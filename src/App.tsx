@@ -9,6 +9,9 @@ import Dashboard from "./components/admin/Dashboard";
 import MedicineManagement from "./components/admin/MedicineManagement";
 import LabTestManagement from "./components/admin/LabTestManagement";
 import ScanManagement from "./components/admin/ScanManagement";
+import DoctorsManagement from "./components/admin/DoctorsManagement";
+import HomeCareManagement from "./components/admin/HomeCareManagement";
+import DiabetesCareManagement from "./components/admin/DiabetesCareManagement";
 import Login from "./pages/Login";
 import Index from "./pages/Index";
 
@@ -31,10 +34,10 @@ const App = () => (
               <Route path="medicines" element={<MedicineManagement />} />
               <Route path="lab-tests" element={<LabTestManagement />} />
               <Route path="scans" element={<ScanManagement />} />
+              <Route path="doctors" element={<DoctorsManagement />} />
+              <Route path="home-care" element={<HomeCareManagement />} />
+              <Route path="diabetes-care" element={<DiabetesCareManagement />} />
               {/* Placeholder routes for other modules */}
-              <Route path="doctors" element={<div className="p-8 text-center">Doctors Module - Coming Soon</div>} />
-              <Route path="home-care" element={<div className="p-8 text-center">Home Care Module - Coming Soon</div>} />
-              <Route path="diabetes-care" element={<div className="p-8 text-center">Diabetes Care Module - Coming Soon</div>} />
               <Route path="ambulance" element={<div className="p-8 text-center">Ambulance Module - Coming Soon</div>} />
               <Route path="orders" element={<div className="p-8 text-center">Orders Module - Coming Soon</div>} />
               <Route path="users" element={<div className="p-8 text-center">Users Module - Coming Soon</div>} />

@@ -936,6 +936,45 @@ export type Database = {
           },
         ]
       }
+      diagnostic_centers: {
+        Row: {
+          address: string
+          created_at: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name_en: string
+          name_te: string
+          phone: string | null
+          updated_at: string | null
+          working_hours: string | null
+        }
+        Insert: {
+          address: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name_en: string
+          name_te: string
+          phone?: string | null
+          updated_at?: string | null
+          working_hours?: string | null
+        }
+        Update: {
+          address?: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name_en?: string
+          name_te?: string
+          phone?: string | null
+          updated_at?: string | null
+          working_hours?: string | null
+        }
+        Relationships: []
+      }
       doctor_credentials: {
         Row: {
           created_at: string | null
@@ -1639,6 +1678,57 @@ export type Database = {
           name_te?: string
           rating?: number | null
           website_url?: string | null
+        }
+        Relationships: []
+      }
+      lab_tests: {
+        Row: {
+          created_at: string | null
+          description_en: string | null
+          description_te: string | null
+          id: string
+          is_active: boolean | null
+          is_fasting_required: boolean | null
+          is_home_collection: boolean | null
+          name_en: string
+          name_te: string
+          preparation_instructions: string | null
+          price: number
+          report_time: string | null
+          test_code: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description_en?: string | null
+          description_te?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_fasting_required?: boolean | null
+          is_home_collection?: boolean | null
+          name_en: string
+          name_te: string
+          preparation_instructions?: string | null
+          price?: number
+          report_time?: string | null
+          test_code: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description_en?: string | null
+          description_te?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_fasting_required?: boolean | null
+          is_home_collection?: boolean | null
+          name_en?: string
+          name_te?: string
+          preparation_instructions?: string | null
+          price?: number
+          report_time?: string | null
+          test_code?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -2418,6 +2508,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      scan_services: {
+        Row: {
+          created_at: string | null
+          description_en: string | null
+          description_te: string | null
+          duration: string | null
+          id: string
+          is_active: boolean | null
+          is_contrast_required: boolean | null
+          name_en: string
+          name_te: string
+          preparation_instructions: string | null
+          price: number
+          scan_code: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description_en?: string | null
+          description_te?: string | null
+          duration?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_contrast_required?: boolean | null
+          name_en: string
+          name_te: string
+          preparation_instructions?: string | null
+          price?: number
+          scan_code: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description_en?: string | null
+          description_te?: string | null
+          duration?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_contrast_required?: boolean | null
+          name_en?: string
+          name_te?: string
+          preparation_instructions?: string | null
+          price?: number
+          scan_code?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       service_analytics: {
         Row: {
