@@ -16,10 +16,10 @@ import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Activity, MapPin, Phone, Star, Clock } from 'lucide-react';
 
 const PhysiotherapyManagement = () => {
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('services');
-  const [dialogType, setDialogType] = useState('service'); // 'service' or 'therapist'
+  const [dialogType, setDialogType] = useState<'service' | 'therapist'>('service');
   const queryClient = useQueryClient();
 
   // Real-time subscription
@@ -65,7 +65,7 @@ const PhysiotherapyManagement = () => {
 
   // Service mutations
   const serviceMutation = useMutation({
-    mutationFn: async (serviceData) => {
+    mutationFn: async (serviceData: any) => {
       if (serviceData.id) {
         const { data, error } = await supabase
           .from('physiotherapy_services')
@@ -91,14 +91,14 @@ const PhysiotherapyManagement = () => {
       setSelectedItem(null);
       toast.success('Service saved successfully');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error('Error saving service: ' + error.message);
     }
   });
 
   // Therapist mutations
   const therapistMutation = useMutation({
-    mutationFn: async (therapistData) => {
+    mutationFn: async (therapistData: any) => {
       if (therapistData.id) {
         const { data, error } = await supabase
           .from('physiotherapists')
@@ -124,14 +124,14 @@ const PhysiotherapyManagement = () => {
       setSelectedItem(null);
       toast.success('Physiotherapist saved successfully');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error('Error saving physiotherapist: ' + error.message);
     }
   });
 
   // Delete mutations
   const deleteServiceMutation = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (id: string) => {
       const { error } = await supabase.from('physiotherapy_services').delete().eq('id', id);
       if (error) throw error;
     },
@@ -139,11 +139,11 @@ const PhysiotherapyManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['physiotherapy-services'] });
       toast.success('Service deleted successfully');
     },
-    onError: (error) => toast.error('Error deleting service: ' + error.message)
+    onError: (error: any) => toast.error('Error deleting service: ' + error.message)
   });
 
   const deleteTherapistMutation = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (id: string) => {
       const { error } = await supabase.from('physiotherapists').delete().eq('id', id);
       if (error) throw error;
     },
@@ -151,54 +151,58 @@ const PhysiotherapyManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['physiotherapists'] });
       toast.success('Physiotherapist deleted successfully');
     },
-    onError: (error) => toast.error('Error deleting physiotherapist: ' + error.message)
+    onError: (error: any) => toast.error('Error deleting physiotherapist: ' + error.message)
   });
 
-  const handleServiceSubmit = (e) => {
+  const handleServiceSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const serviceData = {
-      name_en: formData.get('name_en'),
-      name_te: formData.get('name_te'),
-      description_en: formData.get('description_en'),
-      description_te: formData.get('description_te'),
-      service_type: formData.get('service_type'),
-      duration: formData.get('duration'),
-      price: parseFloat(formData.get('price')) || 0,
-      conditions_treated: formData.get('conditions_treated')?.split(',').map(item => item.trim()) || [],
-      techniques_used: formData.get('techniques_used')?.split(',').map(item => item.trim()) || [],
-      equipment_required: formData.get('equipment_required')?.split(',').map(item => item.trim()) || [],
-      age_group: formData.get('age_group'),
+    const formData = new FormData(e.target as HTMLFormElement);
+    const serviceData: any = {
+      name_en: formData.get('name_en') as string,
+      name_te: formData.get('name_te') as string,
+      description_en: formData.get('description_en') as string,
+      description_te: formData.get('description_te') as string,
+      service_type: formData.get('service_type') as string,
+      duration: formData.get('duration') as string,
+      price: parseFloat(formData.get('price') as string) || 0,
+      conditions_treated: (formData.get('conditions_treated') as string)?.split(',').map(item => item.trim()) || [],
+      techniques_used: (formData.get('techniques_used') as string)?.split(',').map(item => item.trim()) || [],
+      equipment_required: (formData.get('equipment_required') as string)?.split(',').map(item => item.trim()) || [],
+      age_group: formData.get('age_group') as string,
       is_home_service: formData.get('is_home_service') === 'on',
       is_clinic_service: formData.get('is_clinic_service') === 'on',
       is_active: formData.get('is_active') === 'on'
     };
 
-    if (selectedItem) serviceData.id = selectedItem.id;
+    if (selectedItem) {
+      serviceData.id = selectedItem.id;
+    }
     serviceMutation.mutate(serviceData);
   };
 
-  const handleTherapistSubmit = (e) => {
+  const handleTherapistSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const therapistData = {
-      name: formData.get('name'),
-      qualification: formData.get('qualification'),
-      license_number: formData.get('license_number'),
-      experience_years: parseInt(formData.get('experience_years')) || 0,
-      specializations: formData.get('specializations')?.split(',').map(item => item.trim()) || [],
-      languages: formData.get('languages')?.split(',').map(item => item.trim()) || [],
-      bio_en: formData.get('bio_en'),
-      bio_te: formData.get('bio_te'),
-      consultation_fee: parseFloat(formData.get('consultation_fee')) || 0,
-      home_visit_fee: parseFloat(formData.get('home_visit_fee')) || 0,
-      clinic_address: formData.get('clinic_address'),
+    const formData = new FormData(e.target as HTMLFormElement);
+    const therapistData: any = {
+      name: formData.get('name') as string,
+      qualification: formData.get('qualification') as string,
+      license_number: formData.get('license_number') as string,
+      experience_years: parseInt(formData.get('experience_years') as string) || 0,
+      specializations: (formData.get('specializations') as string)?.split(',').map(item => item.trim()) || [],
+      languages: (formData.get('languages') as string)?.split(',').map(item => item.trim()) || [],
+      bio_en: formData.get('bio_en') as string,
+      bio_te: formData.get('bio_te') as string,
+      consultation_fee: parseFloat(formData.get('consultation_fee') as string) || 0,
+      home_visit_fee: parseFloat(formData.get('home_visit_fee') as string) || 0,
+      clinic_address: formData.get('clinic_address') as string,
       is_home_service: formData.get('is_home_service') === 'on',
       is_verified: formData.get('is_verified') === 'on',
       is_active: formData.get('is_active') === 'on'
     };
 
-    if (selectedItem) therapistData.id = selectedItem.id;
+    if (selectedItem) {
+      therapistData.id = selectedItem.id;
+    }
     therapistMutation.mutate(therapistData);
   };
 

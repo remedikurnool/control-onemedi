@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -178,7 +179,7 @@ const BloodBankManagement = () => {
   const handleBankSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    const bankData = {
+    const bankData: any = {
       name_en: formData.get('name_en') as string,
       name_te: formData.get('name_te') as string,
       hospital_id: (formData.get('hospital_id') as string) || null,
@@ -193,14 +194,16 @@ const BloodBankManagement = () => {
       is_active: formData.get('is_active') === 'on'
     };
 
-    if (selectedItem) bankData.id = selectedItem.id;
+    if (selectedItem) {
+      bankData.id = selectedItem.id;
+    }
     bankMutation.mutate(bankData);
   };
 
   const handleInventorySubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    const inventoryData = {
+    const inventoryData: any = {
       blood_bank_id: formData.get('blood_bank_id') as string,
       blood_group: formData.get('blood_group') as string,
       component_type: formData.get('component_type') as string,
@@ -209,7 +212,9 @@ const BloodBankManagement = () => {
       expiry_date: (formData.get('expiry_date') as string) || null
     };
 
-    if (selectedItem) inventoryData.id = selectedItem.id;
+    if (selectedItem) {
+      inventoryData.id = selectedItem.id;
+    }
     inventoryMutation.mutate(inventoryData);
   };
 

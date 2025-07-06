@@ -8,20 +8,27 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Edit, Stethoscope, Calendar, Clock, AlertTriangle, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, Stethoscope, Star, Clock, MapPin, Phone } from 'lucide-react';
 
 const SurgeryOpinionManagement = () => {
-  const [selectedOpinion, setSelectedOpinion] = useState(null);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('specialists');
+  const [dialogType, setDialogType] = useState<'specialist' | 'opinion'>('specialist');
   const queryClient = useQueryClient();
 
   // Real-time subscription
   useEffect(() => {
     const channel = supabase
       .channel('surgery-opinion-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'surgery_specialists' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['surgery-specialists'] });
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'surgery_opinions' }, () => {
         queryClient.invalidateQueries({ queryKey: ['surgery-opinions'] });
       })
@@ -30,275 +37,346 @@ const SurgeryOpinionManagement = () => {
     return () => supabase.removeChannel(channel);
   }, [queryClient]);
 
-  // Fetch surgery opinions
-  const { data: opinions, isLoading } = useQuery({
-    queryKey: ['surgery-opinions'],
+  // Fetch surgery specialists
+  const { data: specialists, isLoading: specialistsLoading } = useQuery({
+    queryKey: ['surgery-specialists'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('surgery_opinions')
-        .select('*, doctors(name, qualification)')
+        .from('surgery_specialists')
+        .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     }
   });
 
-  // Fetch doctors for assignment
-  const { data: doctors } = useQuery({
-    queryKey: ['doctors-list'],
+  // Fetch surgery opinions
+  const { data: opinions, isLoading: opinionsLoading } = useQuery({
+    queryKey: ['surgery-opinions'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('doctors')
-        .select('id, qualification')
-        .eq('status', 'active')
-        .eq('is_verified', true)
-        .order('qualification');
+        .from('surgery_opinions')
+        .select('*, surgery_specialists(name)')
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     }
   });
 
-  // Update opinion mutation
-  const updateOpinionMutation = useMutation({
-    mutationFn: async (opinionData) => {
-      const { data, error } = await supabase
-        .from('surgery_opinions')
-        .update(opinionData)
-        .eq('id', opinionData.id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+  // Specialist mutations
+  const specialistMutation = useMutation({
+    mutationFn: async (specialistData: any) => {
+      if (specialistData.id) {
+        const { data, error } = await supabase
+          .from('surgery_specialists')
+          .update(specialistData)
+          .eq('id', specialistData.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await supabase
+          .from('surgery_specialists')
+          .insert([specialistData])
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['surgery-specialists'] });
+      setIsDialogOpen(false);
+      setSelectedItem(null);
+      toast.success('Specialist saved successfully');
+    },
+    onError: (error: any) => toast.error('Error saving specialist: ' + error.message)
+  });
+
+  // Opinion mutations
+  const opinionMutation = useMutation({
+    mutationFn: async (opinionData: any) => {
+      if (opinionData.id) {
+        const { data, error } = await supabase
+          .from('surgery_opinions')
+          .update(opinionData)
+          .eq('id', opinionData.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await supabase
+          .from('surgery_opinions')
+          .insert([opinionData])
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['surgery-opinions'] });
       setIsDialogOpen(false);
-      setSelectedOpinion(null);
-      toast.success('Opinion updated successfully');
+      setSelectedItem(null);
+      toast.success('Opinion saved successfully');
     },
-    onError: (error) => {
-      toast.error('Error updating opinion: ' + error.message);
-    }
+    onError: (error: any) => toast.error('Error saving opinion: ' + error.message)
   });
 
-  const handleSubmit = (e) => {
+  // Delete mutations
+  const deleteSpecialistMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('surgery_specialists').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['surgery-specialists'] });
+      toast.success('Specialist deleted successfully');
+    },
+    onError: (error: any) => toast.error('Error deleting specialist: ' + error.message)
+  });
+
+  const handleSpecialistSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const opinionData = {
-      id: selectedOpinion.id,
-      specialist_id: formData.get('specialist_id') || null,
-      opinion_status: formData.get('opinion_status'),
-      second_opinion: formData.get('second_opinion'),
-      recommended_approach: formData.get('recommended_approach'),
-      alternative_treatments: formData.get('alternative_treatments'),
-      risks_assessment: formData.get('risks_assessment'),
-      recovery_timeline: formData.get('recovery_timeline'),
-      additional_tests_needed: formData.get('additional_tests_needed'),
-      consultation_date: formData.get('consultation_date') || null,
-      priority_level: formData.get('priority_level')
+    const formData = new FormData(e.target as HTMLFormElement);
+    const specialistData: any = {
+      name: formData.get('name') as string,
+      qualification: formData.get('qualification') as string,
+      specialization: formData.get('specialization') as string,
+      experience_years: parseInt(formData.get('experience_years') as string) || 0,
+      hospital_affiliation: formData.get('hospital_affiliation') as string,
+      consultation_fee: parseFloat(formData.get('consultation_fee') as string) || 0,
+      bio: formData.get('bio') as string,
+      languages: (formData.get('languages') as string)?.split(',').map(item => item.trim()) || [],
+      is_verified: formData.get('is_verified') === 'on',
+      is_active: formData.get('is_active') === 'on'
     };
 
-    updateOpinionMutation.mutate(opinionData);
+    if (selectedItem) {
+      specialistData.id = selectedItem.id;
+    }
+    specialistMutation.mutate(specialistData);
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      in_review: 'bg-blue-100 text-blue-800',
-      completed: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800'
+  const handleOpinionSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    const opinionData: any = {
+      specialist_id: formData.get('specialist_id') as string,
+      patient_name: formData.get('patient_name') as string,
+      patient_age: parseInt(formData.get('patient_age') as string) || 0,
+      medical_condition: formData.get('medical_condition') as string,
+      current_treatment: formData.get('current_treatment') as string,
+      opinion_notes: formData.get('opinion_notes') as string,
+      recommendations: formData.get('recommendations') as string,
+      urgency_level: formData.get('urgency_level') as string,
+      status: formData.get('status') as string,
+      follow_up_required: formData.get('follow_up_required') === 'on'
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+
+    if (selectedItem) {
+      opinionData.id = selectedItem.id;
+    }
+    opinionMutation.mutate(opinionData);
   };
 
-  const getPriorityColor = (priority) => {
-    const colors = {
-      normal: 'bg-gray-100 text-gray-800',
-      urgent: 'bg-orange-100 text-orange-800',
-      emergency: 'bg-red-100 text-red-800'
-    };
-    return colors[priority] || 'bg-gray-100 text-gray-800';
+  const openSpecialistDialog = (specialist: any = null) => {
+    setSelectedItem(specialist);
+    setDialogType('specialist');
+    setIsDialogOpen(true);
+  };
+
+  const openOpinionDialog = (opinion: any = null) => {
+    setSelectedItem(opinion);
+    setDialogType('opinion');
+    setIsDialogOpen(true);
   };
 
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Surgery Second Opinion Management</h1>
+        <div className="flex gap-2">
+          <Button onClick={() => openSpecialistDialog()}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Specialist
+          </Button>
+          <Button onClick={() => openOpinionDialog()}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Opinion
+          </Button>
+        </div>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Review Surgery Opinion Request</DialogTitle>
-            <DialogDescription>
-              Review and provide second opinion for the surgery request.
-            </DialogDescription>
+            <DialogTitle>
+              {dialogType === 'specialist' 
+                ? (selectedItem ? 'Edit Specialist' : 'Add New Specialist')
+                : (selectedItem ? 'Edit Opinion' : 'Add New Opinion')
+              }
+            </DialogTitle>
           </DialogHeader>
           
-          {selectedOpinion && (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Patient Information */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold mb-3">Patient Information</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div><span className="font-medium">Name:</span> {selectedOpinion.patient_name}</div>
-                  <div><span className="font-medium">Age:</span> {selectedOpinion.patient_age}</div>
-                  <div><span className="font-medium">Gender:</span> {selectedOpinion.patient_gender}</div>
-                  <div><span className="font-medium">Surgery Type:</span> {selectedOpinion.surgery_type}</div>
-                  <div><span className="font-medium">Primary Surgeon:</span> {selectedOpinion.primary_surgeon}</div>
-                  <div><span className="font-medium">Hospital:</span> {selectedOpinion.primary_hospital}</div>
-                </div>
-              </div>
-
-              {/* Medical Details */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold mb-3">Medical Details</h3>
-                <div className="space-y-2 text-sm">
-                  <div><span className="font-medium">Diagnosis:</span> {selectedOpinion.diagnosis}</div>
-                  {selectedOpinion.current_symptoms && (
-                    <div><span className="font-medium">Symptoms:</span> {selectedOpinion.current_symptoms}</div>
-                  )}
-                  {selectedOpinion.medical_history && (
-                    <div><span className="font-medium">Medical History:</span> {selectedOpinion.medical_history}</div>
-                  )}
-                  {selectedOpinion.current_medications?.length > 0 && (
-                    <div>
-                      <span className="font-medium">Current Medications:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {selectedOpinion.current_medications.map((med, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">{med}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Assignment and Status */}
+          {dialogType === 'specialist' ? (
+            <form onSubmit={handleSpecialistSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="specialist_id">Assign Specialist</Label>
-                  <Select name="specialist_id" defaultValue={selectedOpinion.specialist_id}>
+                  <Label htmlFor="name">Name</Label>
+                  <Input id="name" name="name" defaultValue={selectedItem?.name} required />
+                </div>
+                <div>
+                  <Label htmlFor="qualification">Qualification</Label>
+                  <Input id="qualification" name="qualification" defaultValue={selectedItem?.qualification} required />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="specialization">Specialization</Label>
+                  <Input id="specialization" name="specialization" defaultValue={selectedItem?.specialization} required />
+                </div>
+                <div>
+                  <Label htmlFor="experience_years">Experience (Years)</Label>
+                  <Input id="experience_years" name="experience_years" type="number" defaultValue={selectedItem?.experience_years} required />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="hospital_affiliation">Hospital Affiliation</Label>
+                  <Input id="hospital_affiliation" name="hospital_affiliation" defaultValue={selectedItem?.hospital_affiliation} />
+                </div>
+                <div>
+                  <Label htmlFor="consultation_fee">Consultation Fee (₹)</Label>
+                  <Input id="consultation_fee" name="consultation_fee" type="number" step="0.01" defaultValue={selectedItem?.consultation_fee} />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea id="bio" name="bio" defaultValue={selectedItem?.bio} />
+              </div>
+
+              <div>
+                <Label htmlFor="languages">Languages (comma-separated)</Label>
+                <Input 
+                  id="languages" 
+                  name="languages" 
+                  defaultValue={selectedItem?.languages?.join(', ') || 'English,Telugu,Hindi'}
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex items-center space-x-2">
+                  <Switch id="is_verified" name="is_verified" defaultChecked={selectedItem?.is_verified} />
+                  <Label htmlFor="is_verified">Verified</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch id="is_active" name="is_active" defaultChecked={selectedItem?.is_active ?? true} />
+                  <Label htmlFor="is_active">Active</Label>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={specialistMutation.isPending}>
+                  {specialistMutation.isPending ? 'Saving...' : 'Save Specialist'}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleOpinionSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="specialist_id">Specialist</Label>
+                <Select name="specialist_id" defaultValue={selectedItem?.specialist_id} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select specialist" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {specialists?.map((specialist) => (
+                      <SelectItem key={specialist.id} value={specialist.id}>
+                        {specialist.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="patient_name">Patient Name</Label>
+                  <Input id="patient_name" name="patient_name" defaultValue={selectedItem?.patient_name} required />
+                </div>
+                <div>
+                  <Label htmlFor="patient_age">Patient Age</Label>
+                  <Input id="patient_age" name="patient_age" type="number" defaultValue={selectedItem?.patient_age} />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="medical_condition">Medical Condition</Label>
+                <Textarea id="medical_condition" name="medical_condition" defaultValue={selectedItem?.medical_condition} required />
+              </div>
+
+              <div>
+                <Label htmlFor="current_treatment">Current Treatment</Label>
+                <Textarea id="current_treatment" name="current_treatment" defaultValue={selectedItem?.current_treatment} />
+              </div>
+
+              <div>
+                <Label htmlFor="opinion_notes">Opinion Notes</Label>
+                <Textarea id="opinion_notes" name="opinion_notes" defaultValue={selectedItem?.opinion_notes} />
+              </div>
+
+              <div>
+                <Label htmlFor="recommendations">Recommendations</Label>
+                <Textarea id="recommendations" name="recommendations" defaultValue={selectedItem?.recommendations} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="urgency_level">Urgency Level</Label>
+                  <Select name="urgency_level" defaultValue={selectedItem?.urgency_level}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select specialist" />
+                      <SelectValue placeholder="Select urgency" />
                     </SelectTrigger>
                     <SelectContent>
-                      {doctors?.map((doctor) => (
-                        <SelectItem key={doctor.id} value={doctor.id}>
-                          {doctor.qualification}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="opinion_status">Status</Label>
-                  <Select name="opinion_status" defaultValue={selectedOpinion.opinion_status}>
+                  <Label htmlFor="status">Status</Label>
+                  <Select name="status" defaultValue={selectedItem?.status}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="in_review">In Review</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="follow_up">Follow Up</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="priority_level">Priority Level</Label>
-                  <Select name="priority_level" defaultValue={selectedOpinion.priority_level}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
-                      <SelectItem value="emergency">Emergency</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="consultation_date">Consultation Date</Label>
-                  <Input 
-                    id="consultation_date" 
-                    name="consultation_date" 
-                    type="datetime-local"
-                    defaultValue={selectedOpinion.consultation_date?.split('.')[0]} 
-                  />
-                </div>
-              </div>
-
-              {/* Opinion Fields */}
-              <div>
-                <Label htmlFor="second_opinion">Second Opinion</Label>
-                <Textarea 
-                  id="second_opinion" 
-                  name="second_opinion" 
-                  defaultValue={selectedOpinion.second_opinion}
-                  placeholder="Provide your professional second opinion..."
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="recommended_approach">Recommended Approach</Label>
-                <Textarea 
-                  id="recommended_approach" 
-                  name="recommended_approach" 
-                  defaultValue={selectedOpinion.recommended_approach}
-                  placeholder="Recommend the best treatment approach..."
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="alternative_treatments">Alternative Treatments</Label>
-                <Textarea 
-                  id="alternative_treatments" 
-                  name="alternative_treatments" 
-                  defaultValue={selectedOpinion.alternative_treatments}
-                  placeholder="Suggest alternative treatment options..."
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="risks_assessment">Risk Assessment</Label>
-                <Textarea 
-                  id="risks_assessment" 
-                  name="risks_assessment" 
-                  defaultValue={selectedOpinion.risks_assessment}
-                  placeholder="Assess potential risks and complications..."
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="recovery_timeline">Recovery Timeline</Label>
-                <Textarea 
-                  id="recovery_timeline" 
-                  name="recovery_timeline" 
-                  defaultValue={selectedOpinion.recovery_timeline}
-                  placeholder="Provide expected recovery timeline..."
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="additional_tests_needed">Additional Tests Needed</Label>
-                <Textarea 
-                  id="additional_tests_needed" 
-                  name="additional_tests_needed" 
-                  defaultValue={selectedOpinion.additional_tests_needed}
-                  placeholder="Recommend additional tests or examinations..."
-                />
+              <div className="flex items-center space-x-2">
+                <Switch id="follow_up_required" name="follow_up_required" defaultChecked={selectedItem?.follow_up_required} />
+                <Label htmlFor="follow_up_required">Follow-up Required</Label>
               </div>
 
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={updateOpinionMutation.isPending}>
-                  {updateOpinionMutation.isPending ? 'Saving...' : 'Update Opinion'}
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={opinionMutation.isPending}>
+                  {opinionMutation.isPending ? 'Saving...' : 'Save Opinion'}
                 </Button>
               </div>
             </form>
@@ -306,102 +384,117 @@ const SurgeryOpinionManagement = () => {
         </DialogContent>
       </Dialog>
 
-      <div className="grid gap-4">
-        {isLoading ? (
-          <div>Loading surgery opinion requests...</div>
-        ) : (
-          opinions?.map((opinion) => (
-            <Card key={opinion.id}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Stethoscope className="h-5 w-5" />
-                      {opinion.patient_name} - {opinion.surgery_type}
-                    </CardTitle>
-                    <CardDescription>
-                      {opinion.diagnosis} • Fee: ₹{opinion.consultation_fee}
-                    </CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <Badge className={getPriorityColor(opinion.priority_level)}>
-                      {opinion.priority_level}
-                    </Badge>
-                    <Badge className={getStatusColor(opinion.opinion_status)}>
-                      {opinion.opinion_status}
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm mb-4">
-                  <div><span className="font-medium">Age:</span> {opinion.patient_age}</div>
-                  <div><span className="font-medium">Gender:</span> {opinion.patient_gender}</div>
-                  <div><span className="font-medium">Primary Surgeon:</span> {opinion.primary_surgeon}</div>
-                  <div><span className="font-medium">Hospital:</span> {opinion.primary_hospital}</div>
-                  {opinion.proposed_date && (
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      Proposed: {new Date(opinion.proposed_date).toLocaleDateString()}
-                    </div>
-                  )}
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    Requested: {new Date(opinion.created_at).toLocaleDateString()}
-                  </div>
-                </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="specialists">Specialists</TabsTrigger>
+          <TabsTrigger value="opinions">Opinions</TabsTrigger>
+        </TabsList>
 
-                {opinion.current_symptoms && (
-                  <div className="mb-3 text-sm">
-                    <span className="font-medium">Current Symptoms:</span> {opinion.current_symptoms}
-                  </div>
-                )}
-
-                {opinion.doctors && (
-                  <div className="mb-3 text-sm">
-                    <span className="font-medium">Assigned Specialist:</span> {opinion.doctors.qualification}
-                  </div>
-                )}
-
-                {opinion.second_opinion && (
-                  <div className="mb-3 text-sm bg-blue-50 p-3 rounded">
-                    <span className="font-medium">Second Opinion:</span> 
-                    <p className="mt-1">{opinion.second_opinion}</p>
-                  </div>
-                )}
-
-                {opinion.test_reports_urls?.length > 0 && (
-                  <div className="mb-3">
-                    <span className="font-medium text-sm">Reports:</span>
-                    <div className="flex gap-1 mt-1">
-                      {opinion.test_reports_urls.map((url, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          <FileText className="h-3 w-3 mr-1" />
-                          Report {idx + 1}
+        <TabsContent value="specialists">
+          <div className="grid gap-4">
+            {specialistsLoading ? (
+              <div>Loading specialists...</div>
+            ) : (
+              specialists?.map((specialist) => (
+                <Card key={specialist.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Stethoscope className="h-5 w-5" />
+                          {specialist.name}
+                        </CardTitle>
+                        <CardDescription>{specialist.qualification}</CardDescription>
+                      </div>
+                      <div className="flex gap-2">
+                        <Badge variant={specialist.is_verified ? 'default' : 'secondary'}>
+                          {specialist.is_verified ? 'Verified' : 'Unverified'}
                         </Badge>
-                      ))}
+                        <Badge variant={specialist.is_active ? 'default' : 'destructive'}>
+                          {specialist.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+                      <div><span className="font-medium">Specialization:</span> {specialist.specialization}</div>
+                      <div><span className="font-medium">Experience:</span> {specialist.experience_years} years</div>
+                      <div><span className="font-medium">Fee:</span> ₹{specialist.consultation_fee}</div>
+                      <div className="flex items-center gap-1">
+                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        {specialist.rating?.toFixed(1) || '0.0'}
+                      </div>
+                    </div>
 
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedOpinion(opinion);
-                      setIsDialogOpen(true);
-                    }}
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Review
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+                    {specialist.hospital_affiliation && (
+                      <div className="mb-2 text-sm">
+                        <span className="font-medium">Hospital:</span> {specialist.hospital_affiliation}
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" onClick={() => openSpecialistDialog(specialist)}>
+                        <Edit className="h-4 w-4 mr-1" />Edit
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => deleteSpecialistMutation.mutate(specialist.id)}>
+                        <Trash2 className="h-4 w-4 mr-1" />Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="opinions">
+          <div className="grid gap-4">
+            {opinionsLoading ? (
+              <div>Loading opinions...</div>
+            ) : (
+              opinions?.map((opinion) => (
+                <Card key={opinion.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle>{opinion.patient_name}</CardTitle>
+                        <CardDescription>
+                          Specialist: {opinion.surgery_specialists?.name || 'N/A'}
+                        </CardDescription>
+                      </div>
+                      <div className="flex gap-2">
+                        <Badge variant={opinion.urgency_level === 'critical' ? 'destructive' : 
+                                       opinion.urgency_level === 'high' ? 'secondary' : 'outline'}>
+                          {opinion.urgency_level}
+                        </Badge>
+                        <Badge variant={opinion.status === 'completed' ? 'default' : 'secondary'}>
+                          {opinion.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 gap-4 text-sm mb-4">
+                      <div><span className="font-medium">Condition:</span> {opinion.medical_condition}</div>
+                      {opinion.recommendations && (
+                        <div><span className="font-medium">Recommendations:</span> {opinion.recommendations}</div>
+                      )}
+                      <div><span className="font-medium">Created:</span> {new Date(opinion.created_at).toLocaleDateString()}</div>
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" onClick={() => openOpinionDialog(opinion)}>
+                        <Edit className="h-4 w-4 mr-1" />View/Edit
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
