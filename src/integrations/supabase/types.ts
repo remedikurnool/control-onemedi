@@ -9,6 +9,332 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ambulance_bookings: {
+        Row: {
+          admin_notes: string | null
+          ambulance_id: string | null
+          booking_time: string | null
+          completion_time: string | null
+          contact_phone: string
+          created_at: string | null
+          current_condition: string | null
+          destination_address: string
+          destination_coordinates: Json | null
+          driver_notes: string | null
+          emergency_contact: string | null
+          emergency_type: string
+          estimated_distance: number | null
+          id: string
+          medical_history: string | null
+          patient_age: number | null
+          patient_name: string
+          pickup_address: string
+          pickup_coordinates: Json | null
+          pickup_time: string | null
+          status: string | null
+          total_amount: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          ambulance_id?: string | null
+          booking_time?: string | null
+          completion_time?: string | null
+          contact_phone: string
+          created_at?: string | null
+          current_condition?: string | null
+          destination_address: string
+          destination_coordinates?: Json | null
+          driver_notes?: string | null
+          emergency_contact?: string | null
+          emergency_type: string
+          estimated_distance?: number | null
+          id?: string
+          medical_history?: string | null
+          patient_age?: number | null
+          patient_name: string
+          pickup_address: string
+          pickup_coordinates?: Json | null
+          pickup_time?: string | null
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          ambulance_id?: string | null
+          booking_time?: string | null
+          completion_time?: string | null
+          contact_phone?: string
+          created_at?: string | null
+          current_condition?: string | null
+          destination_address?: string
+          destination_coordinates?: Json | null
+          driver_notes?: string | null
+          emergency_contact?: string | null
+          emergency_type?: string
+          estimated_distance?: number | null
+          id?: string
+          medical_history?: string | null
+          patient_age?: number | null
+          patient_name?: string
+          pickup_address?: string
+          pickup_coordinates?: Json | null
+          pickup_time?: string | null
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ambulance_bookings_ambulance_id_fkey"
+            columns: ["ambulance_id"]
+            isOneToOne: false
+            referencedRelation: "ambulance_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ambulance_services: {
+        Row: {
+          base_fare: number
+          created_at: string | null
+          driver_name: string
+          driver_phone: string
+          equipment_list: string[] | null
+          id: string
+          is_active: boolean | null
+          is_available: boolean | null
+          location: Json | null
+          name_en: string
+          name_te: string
+          paramedic_name: string | null
+          paramedic_phone: string | null
+          price_per_km: number
+          service_type: string
+          updated_at: string | null
+          vehicle_number: string
+        }
+        Insert: {
+          base_fare?: number
+          created_at?: string | null
+          driver_name: string
+          driver_phone: string
+          equipment_list?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          is_available?: boolean | null
+          location?: Json | null
+          name_en: string
+          name_te: string
+          paramedic_name?: string | null
+          paramedic_phone?: string | null
+          price_per_km?: number
+          service_type: string
+          updated_at?: string | null
+          vehicle_number: string
+        }
+        Update: {
+          base_fare?: number
+          created_at?: string | null
+          driver_name?: string
+          driver_phone?: string
+          equipment_list?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          is_available?: boolean | null
+          location?: Json | null
+          name_en?: string
+          name_te?: string
+          paramedic_name?: string | null
+          paramedic_phone?: string | null
+          price_per_km?: number
+          service_type?: string
+          updated_at?: string | null
+          vehicle_number?: string
+        }
+        Relationships: []
+      }
+      blood_banks: {
+        Row: {
+          address: string
+          created_at: string | null
+          email: string | null
+          emergency_contact: string | null
+          hospital_id: string | null
+          id: string
+          is_active: boolean | null
+          is_government: boolean | null
+          license_number: string
+          name_en: string
+          name_te: string
+          operating_hours: string | null
+          phone: string
+          storage_capacity: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          address: string
+          created_at?: string | null
+          email?: string | null
+          emergency_contact?: string | null
+          hospital_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_government?: boolean | null
+          license_number: string
+          name_en: string
+          name_te: string
+          operating_hours?: string | null
+          phone: string
+          storage_capacity?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string
+          created_at?: string | null
+          email?: string | null
+          emergency_contact?: string | null
+          hospital_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_government?: boolean | null
+          license_number?: string
+          name_en?: string
+          name_te?: string
+          operating_hours?: string | null
+          phone?: string
+          storage_capacity?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blood_banks_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blood_inventory: {
+        Row: {
+          blood_bank_id: string
+          blood_group: string
+          component_type: string
+          created_at: string | null
+          expiry_date: string | null
+          id: string
+          last_updated: string | null
+          units_available: number
+          units_reserved: number | null
+        }
+        Insert: {
+          blood_bank_id: string
+          blood_group: string
+          component_type: string
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          last_updated?: string | null
+          units_available?: number
+          units_reserved?: number | null
+        }
+        Update: {
+          blood_bank_id?: string
+          blood_group?: string
+          component_type?: string
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          last_updated?: string | null
+          units_available?: number
+          units_reserved?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blood_inventory_blood_bank_id_fkey"
+            columns: ["blood_bank_id"]
+            isOneToOne: false
+            referencedRelation: "blood_banks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blood_requests: {
+        Row: {
+          admin_notes: string | null
+          blood_group: string
+          component_type: string
+          contact_phone: string
+          created_at: string | null
+          doctor_name: string | null
+          hospital_name: string | null
+          id: string
+          medical_reason: string | null
+          patient_age: number | null
+          patient_name: string
+          preferred_blood_bank_id: string | null
+          required_by: string | null
+          status: string | null
+          units_required: number
+          updated_at: string | null
+          urgency_level: string | null
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          blood_group: string
+          component_type: string
+          contact_phone: string
+          created_at?: string | null
+          doctor_name?: string | null
+          hospital_name?: string | null
+          id?: string
+          medical_reason?: string | null
+          patient_age?: number | null
+          patient_name: string
+          preferred_blood_bank_id?: string | null
+          required_by?: string | null
+          status?: string | null
+          units_required: number
+          updated_at?: string | null
+          urgency_level?: string | null
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          blood_group?: string
+          component_type?: string
+          contact_phone?: string
+          created_at?: string | null
+          doctor_name?: string | null
+          hospital_name?: string | null
+          id?: string
+          medical_reason?: string | null
+          patient_age?: number | null
+          patient_name?: string
+          preferred_blood_bank_id?: string | null
+          required_by?: string | null
+          status?: string | null
+          units_required?: number
+          updated_at?: string | null
+          urgency_level?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blood_requests_preferred_blood_bank_id_fkey"
+            columns: ["preferred_blood_bank_id"]
+            isOneToOne: false
+            referencedRelation: "blood_banks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       caregiver_certifications: {
         Row: {
           caregiver_id: string | null
@@ -975,6 +1301,173 @@ export type Database = {
         }
         Relationships: []
       }
+      diet_consultations: {
+        Row: {
+          activity_level: string | null
+          allergies: string[] | null
+          consultation_date: string | null
+          consultation_fee: number | null
+          consultation_notes: string | null
+          consultation_type: string | null
+          created_at: string | null
+          current_diet_pattern: string | null
+          custom_plan: Json | null
+          diet_plan_id: string | null
+          food_preferences: string[] | null
+          health_goals: string[] | null
+          height: number | null
+          id: string
+          medical_conditions: string[] | null
+          next_consultation: string | null
+          nutritionist_id: string | null
+          patient_age: number | null
+          patient_gender: string | null
+          patient_name: string
+          progress_tracking: Json | null
+          recommendations: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+          weight: number | null
+        }
+        Insert: {
+          activity_level?: string | null
+          allergies?: string[] | null
+          consultation_date?: string | null
+          consultation_fee?: number | null
+          consultation_notes?: string | null
+          consultation_type?: string | null
+          created_at?: string | null
+          current_diet_pattern?: string | null
+          custom_plan?: Json | null
+          diet_plan_id?: string | null
+          food_preferences?: string[] | null
+          health_goals?: string[] | null
+          height?: number | null
+          id?: string
+          medical_conditions?: string[] | null
+          next_consultation?: string | null
+          nutritionist_id?: string | null
+          patient_age?: number | null
+          patient_gender?: string | null
+          patient_name: string
+          progress_tracking?: Json | null
+          recommendations?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+          weight?: number | null
+        }
+        Update: {
+          activity_level?: string | null
+          allergies?: string[] | null
+          consultation_date?: string | null
+          consultation_fee?: number | null
+          consultation_notes?: string | null
+          consultation_type?: string | null
+          created_at?: string | null
+          current_diet_pattern?: string | null
+          custom_plan?: Json | null
+          diet_plan_id?: string | null
+          food_preferences?: string[] | null
+          health_goals?: string[] | null
+          height?: number | null
+          id?: string
+          medical_conditions?: string[] | null
+          next_consultation?: string | null
+          nutritionist_id?: string | null
+          patient_age?: number | null
+          patient_gender?: string | null
+          patient_name?: string
+          progress_tracking?: Json | null
+          recommendations?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diet_consultations_diet_plan_id_fkey"
+            columns: ["diet_plan_id"]
+            isOneToOne: false
+            referencedRelation: "diet_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diet_plans: {
+        Row: {
+          calorie_range: string | null
+          created_at: string | null
+          description_en: string | null
+          description_te: string | null
+          dietary_restrictions: string[] | null
+          duration_days: number
+          foods_to_avoid: string[] | null
+          foods_to_include: string[] | null
+          id: string
+          is_active: boolean | null
+          is_personalized: boolean | null
+          macros: Json | null
+          meal_structure: Json | null
+          name_en: string
+          name_te: string
+          nutritionist_id: string | null
+          plan_type: string
+          price: number | null
+          sample_menu: Json | null
+          target_conditions: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          calorie_range?: string | null
+          created_at?: string | null
+          description_en?: string | null
+          description_te?: string | null
+          dietary_restrictions?: string[] | null
+          duration_days: number
+          foods_to_avoid?: string[] | null
+          foods_to_include?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          is_personalized?: boolean | null
+          macros?: Json | null
+          meal_structure?: Json | null
+          name_en: string
+          name_te: string
+          nutritionist_id?: string | null
+          plan_type: string
+          price?: number | null
+          sample_menu?: Json | null
+          target_conditions?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          calorie_range?: string | null
+          created_at?: string | null
+          description_en?: string | null
+          description_te?: string | null
+          dietary_restrictions?: string[] | null
+          duration_days?: number
+          foods_to_avoid?: string[] | null
+          foods_to_include?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          is_personalized?: boolean | null
+          macros?: Json | null
+          meal_structure?: Json | null
+          name_en?: string
+          name_te?: string
+          nutritionist_id?: string | null
+          plan_type?: string
+          price?: number | null
+          sample_menu?: Json | null
+          target_conditions?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       doctor_credentials: {
         Row: {
           created_at: string | null
@@ -1478,6 +1971,96 @@ export type Database = {
           },
         ]
       }
+      hospitals: {
+        Row: {
+          address: string
+          ambulance_service: boolean | null
+          bed_capacity: number | null
+          blood_bank: boolean | null
+          coordinates: Json | null
+          created_at: string | null
+          email: string | null
+          emergency_hours: string | null
+          emergency_number: string | null
+          emergency_services: boolean | null
+          facilities: string[] | null
+          hospital_type: string
+          icu_beds: number | null
+          id: string
+          insurance_accepted: string[] | null
+          is_active: boolean | null
+          laboratory: boolean | null
+          name_en: string
+          name_te: string
+          operating_hours: string | null
+          pharmacy: boolean | null
+          phone: string
+          rating: number | null
+          specialties: string[] | null
+          total_reviews: number | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          address: string
+          ambulance_service?: boolean | null
+          bed_capacity?: number | null
+          blood_bank?: boolean | null
+          coordinates?: Json | null
+          created_at?: string | null
+          email?: string | null
+          emergency_hours?: string | null
+          emergency_number?: string | null
+          emergency_services?: boolean | null
+          facilities?: string[] | null
+          hospital_type: string
+          icu_beds?: number | null
+          id?: string
+          insurance_accepted?: string[] | null
+          is_active?: boolean | null
+          laboratory?: boolean | null
+          name_en: string
+          name_te: string
+          operating_hours?: string | null
+          pharmacy?: boolean | null
+          phone: string
+          rating?: number | null
+          specialties?: string[] | null
+          total_reviews?: number | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string
+          ambulance_service?: boolean | null
+          bed_capacity?: number | null
+          blood_bank?: boolean | null
+          coordinates?: Json | null
+          created_at?: string | null
+          email?: string | null
+          emergency_hours?: string | null
+          emergency_number?: string | null
+          emergency_services?: boolean | null
+          facilities?: string[] | null
+          hospital_type?: string
+          icu_beds?: number | null
+          id?: string
+          insurance_accepted?: string[] | null
+          is_active?: boolean | null
+          laboratory?: boolean | null
+          name_en?: string
+          name_te?: string
+          operating_hours?: string | null
+          pharmacy?: boolean | null
+          phone?: string
+          rating?: number | null
+          specialties?: string[] | null
+          total_reviews?: number | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       insurance_claims: {
         Row: {
           approved_amount: number | null
@@ -1907,6 +2490,141 @@ export type Database = {
           logo_url?: string
           name?: string
           website_url?: string | null
+        }
+        Relationships: []
+      }
+      physiotherapists: {
+        Row: {
+          available_slots: Json | null
+          bio_en: string | null
+          bio_te: string | null
+          clinic_address: string | null
+          consultation_fee: number
+          created_at: string | null
+          experience_years: number
+          home_visit_fee: number | null
+          id: string
+          is_active: boolean | null
+          is_home_service: boolean | null
+          is_verified: boolean | null
+          languages: string[] | null
+          license_number: string
+          name: string
+          profile_image: string | null
+          qualification: string
+          rating: number | null
+          specializations: string[] | null
+          total_reviews: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          available_slots?: Json | null
+          bio_en?: string | null
+          bio_te?: string | null
+          clinic_address?: string | null
+          consultation_fee?: number
+          created_at?: string | null
+          experience_years: number
+          home_visit_fee?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_home_service?: boolean | null
+          is_verified?: boolean | null
+          languages?: string[] | null
+          license_number: string
+          name: string
+          profile_image?: string | null
+          qualification: string
+          rating?: number | null
+          specializations?: string[] | null
+          total_reviews?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          available_slots?: Json | null
+          bio_en?: string | null
+          bio_te?: string | null
+          clinic_address?: string | null
+          consultation_fee?: number
+          created_at?: string | null
+          experience_years?: number
+          home_visit_fee?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_home_service?: boolean | null
+          is_verified?: boolean | null
+          languages?: string[] | null
+          license_number?: string
+          name?: string
+          profile_image?: string | null
+          qualification?: string
+          rating?: number | null
+          specializations?: string[] | null
+          total_reviews?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      physiotherapy_services: {
+        Row: {
+          age_group: string | null
+          conditions_treated: string[] | null
+          created_at: string | null
+          description_en: string | null
+          description_te: string | null
+          duration: string | null
+          equipment_required: string[] | null
+          id: string
+          is_active: boolean | null
+          is_clinic_service: boolean | null
+          is_home_service: boolean | null
+          name_en: string
+          name_te: string
+          price: number
+          service_type: string
+          techniques_used: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          age_group?: string | null
+          conditions_treated?: string[] | null
+          created_at?: string | null
+          description_en?: string | null
+          description_te?: string | null
+          duration?: string | null
+          equipment_required?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          is_clinic_service?: boolean | null
+          is_home_service?: boolean | null
+          name_en: string
+          name_te: string
+          price?: number
+          service_type: string
+          techniques_used?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          age_group?: string | null
+          conditions_treated?: string[] | null
+          created_at?: string | null
+          description_en?: string | null
+          description_te?: string | null
+          duration?: string | null
+          equipment_required?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          is_clinic_service?: boolean | null
+          is_home_service?: boolean | null
+          name_en?: string
+          name_te?: string
+          price?: number
+          service_type?: string
+          techniques_used?: string[] | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -2685,6 +3403,110 @@ export type Database = {
             columns: ["moved_by"]
             isOneToOne: false
             referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      surgery_opinions: {
+        Row: {
+          additional_tests_needed: string | null
+          alternative_treatments: string | null
+          consultation_date: string | null
+          consultation_fee: number | null
+          created_at: string | null
+          current_medications: string[] | null
+          current_symptoms: string | null
+          diagnosis: string
+          id: string
+          imaging_urls: string[] | null
+          medical_history: string | null
+          opinion_status: string | null
+          patient_age: number | null
+          patient_gender: string | null
+          patient_name: string
+          previous_surgeries: string[] | null
+          primary_hospital: string | null
+          primary_surgeon: string | null
+          priority_level: string | null
+          proposed_date: string | null
+          recommended_approach: string | null
+          recovery_timeline: string | null
+          risks_assessment: string | null
+          second_opinion: string | null
+          specialist_id: string | null
+          surgery_type: string
+          test_reports_urls: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          additional_tests_needed?: string | null
+          alternative_treatments?: string | null
+          consultation_date?: string | null
+          consultation_fee?: number | null
+          created_at?: string | null
+          current_medications?: string[] | null
+          current_symptoms?: string | null
+          diagnosis: string
+          id?: string
+          imaging_urls?: string[] | null
+          medical_history?: string | null
+          opinion_status?: string | null
+          patient_age?: number | null
+          patient_gender?: string | null
+          patient_name: string
+          previous_surgeries?: string[] | null
+          primary_hospital?: string | null
+          primary_surgeon?: string | null
+          priority_level?: string | null
+          proposed_date?: string | null
+          recommended_approach?: string | null
+          recovery_timeline?: string | null
+          risks_assessment?: string | null
+          second_opinion?: string | null
+          specialist_id?: string | null
+          surgery_type: string
+          test_reports_urls?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          additional_tests_needed?: string | null
+          alternative_treatments?: string | null
+          consultation_date?: string | null
+          consultation_fee?: number | null
+          created_at?: string | null
+          current_medications?: string[] | null
+          current_symptoms?: string | null
+          diagnosis?: string
+          id?: string
+          imaging_urls?: string[] | null
+          medical_history?: string | null
+          opinion_status?: string | null
+          patient_age?: number | null
+          patient_gender?: string | null
+          patient_name?: string
+          previous_surgeries?: string[] | null
+          primary_hospital?: string | null
+          primary_surgeon?: string | null
+          priority_level?: string | null
+          proposed_date?: string | null
+          recommended_approach?: string | null
+          recovery_timeline?: string | null
+          risks_assessment?: string | null
+          second_opinion?: string | null
+          specialist_id?: string | null
+          surgery_type?: string
+          test_reports_urls?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "surgery_opinions_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
             referencedColumns: ["id"]
           },
         ]

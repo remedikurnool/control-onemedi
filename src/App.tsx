@@ -12,6 +12,12 @@ import ScanManagement from "./components/admin/ScanManagement";
 import DoctorsManagement from "./components/admin/DoctorsManagement";
 import HomeCareManagement from "./components/admin/HomeCareManagement";
 import DiabetesCareManagement from "./components/admin/DiabetesCareManagement";
+import AmbulanceManagement from "./components/admin/AmbulanceManagement";
+import PhysiotherapyManagement from "./components/admin/PhysiotherapyManagement";
+import HospitalManagement from "./components/admin/HospitalManagement";
+import BloodBankManagement from "./components/admin/BloodBankManagement";
+import SurgeryOpinionManagement from "./components/admin/SurgeryOpinionManagement";
+import DietGuideManagement from "./components/admin/DietGuideManagement";
 import Login from "./pages/Login";
 import Index from "./pages/Index";
 
@@ -37,8 +43,13 @@ const App = () => (
               <Route path="doctors" element={<DoctorsManagement />} />
               <Route path="home-care" element={<HomeCareManagement />} />
               <Route path="diabetes-care" element={<DiabetesCareManagement />} />
-              {/* Placeholder routes for other modules */}
-              <Route path="ambulance" element={<div className="p-8 text-center">Ambulance Module - Coming Soon</div>} />
+              <Route path="ambulance" element={<AmbulanceManagement />} />
+              <Route path="physiotherapy" element={<PhysiotherapyManagement />} />
+              <Route path="hospitals" element={<HospitalManagement />} />
+              <Route path="blood-banks" element={<BloodBankManagement />} />
+              <Route path="surgery-opinions" element={<SurgeryOpinionManagement />} />
+              <Route path="diet-guide" element={<DietGuideManagement />} />
+              {/* Placeholder routes for remaining modules */}
               <Route path="orders" element={<div className="p-8 text-center">Orders Module - Coming Soon</div>} />
               <Route path="users" element={<div className="p-8 text-center">Users Module - Coming Soon</div>} />
               <Route path="inventory" element={<div className="p-8 text-center">Inventory Module - Coming Soon</div>} />
