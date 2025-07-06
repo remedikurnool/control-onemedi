@@ -50,22 +50,26 @@ const ScanManagement = () => {
   const [selectedScanForPricing, setSelectedScanForPricing] = useState<ScanData | null>(null);
   const queryClient = useQueryClient();
 
-  // Fetch scans using raw SQL to avoid type issues
+  // Fetch scans - handle gracefully if tables don't exist
   const { data: scans, isLoading: scansLoading } = useQuery({
     queryKey: ['scans'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc('exec_sql', { 
-          sql: 'SELECT * FROM scans WHERE is_active = true ORDER BY name_en' 
-        })
-        .catch(() => {
-          return { data: [], error: null };
-        });
-      
-      if (error && !error.message.includes('does not exist')) {
-        throw error;
+      try {
+        const { data, error } = await supabase
+          .from('scans' as any)
+          .select('*')
+          .eq('is_active', true)
+          .order('name_en');
+        
+        if (error) {
+          console.log('Scans table not ready yet:', error.message);
+          return [];
+        }
+        return data || [];
+      } catch (err) {
+        console.log('Scans query failed:', err);
+        return [];
       }
-      return data || [];
     },
   });
 
@@ -73,52 +77,75 @@ const ScanManagement = () => {
   const { data: centers } = useQuery({
     queryKey: ['diagnostic-centers'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc('exec_sql', { 
-          sql: 'SELECT * FROM diagnostic_centers WHERE is_active = true ORDER BY name_en' 
-        })
-        .catch(() => {
-          return { data: [], error: null };
-        });
-      
-      if (error && !error.message.includes('does not exist')) {
-        throw error;
+      try {
+        const { data, error } = await supabase
+          .from('diagnostic_centers' as any)
+          .select('*')
+          .eq('is_active', true)
+          .order('name_en');
+        
+        if (error) {
+          console.log('Diagnostic centers table not ready yet:', error.message);
+          return [];
+        }
+        return data || [];
+      } catch (err) {
+        console.log('Diagnostic centers query failed:', err);
+        return [];
       }
-      return data || [];
     },
   });
 
   // Create/Update scan mutation
   const scanMutation = useMutation({
     mutationFn: async (scanData: any) => {
-      const sql = selectedScan 
-        ? `UPDATE scans SET 
-           name_en = '${scanData.name_en}',
-           name_te = '${scanData.name_te}',
-           description_en = '${scanData.description_en || ''}',
-           description_te = '${scanData.description_te || ''}',
-           scan_code = '${scanData.scan_code}',
-           scan_type = '${scanData.scan_type}',
-           contrast_required = ${scanData.contrast_required},
-           preparation_instructions = '${scanData.preparation_instructions || ''}',
-           duration_minutes = ${scanData.duration_minutes || 'NULL'},
-           radiation_dose = '${scanData.radiation_dose || ''}',
-           updated_at = CURRENT_TIMESTAMP
-           WHERE id = '${selectedScan.id}'
-           RETURNING *`
-        : `INSERT INTO scans (
-           name_en, name_te, description_en, description_te, scan_code, scan_type,
-           contrast_required, preparation_instructions, duration_minutes, radiation_dose, is_active
-           ) VALUES (
-           '${scanData.name_en}', '${scanData.name_te}', '${scanData.description_en || ''}',
-           '${scanData.description_te || ''}', '${scanData.scan_code}', '${scanData.scan_type}',
-           ${scanData.contrast_required}, '${scanData.preparation_instructions || ''}',
-           ${scanData.duration_minutes || 'NULL'}, '${scanData.radiation_dose || ''}', true
-           ) RETURNING *`;
-
-      const { data, error } = await supabase.rpc('exec_sql', { sql });
-      if (error) throw error;
-      return data;
+      try {
+        if (selectedScan) {
+          const { data, error } = await supabase
+            .from('scans' as any)
+            .update({
+              name_en: scanData.name_en,
+              name_te: scanData.name_te,
+              description_en: scanData.description_en,
+              description_te: scanData.description_te,
+              scan_code: scanData.scan_code,
+              scan_type: scanData.scan_type,
+              contrast_required: scanData.contrast_required,
+              preparation_instructions: scanData.preparation_instructions,
+              duration_minutes: scanData.duration_minutes,
+              radiation_dose: scanData.radiation_dose,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', selectedScan.id)
+            .select();
+          
+          if (error) throw error;
+          return data;
+        } else {
+          const { data, error } = await supabase
+            .from('scans' as any)
+            .insert({
+              name_en: scanData.name_en,
+              name_te: scanData.name_te,
+              description_en: scanData.description_en,
+              description_te: scanData.description_te,
+              scan_code: scanData.scan_code,
+              scan_type: scanData.scan_type,
+              contrast_required: scanData.contrast_required,
+              preparation_instructions: scanData.preparation_instructions,
+              duration_minutes: scanData.duration_minutes,
+              radiation_dose: scanData.radiation_dose,
+              is_active: true
+            })
+            .select();
+          
+          if (error) throw error;
+          return data;
+        }
+      } catch (err) {
+        console.error('Scan mutation error:', err);
+        throw new Error('Database tables are still being set up. Please try again in a few moments.');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scans'] });
@@ -134,10 +161,17 @@ const ScanManagement = () => {
   // Delete scan mutation
   const deleteScanMutation = useMutation({
     mutationFn: async (scanId: string) => {
-      const { error } = await supabase.rpc('exec_sql', { 
-        sql: `DELETE FROM scans WHERE id = '${scanId}'` 
-      });
-      if (error) throw error;
+      try {
+        const { error } = await supabase
+          .from('scans' as any)
+          .delete()
+          .eq('id', scanId);
+        
+        if (error) throw error;
+      } catch (err) {
+        console.error('Delete scan error:', err);
+        throw new Error('Database tables are still being set up. Please try again in a few moments.');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scans'] });

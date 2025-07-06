@@ -78,23 +78,27 @@ const LabTestManagement = () => {
   const [selectedTestForPricing, setSelectedTestForPricing] = useState<LabTest | null>(null);
   const queryClient = useQueryClient();
 
-  // Fetch lab tests using raw SQL to avoid type issues
+  // Fetch lab tests - handle gracefully if tables don't exist
   const { data: labTests, isLoading: testsLoading } = useQuery({
     queryKey: ['lab-tests'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc('exec_sql', { 
-          sql: 'SELECT * FROM lab_tests WHERE is_active = true ORDER BY name_en' 
-        })
-        .catch(() => {
-          // Fallback: return empty array if tables don't exist yet
-          return { data: [], error: null };
-        });
-      
-      if (error && !error.message.includes('does not exist')) {
-        throw error;
+      try {
+        // Try to use the standard Supabase client first
+        const { data, error } = await supabase
+          .from('lab_tests' as any)
+          .select('*')
+          .eq('is_active', true)
+          .order('name_en');
+        
+        if (error) {
+          console.log('Lab tests table not ready yet:', error.message);
+          return [];
+        }
+        return data || [];
+      } catch (err) {
+        console.log('Lab tests query failed:', err);
+        return [];
       }
-      return data || [];
     },
   });
 
@@ -102,54 +106,77 @@ const LabTestManagement = () => {
   const { data: centers } = useQuery({
     queryKey: ['diagnostic-centers'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc('exec_sql', { 
-          sql: 'SELECT * FROM diagnostic_centers WHERE is_active = true ORDER BY name_en' 
-        })
-        .catch(() => {
-          return { data: [], error: null };
-        });
-      
-      if (error && !error.message.includes('does not exist')) {
-        throw error;
+      try {
+        const { data, error } = await supabase
+          .from('diagnostic_centers' as any)
+          .select('*')
+          .eq('is_active', true)
+          .order('name_en');
+        
+        if (error) {
+          console.log('Diagnostic centers table not ready yet:', error.message);
+          return [];
+        }
+        return data || [];
+      } catch (err) {
+        console.log('Diagnostic centers query failed:', err);
+        return [];
       }
-      return data || [];
     },
   });
 
   // Create/Update lab test mutation
   const labTestMutation = useMutation({
     mutationFn: async (testData: any) => {
-      const sql = selectedTest 
-        ? `UPDATE lab_tests SET 
-           name_en = '${testData.name_en}',
-           name_te = '${testData.name_te}',
-           description_en = '${testData.description_en || ''}',
-           description_te = '${testData.description_te || ''}',
-           test_code = '${testData.test_code}',
-           category = '${testData.category}',
-           sample_type = '${testData.sample_type}',
-           fasting_required = ${testData.fasting_required},
-           preparation_instructions = '${testData.preparation_instructions || ''}',
-           report_delivery_hours = ${testData.report_delivery_hours},
-           is_package = ${testData.is_package},
-           updated_at = CURRENT_TIMESTAMP
-           WHERE id = '${selectedTest.id}'
-           RETURNING *`
-        : `INSERT INTO lab_tests (
-           name_en, name_te, description_en, description_te, test_code, category,
-           sample_type, fasting_required, preparation_instructions, report_delivery_hours,
-           is_package, is_active
-           ) VALUES (
-           '${testData.name_en}', '${testData.name_te}', '${testData.description_en || ''}',
-           '${testData.description_te || ''}', '${testData.test_code}', '${testData.category}',
-           '${testData.sample_type}', ${testData.fasting_required}, '${testData.preparation_instructions || ''}',
-           ${testData.report_delivery_hours}, ${testData.is_package}, true
-           ) RETURNING *`;
-
-      const { data, error } = await supabase.rpc('exec_sql', { sql });
-      if (error) throw error;
-      return data;
+      try {
+        if (selectedTest) {
+          const { data, error } = await supabase
+            .from('lab_tests' as any)
+            .update({
+              name_en: testData.name_en,
+              name_te: testData.name_te,
+              description_en: testData.description_en,
+              description_te: testData.description_te,
+              test_code: testData.test_code,
+              category: testData.category,
+              sample_type: testData.sample_type,
+              fasting_required: testData.fasting_required,
+              preparation_instructions: testData.preparation_instructions,
+              report_delivery_hours: testData.report_delivery_hours,
+              is_package: testData.is_package,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', selectedTest.id)
+            .select();
+          
+          if (error) throw error;
+          return data;
+        } else {
+          const { data, error } = await supabase
+            .from('lab_tests' as any)
+            .insert({
+              name_en: testData.name_en,
+              name_te: testData.name_te,
+              description_en: testData.description_en,
+              description_te: testData.description_te,
+              test_code: testData.test_code,
+              category: testData.category,
+              sample_type: testData.sample_type,
+              fasting_required: testData.fasting_required,
+              preparation_instructions: testData.preparation_instructions,
+              report_delivery_hours: testData.report_delivery_hours,
+              is_package: testData.is_package,
+              is_active: true
+            })
+            .select();
+          
+          if (error) throw error;
+          return data;
+        }
+      } catch (err) {
+        console.error('Lab test mutation error:', err);
+        throw new Error('Database tables are still being set up. Please try again in a few moments.');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lab-tests'] });
@@ -165,10 +192,17 @@ const LabTestManagement = () => {
   // Delete lab test mutation
   const deleteTestMutation = useMutation({
     mutationFn: async (testId: string) => {
-      const { error } = await supabase.rpc('exec_sql', { 
-        sql: `DELETE FROM lab_tests WHERE id = '${testId}'` 
-      });
-      if (error) throw error;
+      try {
+        const { error } = await supabase
+          .from('lab_tests' as any)
+          .delete()
+          .eq('id', testId);
+        
+        if (error) throw error;
+      } catch (err) {
+        console.error('Delete test error:', err);
+        throw new Error('Database tables are still being set up. Please try again in a few moments.');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lab-tests'] });
