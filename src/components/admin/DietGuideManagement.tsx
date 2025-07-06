@@ -16,10 +16,10 @@ import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Apple, Users, Calendar, Star } from 'lucide-react';
 
 const DietGuideManagement = () => {
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('plans');
-  const [dialogType, setDialogType] = useState('plan'); // 'plan' or 'consultation'
+  const [dialogType, setDialogType] = useState<'plan' | 'consultation'>('plan');
   const queryClient = useQueryClient();
 
   // Real-time subscription
@@ -34,7 +34,9 @@ const DietGuideManagement = () => {
       })
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [queryClient]);
 
   // Fetch diet plans
@@ -65,7 +67,7 @@ const DietGuideManagement = () => {
 
   // Plan mutations
   const planMutation = useMutation({
-    mutationFn: async (planData) => {
+    mutationFn: async (planData: any) => {
       if (planData.id) {
         const { data, error } = await supabase
           .from('diet_plans')
@@ -91,12 +93,12 @@ const DietGuideManagement = () => {
       setSelectedItem(null);
       toast.success('Diet plan saved successfully');
     },
-    onError: (error) => toast.error('Error saving diet plan: ' + error.message)
+    onError: (error: any) => toast.error('Error saving diet plan: ' + error.message)
   });
 
   // Consultation mutations
   const consultationMutation = useMutation({
-    mutationFn: async (consultationData) => {
+    mutationFn: async (consultationData: any) => {
       const { data, error } = await supabase
         .from('diet_consultations')
         .update(consultationData)
@@ -112,12 +114,12 @@ const DietGuideManagement = () => {
       setSelectedItem(null);
       toast.success('Consultation updated successfully');
     },
-    onError: (error) => toast.error('Error updating consultation: ' + error.message)
+    onError: (error: any) => toast.error('Error updating consultation: ' + error.message)
   });
 
   // Delete mutations
   const deletePlanMutation = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (id: string) => {
       const { error } = await supabase.from('diet_plans').delete().eq('id', id);
       if (error) throw error;
     },
@@ -125,43 +127,43 @@ const DietGuideManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['diet-plans'] });
       toast.success('Diet plan deleted successfully');
     },
-    onError: (error) => toast.error('Error deleting diet plan: ' + error.message)
+    onError: (error: any) => toast.error('Error deleting diet plan: ' + error.message)
   });
 
-  const handlePlanSubmit = (e) => {
+  const handlePlanSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
+    const formData = new FormData(e.target as HTMLFormElement);
     
     // Parse JSON fields
-    const macros = {};
+    const macros: any = {};
     const macroKeys = ['protein', 'carbs', 'fats'];
     macroKeys.forEach(key => {
-      const value = formData.get(`macros_${key}`);
+      const value = formData.get(`macros_${key}`) as string;
       if (value) macros[key] = parseFloat(value);
     });
 
-    const mealStructure = {};
+    const mealStructure: any = {};
     const mealKeys = ['meals_per_day', 'breakfast_time', 'lunch_time', 'dinner_time'];
     mealKeys.forEach(key => {
-      const value = formData.get(`meal_${key}`);
+      const value = formData.get(`meal_${key}`) as string;
       if (value) mealStructure[key.replace('meal_', '')] = value;
     });
 
-    const planData = {
-      name_en: formData.get('name_en'),
-      name_te: formData.get('name_te'),
-      description_en: formData.get('description_en'),
-      description_te: formData.get('description_te'),
-      plan_type: formData.get('plan_type'),
-      duration_days: parseInt(formData.get('duration_days')) || 0,
-      target_conditions: formData.get('target_conditions')?.split(',').map(item => item.trim()) || [],
-      dietary_restrictions: formData.get('dietary_restrictions')?.split(',').map(item => item.trim()) || [],
-      calorie_range: formData.get('calorie_range'),
+    const planData: any = {
+      name_en: formData.get('name_en') as string,
+      name_te: formData.get('name_te') as string,
+      description_en: formData.get('description_en') as string,
+      description_te: formData.get('description_te') as string,
+      plan_type: formData.get('plan_type') as string,
+      duration_days: parseInt(formData.get('duration_days') as string) || 0,
+      target_conditions: (formData.get('target_conditions') as string)?.split(',').map(item => item.trim()) || [],
+      dietary_restrictions: (formData.get('dietary_restrictions') as string)?.split(',').map(item => item.trim()) || [],
+      calorie_range: formData.get('calorie_range') as string,
       macros: Object.keys(macros).length > 0 ? macros : null,
       meal_structure: Object.keys(mealStructure).length > 0 ? mealStructure : null,
-      foods_to_include: formData.get('foods_to_include')?.split(',').map(item => item.trim()) || [],
-      foods_to_avoid: formData.get('foods_to_avoid')?.split(',').map(item => item.trim()) || [],
-      price: parseFloat(formData.get('price')) || 0,
+      foods_to_include: (formData.get('foods_to_include') as string)?.split(',').map(item => item.trim()) || [],
+      foods_to_avoid: (formData.get('foods_to_avoid') as string)?.split(',').map(item => item.trim()) || [],
+      price: parseFloat(formData.get('price') as string) || 0,
       is_personalized: formData.get('is_personalized') === 'on',
       is_active: formData.get('is_active') === 'on'
     };
@@ -170,35 +172,35 @@ const DietGuideManagement = () => {
     planMutation.mutate(planData);
   };
 
-  const handleConsultationSubmit = (e) => {
+  const handleConsultationSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
+    const formData = new FormData(e.target as HTMLFormElement);
     const consultationData = {
       id: selectedItem.id,
-      diet_plan_id: formData.get('diet_plan_id') || null,
-      consultation_notes: formData.get('consultation_notes'),
-      recommendations: formData.get('recommendations'),
-      status: formData.get('status'),
-      next_consultation: formData.get('next_consultation') || null
+      diet_plan_id: (formData.get('diet_plan_id') as string) || null,
+      consultation_notes: formData.get('consultation_notes') as string,
+      recommendations: formData.get('recommendations') as string,
+      status: formData.get('status') as string,
+      next_consultation: (formData.get('next_consultation') as string) || null
     };
 
     consultationMutation.mutate(consultationData);
   };
 
-  const openPlanDialog = (plan = null) => {
+  const openPlanDialog = (plan: any = null) => {
     setSelectedItem(plan);
     setDialogType('plan');
     setIsDialogOpen(true);
   };
 
-  const openConsultationDialog = (consultation = null) => {
+  const openConsultationDialog = (consultation: any = null) => {
     setSelectedItem(consultation);
     setDialogType('consultation');
     setIsDialogOpen(true);
   };
 
-  const getPlanTypeColor = (type) => {
-    const colors = {
+  const getPlanTypeColor = (type: string) => {
+    const colors: Record<string, string> = {
       weight_loss: 'bg-red-100 text-red-800',
       weight_gain: 'bg-green-100 text-green-800',
       diabetes: 'bg-blue-100 text-blue-800',
@@ -208,8 +210,8 @@ const DietGuideManagement = () => {
     return colors[type] || 'bg-gray-100 text-gray-800';
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
       scheduled: 'bg-blue-100 text-blue-800',
       completed: 'bg-green-100 text-green-800',
       cancelled: 'bg-red-100 text-red-800'
@@ -405,7 +407,7 @@ const DietGuideManagement = () => {
                         <div className="mb-2">
                           <span className="font-medium text-sm">Goals:</span>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {selectedItem.health_goals.map((goal, idx) => (
+                            {selectedItem.health_goals.map((goal: string, idx: number) => (
                               <Badge key={idx} variant="outline" className="text-xs">{goal}</Badge>
                             ))}
                           </div>
@@ -415,7 +417,7 @@ const DietGuideManagement = () => {
                         <div>
                           <span className="font-medium text-sm">Medical Conditions:</span>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {selectedItem.medical_conditions.map((condition, idx) => (
+                            {selectedItem.medical_conditions.map((condition: string, idx: number) => (
                               <Badge key={idx} variant="outline" className="text-xs">{condition}</Badge>
                             ))}
                           </div>
@@ -543,7 +545,7 @@ const DietGuideManagement = () => {
                       <div className="mb-3">
                         <span className="font-medium text-sm">Target Conditions:</span>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {plan.target_conditions.map((condition, idx) => (
+                          {plan.target_conditions.map((condition: string, idx: number) => (
                             <Badge key={idx} variant="outline" className="text-xs">{condition}</Badge>
                           ))}
                         </div>
@@ -608,7 +610,7 @@ const DietGuideManagement = () => {
                       <div className="mb-3">
                         <span className="font-medium text-sm">Health Goals:</span>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {consultation.health_goals.map((goal, idx) => (
+                          {consultation.health_goals.map((goal: string, idx: number) => (
                             <Badge key={idx} variant="outline" className="text-xs">{goal}</Badge>
                           ))}
                         </div>

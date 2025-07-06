@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -139,7 +138,7 @@ const AmbulanceManagement = () => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    const serviceData = {
+    const serviceData: any = {
       name_en: formData.get('name_en') as string,
       name_te: formData.get('name_te') as string,
       service_type: formData.get('service_type') as string,

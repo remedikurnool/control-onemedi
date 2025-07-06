@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Building2, MapPin, Phone, Mail, Star, Bed, Clock } from 'lucide-react';
 
 const HospitalManagement = () => {
-  const [selectedHospital, setSelectedHospital] = useState(null);
+  const [selectedHospital, setSelectedHospital] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -28,7 +28,9 @@ const HospitalManagement = () => {
       })
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [queryClient]);
 
   // Fetch hospitals
@@ -46,7 +48,7 @@ const HospitalManagement = () => {
 
   // Create/Update hospital mutation
   const hospitalMutation = useMutation({
-    mutationFn: async (hospitalData) => {
+    mutationFn: async (hospitalData: any) => {
       if (hospitalData.id) {
         const { data, error } = await supabase
           .from('hospitals')
@@ -72,14 +74,14 @@ const HospitalManagement = () => {
       setSelectedHospital(null);
       toast.success('Hospital saved successfully');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error('Error saving hospital: ' + error.message);
     }
   });
 
   // Delete hospital mutation
   const deleteHospitalMutation = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('hospitals')
         .delete()
@@ -90,30 +92,30 @@ const HospitalManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['hospitals'] });
       toast.success('Hospital deleted successfully');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error('Error deleting hospital: ' + error.message);
     }
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const hospitalData = {
-      name_en: formData.get('name_en'),
-      name_te: formData.get('name_te'),
-      hospital_type: formData.get('hospital_type'),
-      address: formData.get('address'),
-      phone: formData.get('phone'),
-      email: formData.get('email'),
-      website: formData.get('website'),
-      emergency_number: formData.get('emergency_number'),
-      specialties: formData.get('specialties')?.split(',').map(item => item.trim()) || [],
-      facilities: formData.get('facilities')?.split(',').map(item => item.trim()) || [],
-      bed_capacity: parseInt(formData.get('bed_capacity')) || null,
-      icu_beds: parseInt(formData.get('icu_beds')) || null,
-      operating_hours: formData.get('operating_hours'),
-      emergency_hours: formData.get('emergency_hours'),
-      insurance_accepted: formData.get('insurance_accepted')?.split(',').map(item => item.trim()) || [],
+    const formData = new FormData(e.target as HTMLFormElement);
+    const hospitalData: any = {
+      name_en: formData.get('name_en') as string,
+      name_te: formData.get('name_te') as string,
+      hospital_type: formData.get('hospital_type') as string,
+      address: formData.get('address') as string,
+      phone: formData.get('phone') as string,
+      email: formData.get('email') as string,
+      website: formData.get('website') as string,
+      emergency_number: formData.get('emergency_number') as string,
+      specialties: (formData.get('specialties') as string)?.split(',').map(item => item.trim()) || [],
+      facilities: (formData.get('facilities') as string)?.split(',').map(item => item.trim()) || [],
+      bed_capacity: parseInt(formData.get('bed_capacity') as string) || null,
+      icu_beds: parseInt(formData.get('icu_beds') as string) || null,
+      operating_hours: formData.get('operating_hours') as string,
+      emergency_hours: formData.get('emergency_hours') as string,
+      insurance_accepted: (formData.get('insurance_accepted') as string)?.split(',').map(item => item.trim()) || [],
       emergency_services: formData.get('emergency_services') === 'on',
       ambulance_service: formData.get('ambulance_service') === 'on',
       pharmacy: formData.get('pharmacy') === 'on',
@@ -129,8 +131,8 @@ const HospitalManagement = () => {
     hospitalMutation.mutate(hospitalData);
   };
 
-  const getHospitalTypeColor = (type) => {
-    const colors = {
+  const getHospitalTypeColor = (type: string) => {
+    const colors: Record<string, string> = {
       government: 'bg-blue-100 text-blue-800',
       private: 'bg-green-100 text-green-800',
       specialty: 'bg-purple-100 text-purple-800'
@@ -450,7 +452,7 @@ const HospitalManagement = () => {
                   <div className="mb-3">
                     <span className="font-medium text-sm">Specialties:</span>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {hospital.specialties.slice(0, 5).map((specialty, idx) => (
+                      {hospital.specialties.slice(0, 5).map((specialty: string, idx: number) => (
                         <Badge key={idx} variant="outline" className="text-xs">
                           {specialty}
                         </Badge>
