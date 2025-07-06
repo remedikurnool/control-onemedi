@@ -12,8 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Search, Filter, Upload, Download } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Upload, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -57,7 +56,7 @@ const MedicineManagement = () => {
     },
   });
 
-  // Fetch medicines
+  // Fetch medicines from products table
   const { data: medicines, isLoading } = useQuery({
     queryKey: ['medicines', searchTerm, selectedCategory],
     queryFn: async () => {
@@ -83,7 +82,7 @@ const MedicineManagement = () => {
     },
   });
 
-  // Fetch categories
+  // Fetch medicine categories
   const { data: categories } = useQuery({
     queryKey: ['medicine-categories'],
     queryFn: async () => {
@@ -92,7 +91,10 @@ const MedicineManagement = () => {
         .select('*')
         .eq('is_active', true)
         .order('display_order');
-      if (error) throw error;
+      if (error) {
+        console.log('Categories fetch error:', error);
+        return [];
+      }
       return data;
     },
   });
@@ -100,16 +102,31 @@ const MedicineManagement = () => {
   // Create/Update medicine mutation
   const saveMedicineMutation = useMutation({
     mutationFn: async (data: MedicineFormData) => {
+      const medicineData = {
+        name_en: data.name_en,
+        name_te: data.name_te || '',
+        description_en: data.description_en || '',
+        description_te: data.description_te || '',
+        category_id: data.category_id || null,
+        price: data.price,
+        discount_price: data.discount_price || null,
+        manufacturer: data.manufacturer || '',
+        sku: data.sku || '',
+        is_prescription_required: data.is_prescription_required,
+        is_available: data.is_available,
+        tags: data.tags || [],
+      };
+
       if (editingMedicine) {
         const { error } = await supabase
           .from('products')
-          .update(data)
+          .update(medicineData)
           .eq('id', editingMedicine.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('products')
-          .insert([data]);
+          .insert([medicineData]);
         if (error) throw error;
       }
     },
