@@ -81,9 +81,8 @@ const LabTestManagement = () => {
   // Fetch lab tests - handle gracefully if tables don't exist
   const { data: labTests, isLoading: testsLoading } = useQuery({
     queryKey: ['lab-tests'],
-    queryFn: async () => {
+    queryFn: async (): Promise<LabTest[]> => {
       try {
-        // Try to use the standard Supabase client first
         const { data, error } = await supabase
           .from('lab_tests' as any)
           .select('*')
@@ -94,7 +93,7 @@ const LabTestManagement = () => {
           console.log('Lab tests table not ready yet:', error.message);
           return [];
         }
-        return data || [];
+        return (data || []) as LabTest[];
       } catch (err) {
         console.log('Lab tests query failed:', err);
         return [];
@@ -105,7 +104,7 @@ const LabTestManagement = () => {
   // Fetch diagnostic centers
   const { data: centers } = useQuery({
     queryKey: ['diagnostic-centers'],
-    queryFn: async () => {
+    queryFn: async (): Promise<DiagnosticCenter[]> => {
       try {
         const { data, error } = await supabase
           .from('diagnostic_centers' as any)
@@ -117,7 +116,7 @@ const LabTestManagement = () => {
           console.log('Diagnostic centers table not ready yet:', error.message);
           return [];
         }
-        return data || [];
+        return (data || []) as DiagnosticCenter[];
       } catch (err) {
         console.log('Diagnostic centers query failed:', err);
         return [];
@@ -127,7 +126,7 @@ const LabTestManagement = () => {
 
   // Create/Update lab test mutation
   const labTestMutation = useMutation({
-    mutationFn: async (testData: any) => {
+    mutationFn: async (testData: Partial<LabTest>) => {
       try {
         if (selectedTest) {
           const { data, error } = await supabase
@@ -217,7 +216,7 @@ const LabTestManagement = () => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
     
-    const testData = {
+    const testData: Partial<LabTest> = {
       name_en: formData.get('name_en')?.toString() || '',
       name_te: formData.get('name_te')?.toString() || '',
       description_en: formData.get('description_en')?.toString() || '',
@@ -405,7 +404,7 @@ const LabTestManagement = () => {
           ) : (
             <div className="grid gap-4">
               {Array.isArray(labTests) && labTests.length > 0 ? (
-                labTests.map((test: any) => (
+                labTests.map((test: LabTest) => (
                   <Card key={test.id}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
@@ -473,7 +472,7 @@ const LabTestManagement = () => {
         </TabsContent>
 
         <TabsContent value="centers">
-          <DiagnosticCentersTab centers={centers} />
+          <DiagnosticCentersTab centers={centers || []} />
         </TabsContent>
 
         <TabsContent value="bookings">
@@ -499,7 +498,7 @@ const DiagnosticCentersTab = ({ centers }: { centers: DiagnosticCenter[] }) => {
 
       <div className="grid gap-4">
         {Array.isArray(centers) && centers.length > 0 ? (
-          centers.map((center: any) => (
+          centers.map((center: DiagnosticCenter) => (
             <Card key={center.id}>
               <CardHeader>
                 <div className="flex items-center justify-between">
