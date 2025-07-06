@@ -79,6 +79,7 @@ const AdminLayout = () => {
     { name: 'Lab Tests', href: '/admin/lab-tests', icon: TestTube },
     { name: 'Scans', href: '/admin/scans', icon: Scan },
     { name: 'Doctors', href: '/admin/doctors', icon: Stethoscope },
+    { name: 'Surgery Opinion', href: '/admin/surgery-opinion', icon: Heart },
     { name: 'Home Care', href: '/admin/home-care', icon: Heart },
     { name: 'Diabetes Care', href: '/admin/diabetes-care', icon: Droplets },
     { name: 'Ambulance', href: '/admin/ambulance', icon: Ambulance },

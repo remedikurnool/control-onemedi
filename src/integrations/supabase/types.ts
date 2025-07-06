@@ -9,6 +9,60 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ab_experiments: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          experiment_type: string
+          id: string
+          name: string
+          results: Json | null
+          start_date: string | null
+          status: string | null
+          success_metrics: Json | null
+          target_audience: Json | null
+          traffic_allocation: Json | null
+          updated_at: string | null
+          variants: Json
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          experiment_type: string
+          id?: string
+          name: string
+          results?: Json | null
+          start_date?: string | null
+          status?: string | null
+          success_metrics?: Json | null
+          target_audience?: Json | null
+          traffic_allocation?: Json | null
+          updated_at?: string | null
+          variants?: Json
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          experiment_type?: string
+          id?: string
+          name?: string
+          results?: Json | null
+          start_date?: string | null
+          status?: string | null
+          success_metrics?: Json | null
+          target_audience?: Json | null
+          traffic_allocation?: Json | null
+          updated_at?: string | null
+          variants?: Json
+        }
+        Relationships: []
+      }
       ambulance_bookings: {
         Row: {
           admin_notes: string | null
@@ -157,6 +211,59 @@ export type Database = {
           vehicle_number?: string
         }
         Relationships: []
+      }
+      analytics_events: {
+        Row: {
+          created_at: string | null
+          event_category: string | null
+          event_data: Json | null
+          event_type: string
+          id: string
+          ip_address: unknown | null
+          location_id: string | null
+          page_url: string | null
+          referrer: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_category?: string | null
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: unknown | null
+          location_id?: string | null
+          page_url?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_category?: string | null
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown | null
+          location_id?: string | null
+          page_url?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       blood_banks: {
         Row: {
@@ -904,6 +1011,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      customer_segments: {
+        Row: {
+          created_at: string | null
+          criteria: Json
+          customer_count: number | null
+          description: string | null
+          id: string
+          is_dynamic: boolean | null
+          last_updated: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          criteria?: Json
+          customer_count?: number | null
+          description?: string | null
+          id?: string
+          is_dynamic?: boolean | null
+          last_updated?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          criteria?: Json
+          customer_count?: number | null
+          description?: string | null
+          id?: string
+          is_dynamic?: boolean | null
+          last_updated?: string | null
+          name?: string
+        }
+        Relationships: []
       }
       diabetes_appointments: {
         Row: {
@@ -2315,6 +2455,131 @@ export type Database = {
         }
         Relationships: []
       }
+      locations: {
+        Row: {
+          coordinates: Json | null
+          coverage_areas: Json | null
+          created_at: string | null
+          delivery_fee: number | null
+          estimated_delivery_time: string | null
+          id: string
+          is_active: boolean | null
+          market_penetration: number | null
+          min_order_amount: number | null
+          name: string
+          parent_id: string | null
+          population: number | null
+          service_radius_km: number | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          coordinates?: Json | null
+          coverage_areas?: Json | null
+          created_at?: string | null
+          delivery_fee?: number | null
+          estimated_delivery_time?: string | null
+          id?: string
+          is_active?: boolean | null
+          market_penetration?: number | null
+          min_order_amount?: number | null
+          name: string
+          parent_id?: string | null
+          population?: number | null
+          service_radius_km?: number | null
+          type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          coordinates?: Json | null
+          coverage_areas?: Json | null
+          created_at?: string | null
+          delivery_fee?: number | null
+          estimated_delivery_time?: string | null
+          id?: string
+          is_active?: boolean | null
+          market_penetration?: number | null
+          min_order_amount?: number | null
+          name?: string
+          parent_id?: string | null
+          population?: number | null
+          service_radius_km?: number | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locations_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_campaigns: {
+        Row: {
+          budget: number | null
+          campaign_type: string
+          clicks: number | null
+          content: Json | null
+          conversions: number | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          impressions: number | null
+          name: string
+          revenue: number | null
+          schedule_end: string | null
+          schedule_start: string | null
+          spent_amount: number | null
+          status: string | null
+          target_audience: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          budget?: number | null
+          campaign_type: string
+          clicks?: number | null
+          content?: Json | null
+          conversions?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          impressions?: number | null
+          name: string
+          revenue?: number | null
+          schedule_end?: string | null
+          schedule_start?: string | null
+          spent_amount?: number | null
+          status?: string | null
+          target_audience?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          budget?: number | null
+          campaign_type?: string
+          clicks?: number | null
+          content?: Json | null
+          conversions?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          impressions?: number | null
+          name?: string
+          revenue?: number | null
+          schedule_end?: string | null
+          schedule_start?: string | null
+          spent_amount?: number | null
+          status?: string | null
+          target_audience?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       medical_specializations: {
         Row: {
           created_at: string | null
@@ -3026,6 +3291,69 @@ export type Database = {
           },
         ]
       }
+      promotional_offers: {
+        Row: {
+          applicable_categories: Json | null
+          applicable_products: Json | null
+          created_at: string | null
+          description: string | null
+          discount_value: number | null
+          id: string
+          is_active: boolean | null
+          max_discount_amount: number | null
+          min_order_amount: number | null
+          offer_type: string
+          target_locations: Json | null
+          target_segments: Json | null
+          title: string
+          updated_at: string | null
+          usage_count: number | null
+          usage_limit: number | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          applicable_categories?: Json | null
+          applicable_products?: Json | null
+          created_at?: string | null
+          description?: string | null
+          discount_value?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_discount_amount?: number | null
+          min_order_amount?: number | null
+          offer_type: string
+          target_locations?: Json | null
+          target_segments?: Json | null
+          title: string
+          updated_at?: string | null
+          usage_count?: number | null
+          usage_limit?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          applicable_categories?: Json | null
+          applicable_products?: Json | null
+          created_at?: string | null
+          description?: string | null
+          discount_value?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_discount_amount?: number | null
+          min_order_amount?: number | null
+          offer_type?: string
+          target_locations?: Json | null
+          target_segments?: Json | null
+          title?: string
+          updated_at?: string | null
+          usage_count?: number | null
+          usage_limit?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       purchase_order_items: {
         Row: {
           batch_number: string | null
@@ -3510,6 +3838,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_settings: {
+        Row: {
+          category: string
+          created_at: string | null
+          data_type: string | null
+          description: string | null
+          id: string
+          is_public: boolean | null
+          is_required: boolean | null
+          key: string
+          updated_at: string | null
+          validation_rules: Json | null
+          value: Json | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          data_type?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          is_required?: boolean | null
+          key: string
+          updated_at?: string | null
+          validation_rules?: Json | null
+          value?: Json | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          data_type?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          is_required?: boolean | null
+          key?: string
+          updated_at?: string | null
+          validation_rules?: Json | null
+          value?: Json | null
+        }
+        Relationships: []
       }
       testimonials: {
         Row: {
