@@ -62,10 +62,7 @@ const MedicineManagement = () => {
     queryFn: async () => {
       let query = supabase
         .from('products')
-        .select(`
-          *,
-          service_categories:category_id(name_en, name_te)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (searchTerm) {
@@ -82,22 +79,14 @@ const MedicineManagement = () => {
     },
   });
 
-  // Fetch medicine categories
-  const { data: categories } = useQuery({
-    queryKey: ['medicine-categories'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('medicine_categories')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
-      if (error) {
-        console.log('Categories fetch error:', error);
-        return [];
-      }
-      return data;
-    },
-  });
+  // For now, we'll use a simple categories list since medicine_categories table doesn't exist
+  const categories = [
+    { id: '1', name_en: 'Pain Relief', name_te: 'నొప్పి నివారణ' },
+    { id: '2', name_en: 'Antibiotics', name_te: 'యాంటీబయాటిక్స్' },
+    { id: '3', name_en: 'Vitamins', name_te: 'విటమిన్లు' },
+    { id: '4', name_en: 'Diabetes Care', name_te: 'డయాబెటిస్ కేర్' },
+    { id: '5', name_en: 'Heart Care', name_te: 'గుండె సంరక్షణ' },
+  ];
 
   // Create/Update medicine mutation
   const saveMedicineMutation = useMutation({
@@ -359,7 +348,7 @@ const MedicineManagement = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                {categories?.map((category) => (
+                {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name_en}
                   </SelectItem>
