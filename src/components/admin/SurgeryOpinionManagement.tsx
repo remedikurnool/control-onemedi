@@ -267,10 +267,24 @@ const SurgeryOpinionManagement = () => {
                 />
               </div>
 
-              <div className="flex gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center space-x-2">
                   <Switch id="is_verified" name="is_verified" defaultChecked={selectedItem?.is_verified} />
                   <Label htmlFor="is_verified">Verified</Label>
+                </div>
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select name="status" defaultValue={selectedItem?.status || 'offline'}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="busy">Busy</SelectItem>
+                      <SelectItem value="offline">Offline</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -388,7 +402,7 @@ const SurgeryOpinionManagement = () => {
                         <Badge variant={doctor.is_verified ? 'default' : 'secondary'}>
                           {doctor.is_verified ? 'Verified' : 'Unverified'}
                         </Badge>
-                        <Badge variant={doctor.status === 'online' ? 'default' : 'destructive'}>
+                        <Badge variant={doctor.status === 'active' ? 'default' : 'destructive'}>
                           {doctor.status || 'Offline'}
                         </Badge>
                       </div>
