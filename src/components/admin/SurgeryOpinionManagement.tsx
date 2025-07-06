@@ -18,67 +18,69 @@ import { Plus, Edit, Trash2, Stethoscope, Star, Clock, MapPin, Phone } from 'luc
 const SurgeryOpinionManagement = () => {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('specialists');
-  const [dialogType, setDialogType] = useState<'specialist' | 'opinion'>('specialist');
+  const [activeTab, setActiveTab] = useState('doctors');
+  const [dialogType, setDialogType] = useState<'doctor' | 'consultation'>('doctor');
   const queryClient = useQueryClient();
 
   // Real-time subscription
   useEffect(() => {
     const channel = supabase
       .channel('surgery-opinion-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'surgery_specialists' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['surgery-specialists'] });
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'doctors' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['surgery-doctors'] });
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'surgery_opinions' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['surgery-opinions'] });
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'consultations' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['surgery-consultations'] });
       })
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [queryClient]);
 
-  // Fetch surgery specialists
-  const { data: specialists, isLoading: specialistsLoading } = useQuery({
-    queryKey: ['surgery-specialists'],
+  // Fetch doctors (using existing doctors table, filtering for surgeons)
+  const { data: doctors, isLoading: doctorsLoading } = useQuery({
+    queryKey: ['surgery-doctors'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('surgery_specialists')
-        .select('*')
+        .from('doctors')
+        .select('*, specializations(name)')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     }
   });
 
-  // Fetch surgery opinions
-  const { data: opinions, isLoading: opinionsLoading } = useQuery({
-    queryKey: ['surgery-opinions'],
+  // Fetch consultations (using existing consultations table for second opinions)
+  const { data: consultations, isLoading: consultationsLoading } = useQuery({
+    queryKey: ['surgery-consultations'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('surgery_opinions')
-        .select('*, surgery_specialists(name)')
+        .from('consultations')
+        .select('*, doctors(name), user_profiles(full_name)')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     }
   });
 
-  // Specialist mutations
-  const specialistMutation = useMutation({
-    mutationFn: async (specialistData: any) => {
-      if (specialistData.id) {
+  // Doctor mutations
+  const doctorMutation = useMutation({
+    mutationFn: async (doctorData: any) => {
+      if (doctorData.id) {
         const { data, error } = await supabase
-          .from('surgery_specialists')
-          .update(specialistData)
-          .eq('id', specialistData.id)
+          .from('doctors')
+          .update(doctorData)
+          .eq('id', doctorData.id)
           .select()
           .single();
         if (error) throw error;
         return data;
       } else {
         const { data, error } = await supabase
-          .from('surgery_specialists')
-          .insert([specialistData])
+          .from('doctors')
+          .insert([doctorData])
           .select()
           .single();
         if (error) throw error;
@@ -86,30 +88,30 @@ const SurgeryOpinionManagement = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['surgery-specialists'] });
+      queryClient.invalidateQueries({ queryKey: ['surgery-doctors'] });
       setIsDialogOpen(false);
       setSelectedItem(null);
-      toast.success('Specialist saved successfully');
+      toast.success('Doctor saved successfully');
     },
-    onError: (error: any) => toast.error('Error saving specialist: ' + error.message)
+    onError: (error: any) => toast.error('Error saving doctor: ' + error.message)
   });
 
-  // Opinion mutations
-  const opinionMutation = useMutation({
-    mutationFn: async (opinionData: any) => {
-      if (opinionData.id) {
+  // Consultation mutations
+  const consultationMutation = useMutation({
+    mutationFn: async (consultationData: any) => {
+      if (consultationData.id) {
         const { data, error } = await supabase
-          .from('surgery_opinions')
-          .update(opinionData)
-          .eq('id', opinionData.id)
+          .from('consultations')
+          .update(consultationData)
+          .eq('id', consultationData.id)
           .select()
           .single();
         if (error) throw error;
         return data;
       } else {
         const { data, error } = await supabase
-          .from('surgery_opinions')
-          .insert([opinionData])
+          .from('consultations')
+          .insert([consultationData])
           .select()
           .single();
         if (error) throw error;
@@ -117,80 +119,76 @@ const SurgeryOpinionManagement = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['surgery-opinions'] });
+      queryClient.invalidateQueries({ queryKey: ['surgery-consultations'] });
       setIsDialogOpen(false);
       setSelectedItem(null);
-      toast.success('Opinion saved successfully');
+      toast.success('Consultation saved successfully');
     },
-    onError: (error: any) => toast.error('Error saving opinion: ' + error.message)
+    onError: (error: any) => toast.error('Error saving consultation: ' + error.message)
   });
 
   // Delete mutations
-  const deleteSpecialistMutation = useMutation({
+  const deleteDoctorMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('surgery_specialists').delete().eq('id', id);
+      const { error } = await supabase.from('doctors').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['surgery-specialists'] });
-      toast.success('Specialist deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['surgery-doctors'] });
+      toast.success('Doctor deleted successfully');
     },
-    onError: (error: any) => toast.error('Error deleting specialist: ' + error.message)
+    onError: (error: any) => toast.error('Error deleting doctor: ' + error.message)
   });
 
-  const handleSpecialistSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleDoctorSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    const specialistData: any = {
+    const doctorData: any = {
       name: formData.get('name') as string,
       qualification: formData.get('qualification') as string,
-      specialization: formData.get('specialization') as string,
+      license_number: formData.get('license_number') as string,
       experience_years: parseInt(formData.get('experience_years') as string) || 0,
-      hospital_affiliation: formData.get('hospital_affiliation') as string,
+      bio_en: formData.get('bio_en') as string,
       consultation_fee: parseFloat(formData.get('consultation_fee') as string) || 0,
-      bio: formData.get('bio') as string,
       languages: (formData.get('languages') as string)?.split(',').map(item => item.trim()) || [],
       is_verified: formData.get('is_verified') === 'on',
-      is_active: formData.get('is_active') === 'on'
+      status: formData.get('status') || 'active'
     };
 
     if (selectedItem) {
-      specialistData.id = selectedItem.id;
+      doctorData.id = selectedItem.id;
     }
-    specialistMutation.mutate(specialistData);
+    doctorMutation.mutate(doctorData);
   };
 
-  const handleOpinionSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleConsultationSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    const opinionData: any = {
-      specialist_id: formData.get('specialist_id') as string,
-      patient_name: formData.get('patient_name') as string,
-      patient_age: parseInt(formData.get('patient_age') as string) || 0,
-      medical_condition: formData.get('medical_condition') as string,
-      current_treatment: formData.get('current_treatment') as string,
-      opinion_notes: formData.get('opinion_notes') as string,
-      recommendations: formData.get('recommendations') as string,
-      urgency_level: formData.get('urgency_level') as string,
+    const consultationData: any = {
+      doctor_id: formData.get('doctor_id') as string,
+      patient_symptoms: formData.get('patient_symptoms') as string,
+      scheduled_at: formData.get('scheduled_at') as string,
+      consultation_type: formData.get('consultation_type') as string,
       status: formData.get('status') as string,
-      follow_up_required: formData.get('follow_up_required') === 'on'
+      notes: formData.get('notes') as string,
+      fees_paid: parseFloat(formData.get('fees_paid') as string) || 0
     };
 
     if (selectedItem) {
-      opinionData.id = selectedItem.id;
+      consultationData.id = selectedItem.id;
     }
-    opinionMutation.mutate(opinionData);
+    consultationMutation.mutate(consultationData);
   };
 
-  const openSpecialistDialog = (specialist: any = null) => {
-    setSelectedItem(specialist);
-    setDialogType('specialist');
+  const openDoctorDialog = (doctor: any = null) => {
+    setSelectedItem(doctor);
+    setDialogType('doctor');
     setIsDialogOpen(true);
   };
 
-  const openOpinionDialog = (opinion: any = null) => {
-    setSelectedItem(opinion);
-    setDialogType('opinion');
+  const openConsultationDialog = (consultation: any = null) => {
+    setSelectedItem(consultation);
+    setDialogType('consultation');
     setIsDialogOpen(true);
   };
 
@@ -199,13 +197,13 @@ const SurgeryOpinionManagement = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Surgery Second Opinion Management</h1>
         <div className="flex gap-2">
-          <Button onClick={() => openSpecialistDialog()}>
+          <Button onClick={() => openDoctorDialog()}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Specialist
+            Add Doctor
           </Button>
-          <Button onClick={() => openOpinionDialog()}>
+          <Button onClick={() => openConsultationDialog()}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Opinion
+            Add Consultation
           </Button>
         </div>
       </div>
@@ -214,15 +212,15 @@ const SurgeryOpinionManagement = () => {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {dialogType === 'specialist' 
-                ? (selectedItem ? 'Edit Specialist' : 'Add New Specialist')
-                : (selectedItem ? 'Edit Opinion' : 'Add New Opinion')
+              {dialogType === 'doctor' 
+                ? (selectedItem ? 'Edit Doctor' : 'Add New Doctor')
+                : (selectedItem ? 'Edit Consultation' : 'Add New Consultation')
               }
             </DialogTitle>
           </DialogHeader>
           
-          {dialogType === 'specialist' ? (
-            <form onSubmit={handleSpecialistSubmit} className="space-y-4">
+          {dialogType === 'doctor' ? (
+            <form onSubmit={handleDoctorSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="name">Name</Label>
@@ -236,8 +234,8 @@ const SurgeryOpinionManagement = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="specialization">Specialization</Label>
-                  <Input id="specialization" name="specialization" defaultValue={selectedItem?.specialization} required />
+                  <Label htmlFor="license_number">License Number</Label>
+                  <Input id="license_number" name="license_number" defaultValue={selectedItem?.license_number} required />
                 </div>
                 <div>
                   <Label htmlFor="experience_years">Experience (Years)</Label>
@@ -245,20 +243,14 @@ const SurgeryOpinionManagement = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="hospital_affiliation">Hospital Affiliation</Label>
-                  <Input id="hospital_affiliation" name="hospital_affiliation" defaultValue={selectedItem?.hospital_affiliation} />
-                </div>
-                <div>
-                  <Label htmlFor="consultation_fee">Consultation Fee (₹)</Label>
-                  <Input id="consultation_fee" name="consultation_fee" type="number" step="0.01" defaultValue={selectedItem?.consultation_fee} />
-                </div>
+              <div>
+                <Label htmlFor="consultation_fee">Consultation Fee (₹)</Label>
+                <Input id="consultation_fee" name="consultation_fee" type="number" step="0.01" defaultValue={selectedItem?.consultation_fee} />
               </div>
 
               <div>
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea id="bio" name="bio" defaultValue={selectedItem?.bio} />
+                <Label htmlFor="bio_en">Bio</Label>
+                <Textarea id="bio_en" name="bio_en" defaultValue={selectedItem?.bio_en} />
               </div>
 
               <div>
@@ -275,80 +267,54 @@ const SurgeryOpinionManagement = () => {
                   <Switch id="is_verified" name="is_verified" defaultChecked={selectedItem?.is_verified} />
                   <Label htmlFor="is_verified">Verified</Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Switch id="is_active" name="is_active" defaultChecked={selectedItem?.is_active ?? true} />
-                  <Label htmlFor="is_active">Active</Label>
-                </div>
               </div>
 
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={specialistMutation.isPending}>
-                  {specialistMutation.isPending ? 'Saving...' : 'Save Specialist'}
+                <Button type="submit" disabled={doctorMutation.isPending}>
+                  {doctorMutation.isPending ? 'Saving...' : 'Save Doctor'}
                 </Button>
               </div>
             </form>
           ) : (
-            <form onSubmit={handleOpinionSubmit} className="space-y-4">
+            <form onSubmit={handleConsultationSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="specialist_id">Specialist</Label>
-                <Select name="specialist_id" defaultValue={selectedItem?.specialist_id} required>
+                <Label htmlFor="doctor_id">Doctor</Label>
+                <Select name="doctor_id" defaultValue={selectedItem?.doctor_id} required>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select specialist" />
+                    <SelectValue placeholder="Select doctor" />
                   </SelectTrigger>
                   <SelectContent>
-                    {specialists?.map((specialist) => (
-                      <SelectItem key={specialist.id} value={specialist.id}>
-                        {specialist.name}
+                    {doctors?.map((doctor) => (
+                      <SelectItem key={doctor.id} value={doctor.id}>
+                        Dr. {doctor.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="patient_name">Patient Name</Label>
-                  <Input id="patient_name" name="patient_name" defaultValue={selectedItem?.patient_name} required />
-                </div>
-                <div>
-                  <Label htmlFor="patient_age">Patient Age</Label>
-                  <Input id="patient_age" name="patient_age" type="number" defaultValue={selectedItem?.patient_age} />
-                </div>
+              <div>
+                <Label htmlFor="patient_symptoms">Patient Symptoms</Label>
+                <Textarea id="patient_symptoms" name="patient_symptoms" defaultValue={selectedItem?.patient_symptoms} required />
               </div>
 
               <div>
-                <Label htmlFor="medical_condition">Medical Condition</Label>
-                <Textarea id="medical_condition" name="medical_condition" defaultValue={selectedItem?.medical_condition} required />
-              </div>
-
-              <div>
-                <Label htmlFor="current_treatment">Current Treatment</Label>
-                <Textarea id="current_treatment" name="current_treatment" defaultValue={selectedItem?.current_treatment} />
-              </div>
-
-              <div>
-                <Label htmlFor="opinion_notes">Opinion Notes</Label>
-                <Textarea id="opinion_notes" name="opinion_notes" defaultValue={selectedItem?.opinion_notes} />
-              </div>
-
-              <div>
-                <Label htmlFor="recommendations">Recommendations</Label>
-                <Textarea id="recommendations" name="recommendations" defaultValue={selectedItem?.recommendations} />
+                <Label htmlFor="scheduled_at">Scheduled Date & Time</Label>
+                <Input id="scheduled_at" name="scheduled_at" type="datetime-local" defaultValue={selectedItem?.scheduled_at} required />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="urgency_level">Urgency Level</Label>
-                  <Select name="urgency_level" defaultValue={selectedItem?.urgency_level}>
+                  <Label htmlFor="consultation_type">Consultation Type</Label>
+                  <Select name="consultation_type" defaultValue={selectedItem?.consultation_type}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select urgency" />
+                      <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="critical">Critical</SelectItem>
+                      <SelectItem value="video">Video</SelectItem>
+                      <SelectItem value="phone">Phone</SelectItem>
+                      <SelectItem value="in_person">In Person</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -359,24 +325,29 @@ const SurgeryOpinionManagement = () => {
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="in_review">In Review</SelectItem>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="follow_up">Follow Up</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Switch id="follow_up_required" name="follow_up_required" defaultChecked={selectedItem?.follow_up_required} />
-                <Label htmlFor="follow_up_required">Follow-up Required</Label>
+              <div>
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea id="notes" name="notes" defaultValue={selectedItem?.notes} />
+              </div>
+
+              <div>
+                <Label htmlFor="fees_paid">Fees Paid (₹)</Label>
+                <Input id="fees_paid" name="fees_paid" type="number" step="0.01" defaultValue={selectedItem?.fees_paid} />
               </div>
 
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={opinionMutation.isPending}>
-                  {opinionMutation.isPending ? 'Saving...' : 'Save Opinion'}
+                <Button type="submit" disabled={consultationMutation.isPending}>
+                  {consultationMutation.isPending ? 'Saving...' : 'Save Consultation'}
                 </Button>
               </div>
             </form>
@@ -386,58 +357,52 @@ const SurgeryOpinionManagement = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="specialists">Specialists</TabsTrigger>
-          <TabsTrigger value="opinions">Opinions</TabsTrigger>
+          <TabsTrigger value="doctors">Doctors</TabsTrigger>
+          <TabsTrigger value="consultations">Consultations</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="specialists">
+        <TabsContent value="doctors">
           <div className="grid gap-4">
-            {specialistsLoading ? (
-              <div>Loading specialists...</div>
+            {doctorsLoading ? (
+              <div>Loading doctors...</div>
             ) : (
-              specialists?.map((specialist) => (
-                <Card key={specialist.id}>
+              doctors?.map((doctor) => (
+                <Card key={doctor.id}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="flex items-center gap-2">
                           <Stethoscope className="h-5 w-5" />
-                          {specialist.name}
+                          Dr. {doctor.name}
                         </CardTitle>
-                        <CardDescription>{specialist.qualification}</CardDescription>
+                        <CardDescription>{doctor.qualification}</CardDescription>
                       </div>
                       <div className="flex gap-2">
-                        <Badge variant={specialist.is_verified ? 'default' : 'secondary'}>
-                          {specialist.is_verified ? 'Verified' : 'Unverified'}
+                        <Badge variant={doctor.is_verified ? 'default' : 'secondary'}>
+                          {doctor.is_verified ? 'Verified' : 'Unverified'}
                         </Badge>
-                        <Badge variant={specialist.is_active ? 'default' : 'destructive'}>
-                          {specialist.is_active ? 'Active' : 'Inactive'}
+                        <Badge variant={doctor.status === 'active' ? 'default' : 'destructive'}>
+                          {doctor.status || 'Active'}
                         </Badge>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-                      <div><span className="font-medium">Specialization:</span> {specialist.specialization}</div>
-                      <div><span className="font-medium">Experience:</span> {specialist.experience_years} years</div>
-                      <div><span className="font-medium">Fee:</span> ₹{specialist.consultation_fee}</div>
+                      <div><span className="font-medium">Experience:</span> {doctor.experience_years} years</div>
+                      <div><span className="font-medium">Fee:</span> ₹{doctor.consultation_fee}</div>
                       <div className="flex items-center gap-1">
                         <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                        {specialist.rating?.toFixed(1) || '0.0'}
+                        {doctor.rating?.toFixed(1) || '0.0'}
                       </div>
+                      <div><span className="font-medium">License:</span> {doctor.license_number}</div>
                     </div>
 
-                    {specialist.hospital_affiliation && (
-                      <div className="mb-2 text-sm">
-                        <span className="font-medium">Hospital:</span> {specialist.hospital_affiliation}
-                      </div>
-                    )}
-
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => openSpecialistDialog(specialist)}>
+                      <Button variant="outline" size="sm" onClick={() => openDoctorDialog(doctor)}>
                         <Edit className="h-4 w-4 mr-1" />Edit
                       </Button>
-                      <Button variant="destructive" size="sm" onClick={() => deleteSpecialistMutation.mutate(specialist.id)}>
+                      <Button variant="destructive" size="sm" onClick={() => deleteDoctorMutation.mutate(doctor.id)}>
                         <Trash2 className="h-4 w-4 mr-1" />Delete
                       </Button>
                     </div>
@@ -448,43 +413,40 @@ const SurgeryOpinionManagement = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="opinions">
+        <TabsContent value="consultations">
           <div className="grid gap-4">
-            {opinionsLoading ? (
-              <div>Loading opinions...</div>
+            {consultationsLoading ? (
+              <div>Loading consultations...</div>
             ) : (
-              opinions?.map((opinion) => (
-                <Card key={opinion.id}>
+              consultations?.map((consultation) => (
+                <Card key={consultation.id}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle>{opinion.patient_name}</CardTitle>
+                        <CardTitle>Consultation #{consultation.id.slice(0, 8)}</CardTitle>
                         <CardDescription>
-                          Specialist: {opinion.surgery_specialists?.name || 'N/A'}
+                          Doctor: Dr. {consultation.doctors?.name || 'N/A'}
                         </CardDescription>
                       </div>
                       <div className="flex gap-2">
-                        <Badge variant={opinion.urgency_level === 'critical' ? 'destructive' : 
-                                       opinion.urgency_level === 'high' ? 'secondary' : 'outline'}>
-                          {opinion.urgency_level}
+                        <Badge variant={consultation.status === 'completed' ? 'default' : 'secondary'}>
+                          {consultation.status}
                         </Badge>
-                        <Badge variant={opinion.status === 'completed' ? 'default' : 'secondary'}>
-                          {opinion.status}
+                        <Badge variant="outline">
+                          {consultation.consultation_type}
                         </Badge>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 gap-4 text-sm mb-4">
-                      <div><span className="font-medium">Condition:</span> {opinion.medical_condition}</div>
-                      {opinion.recommendations && (
-                        <div><span className="font-medium">Recommendations:</span> {opinion.recommendations}</div>
-                      )}
-                      <div><span className="font-medium">Created:</span> {new Date(opinion.created_at).toLocaleDateString()}</div>
+                      <div><span className="font-medium">Symptoms:</span> {consultation.patient_symptoms}</div>
+                      <div><span className="font-medium">Scheduled:</span> {new Date(consultation.scheduled_at).toLocaleString()}</div>
+                      <div><span className="font-medium">Fees:</span> ₹{consultation.fees_paid || 0}</div>
                     </div>
 
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => openOpinionDialog(opinion)}>
+                      <Button variant="outline" size="sm" onClick={() => openConsultationDialog(consultation)}>
                         <Edit className="h-4 w-4 mr-1" />View/Edit
                       </Button>
                     </div>

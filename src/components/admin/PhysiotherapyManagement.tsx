@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +13,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Activity, MapPin, Phone, Star, Clock } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
+
+type PhysiotherapyService = Database['public']['Tables']['physiotherapy_services']['Row'];
+type Physiotherapist = Database['public']['Tables']['physiotherapists']['Row'];
 
 const PhysiotherapyManagement = () => {
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -34,7 +37,9 @@ const PhysiotherapyManagement = () => {
       })
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [queryClient]);
 
   // Fetch physiotherapy services
@@ -65,7 +70,7 @@ const PhysiotherapyManagement = () => {
 
   // Service mutations
   const serviceMutation = useMutation({
-    mutationFn: async (serviceData: any) => {
+    mutationFn: async (serviceData: Database['public']['Tables']['physiotherapy_services']['Insert']) => {
       if (serviceData.id) {
         const { data, error } = await supabase
           .from('physiotherapy_services')
@@ -98,7 +103,7 @@ const PhysiotherapyManagement = () => {
 
   // Therapist mutations
   const therapistMutation = useMutation({
-    mutationFn: async (therapistData: any) => {
+    mutationFn: async (therapistData: Database['public']['Tables']['physiotherapists']['Insert']) => {
       if (therapistData.id) {
         const { data, error } = await supabase
           .from('physiotherapists')
