@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import AdminLayout from "./components/admin/AdminLayout";
 import Dashboard from "./components/admin/Dashboard";
 import MedicineManagement from "./components/admin/MedicineManagement";
+import Login from "./pages/Login";
 import Index from "./pages/Index";
 
 const queryClient = new QueryClient();
@@ -20,6 +21,7 @@ const App = () => (
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
             
             {/* Admin routes */}
             <Route path="/admin" element={<AdminLayout />}>

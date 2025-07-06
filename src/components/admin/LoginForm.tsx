@@ -94,6 +94,19 @@ const LoginForm = () => {
               {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
+          
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+            <h3 className="font-semibold text-sm mb-2">Demo Credentials:</h3>
+            <div className="text-xs space-y-1">
+              <p><strong>Super Admin:</strong> superadmin@onemedi.com</p>
+              <p><strong>Admin:</strong> admin@onemedi.com</p>
+              <p><strong>Manager:</strong> manager@onemedi.com</p>
+              <p><strong>Pharmacist:</strong> pharmacist@onemedi.com</p>
+              <p><strong>Front Desk:</strong> frontdesk@onemedi.com</p>
+              <p><strong>Customer:</strong> customer@onemedi.com</p>
+              <p className="mt-2"><strong>Password:</strong> password123</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
