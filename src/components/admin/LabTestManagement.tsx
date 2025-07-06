@@ -93,7 +93,7 @@ const LabTestManagement = () => {
           console.log('Lab tests table not ready yet:', error.message);
           return [];
         }
-        return (data || []) as LabTest[];
+        return Array.isArray(data) ? (data as unknown as LabTest[]) : [];
       } catch (err) {
         console.log('Lab tests query failed:', err);
         return [];
@@ -116,7 +116,7 @@ const LabTestManagement = () => {
           console.log('Diagnostic centers table not ready yet:', error.message);
           return [];
         }
-        return (data || []) as DiagnosticCenter[];
+        return Array.isArray(data) ? (data as unknown as DiagnosticCenter[]) : [];
       } catch (err) {
         console.log('Diagnostic centers query failed:', err);
         return [];
