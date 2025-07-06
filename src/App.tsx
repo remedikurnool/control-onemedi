@@ -7,6 +7,8 @@ import { ThemeProvider } from "next-themes";
 import AdminLayout from "./components/admin/AdminLayout";
 import Dashboard from "./components/admin/Dashboard";
 import MedicineManagement from "./components/admin/MedicineManagement";
+import LabTestManagement from "./components/admin/LabTestManagement";
+import ScanManagement from "./components/admin/ScanManagement";
 import Login from "./pages/Login";
 import Index from "./pages/Index";
 
@@ -27,9 +29,9 @@ const App = () => (
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="medicines" element={<MedicineManagement />} />
+              <Route path="lab-tests" element={<LabTestManagement />} />
+              <Route path="scans" element={<ScanManagement />} />
               {/* Placeholder routes for other modules */}
-              <Route path="lab-tests" element={<div className="p-8 text-center">Lab Tests Module - Coming Soon</div>} />
-              <Route path="scans" element={<div className="p-8 text-center">Scans Module - Coming Soon</div>} />
               <Route path="doctors" element={<div className="p-8 text-center">Doctors Module - Coming Soon</div>} />
               <Route path="home-care" element={<div className="p-8 text-center">Home Care Module - Coming Soon</div>} />
               <Route path="diabetes-care" element={<div className="p-8 text-center">Diabetes Care Module - Coming Soon</div>} />
