@@ -45,7 +45,10 @@ const SurgeryOpinionManagement = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('doctors')
-        .select('*, specializations(name)')
+        .select(`
+          *,
+          user_profiles!inner(full_name, email)
+        `)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
@@ -58,7 +61,15 @@ const SurgeryOpinionManagement = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('consultations')
-        .select('*, doctors(name), user_profiles(full_name)')
+        .select(`
+          *,
+          doctors!inner(
+            qualification,
+            license_number,
+            user_profiles!inner(full_name)
+          ),
+          user_profiles!consultations_patient_id_fkey(full_name)
+        `)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
@@ -144,7 +155,6 @@ const SurgeryOpinionManagement = () => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
     const doctorData: any = {
-      name: formData.get('name') as string,
       qualification: formData.get('qualification') as string,
       license_number: formData.get('license_number') as string,
       experience_years: parseInt(formData.get('experience_years') as string) || 0,
@@ -152,7 +162,7 @@ const SurgeryOpinionManagement = () => {
       consultation_fee: parseFloat(formData.get('consultation_fee') as string) || 0,
       languages: (formData.get('languages') as string)?.split(',').map(item => item.trim()) || [],
       is_verified: formData.get('is_verified') === 'on',
-      status: formData.get('status') || 'active'
+      status: formData.get('status') || 'offline'
     };
 
     if (selectedItem) {
@@ -223,29 +233,24 @@ const SurgeryOpinionManagement = () => {
             <form onSubmit={handleDoctorSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="name">Name</Label>
-                  <Input id="name" name="name" defaultValue={selectedItem?.name} required />
-                </div>
-                <div>
                   <Label htmlFor="qualification">Qualification</Label>
                   <Input id="qualification" name="qualification" defaultValue={selectedItem?.qualification} required />
+                </div>
+                <div>
+                  <Label htmlFor="license_number">License Number</Label>
+                  <Input id="license_number" name="license_number" defaultValue={selectedItem?.license_number} required />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="license_number">License Number</Label>
-                  <Input id="license_number" name="license_number" defaultValue={selectedItem?.license_number} required />
-                </div>
-                <div>
                   <Label htmlFor="experience_years">Experience (Years)</Label>
                   <Input id="experience_years" name="experience_years" type="number" defaultValue={selectedItem?.experience_years} required />
                 </div>
-              </div>
-
-              <div>
-                <Label htmlFor="consultation_fee">Consultation Fee (₹)</Label>
-                <Input id="consultation_fee" name="consultation_fee" type="number" step="0.01" defaultValue={selectedItem?.consultation_fee} />
+                <div>
+                  <Label htmlFor="consultation_fee">Consultation Fee (₹)</Label>
+                  <Input id="consultation_fee" name="consultation_fee" type="number" step="0.01" defaultValue={selectedItem?.consultation_fee} />
+                </div>
               </div>
 
               <div>
@@ -287,7 +292,7 @@ const SurgeryOpinionManagement = () => {
                   <SelectContent>
                     {doctors?.map((doctor) => (
                       <SelectItem key={doctor.id} value={doctor.id}>
-                        Dr. {doctor.name}
+                        Dr. {doctor.qualification} ({doctor.user_profiles?.full_name || 'No name'})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -373,16 +378,18 @@ const SurgeryOpinionManagement = () => {
                       <div>
                         <CardTitle className="flex items-center gap-2">
                           <Stethoscope className="h-5 w-5" />
-                          Dr. {doctor.name}
+                          Dr. {doctor.qualification}
                         </CardTitle>
-                        <CardDescription>{doctor.qualification}</CardDescription>
+                        <CardDescription>
+                          {doctor.user_profiles?.full_name || 'No name available'}
+                        </CardDescription>
                       </div>
                       <div className="flex gap-2">
                         <Badge variant={doctor.is_verified ? 'default' : 'secondary'}>
                           {doctor.is_verified ? 'Verified' : 'Unverified'}
                         </Badge>
-                        <Badge variant={doctor.status === 'active' ? 'default' : 'destructive'}>
-                          {doctor.status || 'Active'}
+                        <Badge variant={doctor.status === 'online' ? 'default' : 'destructive'}>
+                          {doctor.status || 'Offline'}
                         </Badge>
                       </div>
                     </div>
@@ -425,7 +432,7 @@ const SurgeryOpinionManagement = () => {
                       <div>
                         <CardTitle>Consultation #{consultation.id.slice(0, 8)}</CardTitle>
                         <CardDescription>
-                          Doctor: Dr. {consultation.doctors?.name || 'N/A'}
+                          Doctor: Dr. {consultation.doctors?.qualification || 'N/A'} ({consultation.doctors?.user_profiles?.full_name || 'No name'})
                         </CardDescription>
                       </div>
                       <div className="flex gap-2">
@@ -440,6 +447,7 @@ const SurgeryOpinionManagement = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 gap-4 text-sm mb-4">
+                      <div><span className="font-medium">Patient:</span> {consultation.user_profiles?.full_name || 'N/A'}</div>
                       <div><span className="font-medium">Symptoms:</span> {consultation.patient_symptoms}</div>
                       <div><span className="font-medium">Scheduled:</span> {new Date(consultation.scheduled_at).toLocaleString()}</div>
                       <div><span className="font-medium">Fees:</span> ₹{consultation.fees_paid || 0}</div>
