@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,10 +15,10 @@ import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Droplets, MapPin, Phone, Calendar, AlertTriangle } from 'lucide-react';
 
 const BloodBankManagement = () => {
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('banks');
-  const [dialogType, setDialogType] = useState('bank'); // 'bank', 'inventory', 'request'
+  const [dialogType, setDialogType] = useState<'bank' | 'inventory' | 'request'>('bank');
   const queryClient = useQueryClient();
 
   // Real-time subscription
@@ -37,7 +36,9 @@ const BloodBankManagement = () => {
       })
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [queryClient]);
 
   // Fetch blood banks
@@ -95,7 +96,7 @@ const BloodBankManagement = () => {
 
   // Blood bank mutations
   const bankMutation = useMutation({
-    mutationFn: async (bankData) => {
+    mutationFn: async (bankData: any) => {
       if (bankData.id) {
         const { data, error } = await supabase
           .from('blood_banks')
@@ -121,12 +122,12 @@ const BloodBankManagement = () => {
       setSelectedItem(null);
       toast.success('Blood bank saved successfully');
     },
-    onError: (error) => toast.error('Error saving blood bank: ' + error.message)
+    onError: (error: any) => toast.error('Error saving blood bank: ' + error.message)
   });
 
   // Inventory mutations
   const inventoryMutation = useMutation({
-    mutationFn: async (inventoryData) => {
+    mutationFn: async (inventoryData: any) => {
       if (inventoryData.id) {
         const { data, error } = await supabase
           .from('blood_inventory')
@@ -152,12 +153,12 @@ const BloodBankManagement = () => {
       setSelectedItem(null);
       toast.success('Inventory updated successfully');
     },
-    onError: (error) => toast.error('Error updating inventory: ' + error.message)
+    onError: (error: any) => toast.error('Error updating inventory: ' + error.message)
   });
 
   // Update request status
   const updateRequestMutation = useMutation({
-    mutationFn: async ({ id, status, notes }) => {
+    mutationFn: async ({ id, status, notes }: { id: string; status: string; notes: string }) => {
       const { data, error } = await supabase
         .from('blood_requests')
         .update({ status, admin_notes: notes })
@@ -171,23 +172,23 @@ const BloodBankManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['blood-requests'] });
       toast.success('Request updated successfully');
     },
-    onError: (error) => toast.error('Error updating request: ' + error.message)
+    onError: (error: any) => toast.error('Error updating request: ' + error.message)
   });
 
-  const handleBankSubmit = (e) => {
+  const handleBankSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
+    const formData = new FormData(e.target as HTMLFormElement);
     const bankData = {
-      name_en: formData.get('name_en'),
-      name_te: formData.get('name_te'),
-      hospital_id: formData.get('hospital_id') || null,
-      address: formData.get('address'),
-      phone: formData.get('phone'),
-      email: formData.get('email'),
-      license_number: formData.get('license_number'),
-      operating_hours: formData.get('operating_hours'),
-      emergency_contact: formData.get('emergency_contact'),
-      storage_capacity: parseInt(formData.get('storage_capacity')) || null,
+      name_en: formData.get('name_en') as string,
+      name_te: formData.get('name_te') as string,
+      hospital_id: (formData.get('hospital_id') as string) || null,
+      address: formData.get('address') as string,
+      phone: formData.get('phone') as string,
+      email: formData.get('email') as string,
+      license_number: formData.get('license_number') as string,
+      operating_hours: formData.get('operating_hours') as string,
+      emergency_contact: formData.get('emergency_contact') as string,
+      storage_capacity: parseInt(formData.get('storage_capacity') as string) || null,
       is_government: formData.get('is_government') === 'on',
       is_active: formData.get('is_active') === 'on'
     };
@@ -196,24 +197,24 @@ const BloodBankManagement = () => {
     bankMutation.mutate(bankData);
   };
 
-  const handleInventorySubmit = (e) => {
+  const handleInventorySubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
+    const formData = new FormData(e.target as HTMLFormElement);
     const inventoryData = {
-      blood_bank_id: formData.get('blood_bank_id'),
-      blood_group: formData.get('blood_group'),
-      component_type: formData.get('component_type'),
-      units_available: parseInt(formData.get('units_available')) || 0,
-      units_reserved: parseInt(formData.get('units_reserved')) || 0,
-      expiry_date: formData.get('expiry_date') || null
+      blood_bank_id: formData.get('blood_bank_id') as string,
+      blood_group: formData.get('blood_group') as string,
+      component_type: formData.get('component_type') as string,
+      units_available: parseInt(formData.get('units_available') as string) || 0,
+      units_reserved: parseInt(formData.get('units_reserved') as string) || 0,
+      expiry_date: (formData.get('expiry_date') as string) || null
     };
 
     if (selectedItem) inventoryData.id = selectedItem.id;
     inventoryMutation.mutate(inventoryData);
   };
 
-  const getBloodGroupColor = (group) => {
-    const colors = {
+  const getBloodGroupColor = (group: string) => {
+    const colors: Record<string, string> = {
       'O+': 'bg-red-100 text-red-800',
       'O-': 'bg-red-200 text-red-900',
       'A+': 'bg-blue-100 text-blue-800',
@@ -226,8 +227,8 @@ const BloodBankManagement = () => {
     return colors[group] || 'bg-gray-100 text-gray-800';
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
       pending: 'bg-yellow-100 text-yellow-800',
       matched: 'bg-blue-100 text-blue-800',
       fulfilled: 'bg-green-100 text-green-800',
@@ -236,8 +237,8 @@ const BloodBankManagement = () => {
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
-  const getUrgencyColor = (urgency) => {
-    const colors = {
+  const getUrgencyColor = (urgency: string) => {
+    const colors: Record<string, string> = {
       low: 'bg-gray-100 text-gray-800',
       medium: 'bg-blue-100 text-blue-800',
       high: 'bg-orange-100 text-orange-800',

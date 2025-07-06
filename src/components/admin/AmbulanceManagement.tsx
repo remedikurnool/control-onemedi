@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Ambulance, MapPin, Phone, Clock, AlertTriangle } from 'lucide-react';
 
 const AmbulanceManagement = () => {
-  const [selectedService, setSelectedService] = useState(null);
+  const [selectedService, setSelectedService] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('services');
   const queryClient = useQueryClient();
@@ -33,7 +33,9 @@ const AmbulanceManagement = () => {
       })
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [queryClient]);
 
   // Fetch ambulance services
@@ -64,7 +66,7 @@ const AmbulanceManagement = () => {
 
   // Create/Update service mutation
   const servicesMutation = useMutation({
-    mutationFn: async (serviceData) => {
+    mutationFn: async (serviceData: any) => {
       if (serviceData.id) {
         const { data, error } = await supabase
           .from('ambulance_services')
@@ -90,14 +92,14 @@ const AmbulanceManagement = () => {
       setSelectedService(null);
       toast.success('Service saved successfully');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error('Error saving service: ' + error.message);
     }
   });
 
   // Delete service mutation
   const deleteServiceMutation = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('ambulance_services')
         .delete()
@@ -108,14 +110,14 @@ const AmbulanceManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['ambulance-services'] });
       toast.success('Service deleted successfully');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error('Error deleting service: ' + error.message);
     }
   });
 
   // Update booking status mutation
   const updateBookingMutation = useMutation({
-    mutationFn: async ({ id, status, notes }) => {
+    mutationFn: async ({ id, status, notes }: { id: string; status: string; notes: string }) => {
       const { data, error } = await supabase
         .from('ambulance_bookings')
         .update({ status, admin_notes: notes })
@@ -129,26 +131,26 @@ const AmbulanceManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['ambulance-bookings'] });
       toast.success('Booking updated successfully');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error('Error updating booking: ' + error.message);
     }
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
+    const formData = new FormData(e.target as HTMLFormElement);
     const serviceData = {
-      name_en: formData.get('name_en'),
-      name_te: formData.get('name_te'),
-      service_type: formData.get('service_type'),
-      vehicle_number: formData.get('vehicle_number'),
-      driver_name: formData.get('driver_name'),
-      driver_phone: formData.get('driver_phone'),
-      paramedic_name: formData.get('paramedic_name'),
-      paramedic_phone: formData.get('paramedic_phone'),
-      equipment_list: formData.get('equipment_list')?.split(',').map(item => item.trim()) || [],
-      price_per_km: parseFloat(formData.get('price_per_km')) || 0,
-      base_fare: parseFloat(formData.get('base_fare')) || 0,
+      name_en: formData.get('name_en') as string,
+      name_te: formData.get('name_te') as string,
+      service_type: formData.get('service_type') as string,
+      vehicle_number: formData.get('vehicle_number') as string,
+      driver_name: formData.get('driver_name') as string,
+      driver_phone: formData.get('driver_phone') as string,
+      paramedic_name: formData.get('paramedic_name') as string,
+      paramedic_phone: formData.get('paramedic_phone') as string,
+      equipment_list: (formData.get('equipment_list') as string)?.split(',').map(item => item.trim()) || [],
+      price_per_km: parseFloat(formData.get('price_per_km') as string) || 0,
+      base_fare: parseFloat(formData.get('base_fare') as string) || 0,
       is_available: formData.get('is_available') === 'on',
       is_active: formData.get('is_active') === 'on'
     };
@@ -160,8 +162,8 @@ const AmbulanceManagement = () => {
     servicesMutation.mutate(serviceData);
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
       requested: 'bg-yellow-100 text-yellow-800',
       assigned: 'bg-blue-100 text-blue-800',
       en_route: 'bg-purple-100 text-purple-800',
@@ -406,7 +408,7 @@ const AmbulanceManagement = () => {
                         <div className="col-span-2">
                           <span className="font-medium">Equipment:</span> 
                           <div className="flex gap-1 mt-1">
-                            {service.equipment_list.map((item, idx) => (
+                            {service.equipment_list.map((item: string, idx: number) => (
                               <Badge key={idx} variant="outline" className="text-xs">
                                 {item}
                               </Badge>
