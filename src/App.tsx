@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import ErrorBoundary from "./components/ui/error-boundary";
+import { NotificationProvider } from "./components/ui/notification-system";
 import AdminLayout from "./components/admin/AdminLayout";
 import LoginForm from "./components/admin/LoginForm";
 import Dashboard from "./components/admin/Dashboard";
@@ -34,35 +35,37 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <div className="min-h-screen bg-background">
-            <Toaster />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/login" element={<LoginForm />} />
-                <Route path="/admin/*" element={
-                  <ProtectedRoute>
-                    <AdminLayout>
-                      <Routes>
-                        <Route path="/" element={<Dashboard />} />
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/users" element={<UsersManagement />} />
-                        <Route path="/inventory" element={<InventoryManagement />} />
-                        <Route path="/orders" element={<OrdersManagement />} />
-                        <Route path="/medicines" element={<MedicineManagement />} />
-                        <Route path="/locations" element={<LocationsPage />} />
-                        <Route path="/pos" element={<EnhancedPOSPage />} />
-                        <Route path="/analytics" element={<AnalyticsPage />} />
-                        <Route path="/marketing" element={<MarketingPage />} />
-                        <Route path="/settings" element={<SettingsPage />} />
-                      </Routes>
-                    </AdminLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
-                <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
-              </Routes>
-            </BrowserRouter>
-          </div>
+          <NotificationProvider>
+            <div className="min-h-screen bg-background">
+              <Toaster />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/login" element={<LoginForm />} />
+                  <Route path="/admin/*" element={
+                    <ProtectedRoute>
+                      <AdminLayout>
+                        <Routes>
+                          <Route path="/" element={<Dashboard />} />
+                          <Route path="/dashboard" element={<Dashboard />} />
+                          <Route path="/users" element={<UsersManagement />} />
+                          <Route path="/inventory" element={<InventoryManagement />} />
+                          <Route path="/orders" element={<OrdersManagement />} />
+                          <Route path="/medicines" element={<MedicineManagement />} />
+                          <Route path="/locations" element={<LocationsPage />} />
+                          <Route path="/pos" element={<EnhancedPOSPage />} />
+                          <Route path="/analytics" element={<AnalyticsPage />} />
+                          <Route path="/marketing" element={<MarketingPage />} />
+                          <Route path="/settings" element={<SettingsPage />} />
+                        </Routes>
+                      </AdminLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+                  <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+                </Routes>
+              </BrowserRouter>
+            </div>
+          </NotificationProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>
@@ -70,9 +73,9 @@ function App() {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
