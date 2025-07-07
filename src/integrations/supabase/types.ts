@@ -665,6 +665,113 @@ export type Database = {
           },
         ]
       }
+      cash_movements: {
+        Row: {
+          amount: number
+          created_at: string | null
+          created_by: string | null
+          id: string
+          movement_type: string
+          notes: string | null
+          reference_number: string | null
+          session_id: string | null
+          transaction_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          movement_type: string
+          notes?: string | null
+          reference_number?: string | null
+          session_id?: string | null
+          transaction_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          movement_type?: string
+          notes?: string | null
+          reference_number?: string | null
+          session_id?: string | null
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_movements_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_movements_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "pos_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_sessions: {
+        Row: {
+          cashier_id: string
+          closing_balance: number | null
+          created_at: string | null
+          expected_balance: number | null
+          id: string
+          notes: string | null
+          opening_balance: number
+          session_end: string | null
+          session_start: string | null
+          status: string | null
+          terminal_id: string | null
+          updated_at: string | null
+          variance: number | null
+        }
+        Insert: {
+          cashier_id: string
+          closing_balance?: number | null
+          created_at?: string | null
+          expected_balance?: number | null
+          id?: string
+          notes?: string | null
+          opening_balance?: number
+          session_end?: string | null
+          session_start?: string | null
+          status?: string | null
+          terminal_id?: string | null
+          updated_at?: string | null
+          variance?: number | null
+        }
+        Update: {
+          cashier_id?: string
+          closing_balance?: number | null
+          created_at?: string | null
+          expected_balance?: number | null
+          id?: string
+          notes?: string | null
+          opening_balance?: number
+          session_end?: string | null
+          session_start?: string | null
+          status?: string | null
+          terminal_id?: string | null
+          updated_at?: string | null
+          variance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_sessions_terminal_id_fkey"
+            columns: ["terminal_id"]
+            isOneToOne: false
+            referencedRelation: "pos_terminals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       claim_documents: {
         Row: {
           claim_id: string | null
@@ -1064,6 +1171,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      customer_profiles: {
+        Row: {
+          address: Json | null
+          allergies: string[] | null
+          created_at: string | null
+          date_of_birth: string | null
+          email: string | null
+          id: string
+          insurance_info: Json | null
+          last_visit_date: string | null
+          loyalty_points: number | null
+          medical_conditions: string[] | null
+          name: string
+          phone: string
+          total_purchases: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: Json | null
+          allergies?: string[] | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          id?: string
+          insurance_info?: Json | null
+          last_visit_date?: string | null
+          loyalty_points?: number | null
+          medical_conditions?: string[] | null
+          name: string
+          phone: string
+          total_purchases?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: Json | null
+          allergies?: string[] | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          id?: string
+          insurance_info?: Json | null
+          last_visit_date?: string | null
+          loyalty_points?: number | null
+          medical_conditions?: string[] | null
+          name?: string
+          phone?: string
+          total_purchases?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       customer_segments: {
         Row: {
@@ -2948,6 +3106,39 @@ export type Database = {
         }
         Relationships: []
       }
+      offline_transactions: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          local_id: string
+          sync_attempts: number | null
+          sync_status: string | null
+          synced_at: string | null
+          transaction_data: Json
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          local_id: string
+          sync_attempts?: number | null
+          sync_status?: string | null
+          synced_at?: string | null
+          transaction_data: Json
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          local_id?: string
+          sync_attempts?: number | null
+          sync_status?: string | null
+          synced_at?: string | null
+          transaction_data?: Json
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string | null
@@ -3186,6 +3377,53 @@ export type Database = {
         }
         Relationships: []
       }
+      pos_terminals: {
+        Row: {
+          created_at: string | null
+          current_session_id: string | null
+          hardware_info: Json | null
+          id: string
+          is_active: boolean | null
+          last_sync_at: string | null
+          location_id: string | null
+          terminal_code: string
+          terminal_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_session_id?: string | null
+          hardware_info?: Json | null
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          location_id?: string | null
+          terminal_code: string
+          terminal_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_session_id?: string | null
+          hardware_info?: Json | null
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          location_id?: string | null
+          terminal_code?: string
+          terminal_name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_terminals_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pos_transaction_items: {
         Row: {
           batch_number: string | null
@@ -3409,6 +3647,110 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prescriptions: {
+        Row: {
+          created_at: string | null
+          dispensed_at: string | null
+          dispensed_by: string | null
+          doctor_license: string | null
+          doctor_name: string | null
+          extracted_text: string | null
+          id: string
+          insurance_claim_id: string | null
+          medications: Json | null
+          patient_name: string
+          patient_phone: string | null
+          prescription_date: string
+          prescription_image_url: string | null
+          prescription_number: string
+          status: string | null
+          total_amount: number | null
+          updated_at: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dispensed_at?: string | null
+          dispensed_by?: string | null
+          doctor_license?: string | null
+          doctor_name?: string | null
+          extracted_text?: string | null
+          id?: string
+          insurance_claim_id?: string | null
+          medications?: Json | null
+          patient_name: string
+          patient_phone?: string | null
+          prescription_date: string
+          prescription_image_url?: string | null
+          prescription_number: string
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dispensed_at?: string | null
+          dispensed_by?: string | null
+          doctor_license?: string | null
+          doctor_name?: string | null
+          extracted_text?: string | null
+          id?: string
+          insurance_claim_id?: string | null
+          medications?: Json | null
+          patient_name?: string
+          patient_phone?: string | null
+          prescription_date?: string
+          prescription_image_url?: string | null
+          prescription_number?: string
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: []
+      }
+      product_barcodes: {
+        Row: {
+          barcode_type: string
+          barcode_value: string
+          created_at: string | null
+          id: string
+          is_primary: boolean | null
+          product_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          barcode_type?: string
+          barcode_value: string
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          product_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          barcode_type?: string
+          barcode_value?: string
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          product_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_barcodes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -4091,6 +4433,48 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_performance: {
+        Row: {
+          average_transaction_time: unknown | null
+          created_at: string | null
+          customer_satisfaction_score: number | null
+          goals_met: Json | null
+          id: string
+          performance_date: string
+          staff_id: string
+          total_items_sold: number | null
+          total_sales_amount: number | null
+          total_transactions: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          average_transaction_time?: unknown | null
+          created_at?: string | null
+          customer_satisfaction_score?: number | null
+          goals_met?: Json | null
+          id?: string
+          performance_date?: string
+          staff_id: string
+          total_items_sold?: number | null
+          total_sales_amount?: number | null
+          total_transactions?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          average_transaction_time?: unknown | null
+          created_at?: string | null
+          customer_satisfaction_score?: number | null
+          goals_met?: Json | null
+          id?: string
+          performance_date?: string
+          staff_id?: string
+          total_items_sold?: number | null
+          total_sales_amount?: number | null
+          total_transactions?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       stock_movements: {
         Row: {
           id: string
@@ -4588,6 +4972,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      generate_prescription_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       generate_referral_code: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -4647,6 +5035,15 @@ export type Database = {
       owns_pre_auth_request: {
         Args: { request_uuid: string }
         Returns: boolean
+      }
+      update_staff_performance: {
+        Args: {
+          p_staff_id: string
+          p_transaction_amount: number
+          p_items_count: number
+          p_transaction_time: unknown
+        }
+        Returns: undefined
       }
     }
     Enums: {

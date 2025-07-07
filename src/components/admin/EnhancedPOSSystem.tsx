@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,7 +68,7 @@ interface CustomerProfile {
   insurance_info?: any;
 }
 
-const POSSystem = () => {
+const EnhancedPOSSystem = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerProfile | null>(null);
@@ -652,4 +653,4 @@ const POSSystem = () => {
   );
 };
 
-export default POSSystem;
+export default EnhancedPOSSystem;
