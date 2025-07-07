@@ -495,6 +495,47 @@ export type Database = {
           },
         ]
       }
+      business_configuration: {
+        Row: {
+          config_key: string
+          config_value: Json
+          created_at: string | null
+          description: string | null
+          id: string
+          is_location_specific: boolean | null
+          location_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          config_key: string
+          config_value: Json
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_location_specific?: boolean | null
+          location_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          config_key?: string
+          config_value?: Json
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_location_specific?: boolean | null
+          location_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_configuration_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       caregiver_certifications: {
         Row: {
           caregiver_id: string | null
@@ -2780,6 +2821,118 @@ export type Database = {
         }
         Relationships: []
       }
+      location_analytics: {
+        Row: {
+          avg_delivery_time: unknown | null
+          cancellation_rate: number | null
+          created_at: string | null
+          customer_satisfaction: number | null
+          date: string
+          demographics: Json | null
+          id: string
+          location_id: string | null
+          peak_hours: Json | null
+          repeat_customers: number | null
+          service_type: Database["public"]["Enums"]["service_type"] | null
+          total_customers: number | null
+          total_orders: number | null
+          total_revenue: number | null
+        }
+        Insert: {
+          avg_delivery_time?: unknown | null
+          cancellation_rate?: number | null
+          created_at?: string | null
+          customer_satisfaction?: number | null
+          date?: string
+          demographics?: Json | null
+          id?: string
+          location_id?: string | null
+          peak_hours?: Json | null
+          repeat_customers?: number | null
+          service_type?: Database["public"]["Enums"]["service_type"] | null
+          total_customers?: number | null
+          total_orders?: number | null
+          total_revenue?: number | null
+        }
+        Update: {
+          avg_delivery_time?: unknown | null
+          cancellation_rate?: number | null
+          created_at?: string | null
+          customer_satisfaction?: number | null
+          date?: string
+          demographics?: Json | null
+          id?: string
+          location_id?: string | null
+          peak_hours?: Json | null
+          repeat_customers?: number | null
+          service_type?: Database["public"]["Enums"]["service_type"] | null
+          total_customers?: number | null
+          total_orders?: number | null
+          total_revenue?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_analytics_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      location_service_zones: {
+        Row: {
+          created_at: string | null
+          delivery_fee: number | null
+          estimated_delivery_time: string | null
+          id: string
+          is_active: boolean | null
+          location_id: string | null
+          pincodes: string[] | null
+          priority_order: number | null
+          service_type: Database["public"]["Enums"]["service_type"]
+          updated_at: string | null
+          zone_boundary: Json | null
+          zone_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          delivery_fee?: number | null
+          estimated_delivery_time?: string | null
+          id?: string
+          is_active?: boolean | null
+          location_id?: string | null
+          pincodes?: string[] | null
+          priority_order?: number | null
+          service_type: Database["public"]["Enums"]["service_type"]
+          updated_at?: string | null
+          zone_boundary?: Json | null
+          zone_name: string
+        }
+        Update: {
+          created_at?: string | null
+          delivery_fee?: number | null
+          estimated_delivery_time?: string | null
+          id?: string
+          is_active?: boolean | null
+          location_id?: string | null
+          pincodes?: string[] | null
+          priority_order?: number | null
+          service_type?: Database["public"]["Enums"]["service_type"]
+          updated_at?: string | null
+          zone_boundary?: Json | null
+          zone_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_service_zones_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locations: {
         Row: {
           coordinates: Json | null
@@ -3376,6 +3529,65 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      pincode_service_mapping: {
+        Row: {
+          city: string | null
+          cod_available: boolean | null
+          created_at: string | null
+          delivery_fee: number | null
+          delivery_type: Database["public"]["Enums"]["delivery_type"] | null
+          district: string | null
+          estimated_delivery_days: number | null
+          id: string
+          is_serviceable: boolean | null
+          pincode: string
+          service_type: Database["public"]["Enums"]["service_type"]
+          serving_location_id: string | null
+          state_code: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          city?: string | null
+          cod_available?: boolean | null
+          created_at?: string | null
+          delivery_fee?: number | null
+          delivery_type?: Database["public"]["Enums"]["delivery_type"] | null
+          district?: string | null
+          estimated_delivery_days?: number | null
+          id?: string
+          is_serviceable?: boolean | null
+          pincode: string
+          service_type: Database["public"]["Enums"]["service_type"]
+          serving_location_id?: string | null
+          state_code?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          city?: string | null
+          cod_available?: boolean | null
+          created_at?: string | null
+          delivery_fee?: number | null
+          delivery_type?: Database["public"]["Enums"]["delivery_type"] | null
+          district?: string | null
+          estimated_delivery_days?: number | null
+          id?: string
+          is_serviceable?: boolean | null
+          pincode?: string
+          service_type?: Database["public"]["Enums"]["service_type"]
+          serving_location_id?: string | null
+          state_code?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pincode_service_mapping_serving_location_id_fkey"
+            columns: ["serving_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pos_terminals: {
         Row: {
@@ -4433,6 +4645,151 @@ export type Database = {
         }
         Relationships: []
       }
+      service_centers: {
+        Row: {
+          address: string
+          advance_booking_days: number | null
+          capacity_per_hour: number | null
+          contact_email: string | null
+          contact_phone: string | null
+          coordinates: Json | null
+          created_at: string | null
+          equipment_available: Json | null
+          id: string
+          is_active: boolean | null
+          is_verified: boolean | null
+          location_id: string | null
+          name: string
+          operating_hours: Json | null
+          pincode: string | null
+          rating: number | null
+          service_type: Database["public"]["Enums"]["service_type"]
+          services_offered: Json | null
+          staff_details: Json | null
+          total_reviews: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          address: string
+          advance_booking_days?: number | null
+          capacity_per_hour?: number | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          equipment_available?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          location_id?: string | null
+          name: string
+          operating_hours?: Json | null
+          pincode?: string | null
+          rating?: number | null
+          service_type: Database["public"]["Enums"]["service_type"]
+          services_offered?: Json | null
+          staff_details?: Json | null
+          total_reviews?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string
+          advance_booking_days?: number | null
+          capacity_per_hour?: number | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          equipment_available?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          location_id?: string | null
+          name?: string
+          operating_hours?: Json | null
+          pincode?: string | null
+          rating?: number | null
+          service_type?: Database["public"]["Enums"]["service_type"]
+          services_offered?: Json | null
+          staff_details?: Json | null
+          total_reviews?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_centers_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_locations: {
+        Row: {
+          capacity_limit: number | null
+          created_at: string | null
+          delivery_fee: number | null
+          delivery_type: Database["public"]["Enums"]["delivery_type"] | null
+          equipment_available: Json | null
+          estimated_delivery_time: string | null
+          id: string
+          is_enabled: boolean | null
+          location_id: string | null
+          min_order_amount: number | null
+          operating_hours: Json | null
+          service_radius_km: number | null
+          service_type: Database["public"]["Enums"]["service_type"]
+          special_instructions: string | null
+          staff_count: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          capacity_limit?: number | null
+          created_at?: string | null
+          delivery_fee?: number | null
+          delivery_type?: Database["public"]["Enums"]["delivery_type"] | null
+          equipment_available?: Json | null
+          estimated_delivery_time?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          location_id?: string | null
+          min_order_amount?: number | null
+          operating_hours?: Json | null
+          service_radius_km?: number | null
+          service_type: Database["public"]["Enums"]["service_type"]
+          special_instructions?: string | null
+          staff_count?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          capacity_limit?: number | null
+          created_at?: string | null
+          delivery_fee?: number | null
+          delivery_type?: Database["public"]["Enums"]["delivery_type"] | null
+          equipment_available?: Json | null
+          estimated_delivery_time?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          location_id?: string | null
+          min_order_amount?: number | null
+          operating_hours?: Json | null
+          service_radius_km?: number | null
+          service_type?: Database["public"]["Enums"]["service_type"]
+          special_instructions?: string | null
+          staff_count?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_locations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_performance: {
         Row: {
           average_transaction_time: unknown | null
@@ -4984,6 +5341,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_serviceable_areas: {
+        Args: {
+          service_name: Database["public"]["Enums"]["service_type"]
+          pincode_input?: string
+        }
+        Returns: {
+          location_name: string
+          delivery_type: string
+          delivery_fee: number
+          estimated_time: string
+          is_serviceable: boolean
+        }[]
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -5093,6 +5463,12 @@ export type Database = {
         | "friday"
         | "saturday"
         | "sunday"
+      delivery_type:
+        | "pickup_only"
+        | "local_delivery"
+        | "courier_delivery"
+        | "nationwide_delivery"
+        | "online_only"
       diabetes_test_type:
         | "hba1c"
         | "fasting_glucose"
@@ -5343,6 +5719,13 @@ export const Constants = {
         "friday",
         "saturday",
         "sunday",
+      ],
+      delivery_type: [
+        "pickup_only",
+        "local_delivery",
+        "courier_delivery",
+        "nationwide_delivery",
+        "online_only",
       ],
       diabetes_test_type: [
         "hba1c",
