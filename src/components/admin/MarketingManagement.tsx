@@ -1,806 +1,754 @@
 
-import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Megaphone, 
-  Users, 
+  TrendingUp, 
   Target, 
-  TrendingUp,
-  Mail,
-  MessageSquare,
-  Bell,
-  Gift,
-  Play,
-  Pause,
+  Mail, 
+  Gift, 
+  Star, 
+  Clock,
+  Plus,
+  Edit,
+  Trash2,
   Eye,
-  Calendar
+  Settings,
+  Zap,
+  Users,
+  ShoppingCart,
+  Award
 } from 'lucide-react';
 
+interface DynamicPricingRule {
+  id: string;
+  rule_name: string;
+  rule_type: string;
+  target_products: any[];
+  conditions: any;
+  adjustments: any;
+  priority: number;
+  is_active: boolean;
+  valid_from: string | null;
+  valid_until: string | null;
+}
+
+interface RecommendationRule {
+  id: string;
+  rule_name: string;
+  rule_type: string;
+  trigger_products: any[];
+  recommended_products: any[];
+  conditions: any;
+  discount_percentage: number;
+  priority: number;
+  is_active: boolean;
+}
+
+interface AbandonedCartCampaign {
+  id: string;
+  campaign_name: string;
+  trigger_delay_minutes: number;
+  email_template: string | null;
+  sms_template: string | null;
+  whatsapp_template: string | null;
+  discount_code: string | null;
+  discount_percentage: number;
+  follow_up_sequence: any[];
+  is_active: boolean;
+}
+
+interface LoyaltyProgram {
+  id: string;
+  program_name: string;
+  points_per_rupee: number;
+  referral_points: number;
+  birthday_bonus_points: number;
+  tier_thresholds: any;
+  tier_benefits: any;
+  point_expiry_months: number;
+  min_redemption_points: number;
+  redemption_rate: number;
+  is_active: boolean;
+}
+
+interface LimitedTimeOffer {
+  id: string;
+  offer_name: string;
+  offer_type: string;
+  applicable_products: any[];
+  applicable_categories: any[];
+  discount_type: string;
+  discount_value: number;
+  max_discount_amount: number | null;
+  minimum_order_amount: number;
+  usage_limit: number | null;
+  usage_count: number;
+  start_time: string;
+  end_time: string;
+  urgency_message: string | null;
+  banner_image_url: string | null;
+  is_active: boolean;
+}
+
 const MarketingManagement = () => {
-  const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('campaigns');
-  const [dialogType, setDialogType] = useState<'campaign' | 'segment' | 'offer'>('campaign');
+  const [activeTab, setActiveTab] = useState('pricing');
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [showForm, setShowForm] = useState(false);
   const queryClient = useQueryClient();
 
-  // Real-time subscriptions
-  useEffect(() => {
-    const channel = supabase
-      .channel('marketing-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'marketing_campaigns' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['marketing-campaigns'] });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'customer_segments' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['customer-segments'] });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'promotional_offers' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['promotional-offers'] });
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
-
-  // Fetch campaigns
-  const { data: campaigns, isLoading: campaignsLoading } = useQuery({
-    queryKey: ['marketing-campaigns'],
+  // Fetch dynamic pricing rules
+  const { data: pricingRules = [], isLoading: pricingLoading } = useQuery({
+    queryKey: ['dynamic-pricing-rules'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('marketing_campaigns')
+        .from('dynamic_pricing_rules')
         .select('*')
+        .order('priority', { ascending: true });
+      if (error) throw error;
+      return data as DynamicPricingRule[];
+    }
+  });
+
+  // Fetch recommendation rules
+  const { data: recommendationRules = [], isLoading: recommendationLoading } = useQuery({
+    queryKey: ['recommendation-rules'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('recommendation_rules')
+        .select('*')
+        .order('priority', { ascending: true });
+      if (error) throw error;
+      return data as RecommendationRule[];
+    }
+  });
+
+  // Fetch abandoned cart campaigns
+  const { data: cartCampaigns = [], isLoading: cartLoading } = useQuery({
+    queryKey: ['abandoned-cart-campaigns'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('abandoned_cart_campaigns')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as AbandonedCartCampaign[];
+    }
+  });
+
+  // Fetch loyalty program config
+  const { data: loyaltyProgram, isLoading: loyaltyLoading } = useQuery({
+    queryKey: ['loyalty-program-config'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('loyalty_program_config')
+        .select('*')
+        .limit(1)
+        .single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return data as LoyaltyProgram | null;
+    }
+  });
+
+  // Fetch limited time offers
+  const { data: limitedOffers = [], isLoading: offersLoading } = useQuery({
+    queryKey: ['limited-time-offers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('limited_time_offers')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as LimitedTimeOffer[];
+    }
+  });
+
+  // Fetch product reviews
+  const { data: productReviews = [], isLoading: reviewsLoading } = useQuery({
+    queryKey: ['product-reviews'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('product_reviews')
+        .select('*, products(name_en)')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     }
   });
 
-  // Fetch customer segments
-  const { data: segments, isLoading: segmentsLoading } = useQuery({
-    queryKey: ['customer-segments'],
-    queryFn: async () => {
+  // Create/Update mutations
+  const createPricingRule = useMutation({
+    mutationFn: async (rule: Partial<DynamicPricingRule>) => {
       const { data, error } = await supabase
-        .from('customer_segments')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from('dynamic_pricing_rules')
+        .insert([rule])
+        .select()
+        .single();
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dynamic-pricing-rules'] });
+      toast.success('Pricing rule created successfully');
+      setShowForm(false);
+      setEditingItem(null);
+    },
+    onError: (error) => {
+      toast.error('Failed to create pricing rule');
+      console.error(error);
     }
   });
 
-  // Fetch promotional offers
-  const { data: offers, isLoading: offersLoading } = useQuery({
-    queryKey: ['promotional-offers'],
-    queryFn: async () => {
+  const updatePricingRule = useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<DynamicPricingRule> & { id: string }) => {
       const { data, error } = await supabase
-        .from('promotional_offers')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from('dynamic_pricing_rules')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dynamic-pricing-rules'] });
+      toast.success('Pricing rule updated successfully');
+      setEditingItem(null);
+    },
+    onError: (error) => {
+      toast.error('Failed to update pricing rule');
+      console.error(error);
     }
   });
 
-  // Campaign mutations
-  const campaignMutation = useMutation({
-    mutationFn: async (campaignData: any) => {
-      if (campaignData.id) {
-        const { data, error } = await supabase
-          .from('marketing_campaigns')
-          .update(campaignData)
-          .eq('id', campaignData.id)
-          .select()
-          .single();
-        if (error) throw error;
-        return data;
-      } else {
-        const { data, error } = await supabase
-          .from('marketing_campaigns')
-          .insert([campaignData])
-          .select()
-          .single();
-        if (error) throw error;
-        return data;
-      }
+  const deletePricingRule = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('dynamic_pricing_rules')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['marketing-campaigns'] });
-      setIsDialogOpen(false);
-      setSelectedItem(null);
-      toast.success('Campaign saved successfully');
+      queryClient.invalidateQueries({ queryKey: ['dynamic-pricing-rules'] });
+      toast.success('Pricing rule deleted successfully');
     },
-    onError: (error: any) => toast.error('Error saving campaign: ' + error.message)
-  });
-
-  // Segment mutations
-  const segmentMutation = useMutation({
-    mutationFn: async (segmentData: any) => {
-      if (segmentData.id) {
-        const { data, error } = await supabase
-          .from('customer_segments')
-          .update(segmentData)
-          .eq('id', segmentData.id)
-          .select()
-          .single();
-        if (error) throw error;
-        return data;
-      } else {
-        const { data, error } = await supabase
-          .from('customer_segments')
-          .insert([segmentData])
-          .select()
-          .single();
-        if (error) throw error;
-        return data;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customer-segments'] });
-      setIsDialogOpen(false);
-      setSelectedItem(null);
-      toast.success('Segment saved successfully');
-    },
-    onError: (error: any) => toast.error('Error saving segment: ' + error.message)
-  });
-
-  // Offer mutations
-  const offerMutation = useMutation({
-    mutationFn: async (offerData: any) => {
-      if (offerData.id) {
-        const { data, error } = await supabase
-          .from('promotional_offers')
-          .update(offerData)
-          .eq('id', offerData.id)
-          .select()
-          .single();
-        if (error) throw error;
-        return data;
-      } else {
-        const { data, error } = await supabase
-          .from('promotional_offers')
-          .insert([offerData])
-          .select()
-          .single();
-        if (error) throw error;
-        return data;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['promotional-offers'] });
-      setIsDialogOpen(false);
-      setSelectedItem(null);
-      toast.success('Offer saved successfully');
-    },
-    onError: (error: any) => toast.error('Error saving offer: ' + error.message)
-  });
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-
-    if (dialogType === 'campaign') {
-      const campaignData: any = {
-        name: formData.get('name') as string,
-        description: formData.get('description') as string,
-        campaign_type: formData.get('campaign_type') as string,
-        status: formData.get('status') as string,
-        budget: parseFloat(formData.get('budget') as string) || 0,
-        schedule_start: formData.get('schedule_start') as string || null,
-        schedule_end: formData.get('schedule_end') as string || null,
-        target_audience: {
-          age_range: formData.get('age_range') as string,
-          location: formData.get('location') as string,
-          interests: (formData.get('interests') as string)?.split(',').map(i => i.trim()) || []
-        },
-        content: {
-          subject: formData.get('subject') as string,
-          message: formData.get('message') as string,
-          call_to_action: formData.get('call_to_action') as string
-        }
-      };
-
-      if (selectedItem) {
-        campaignData.id = selectedItem.id;
-      }
-      campaignMutation.mutate(campaignData);
-    } else if (dialogType === 'segment') {
-      const segmentData: any = {
-        name: formData.get('name') as string,
-        description: formData.get('description') as string,
-        criteria: {
-          min_orders: parseInt(formData.get('min_orders') as string) || 0,
-          min_amount: parseFloat(formData.get('min_amount') as string) || 0,
-          last_order_days: parseInt(formData.get('last_order_days') as string) || 30,
-          location: formData.get('location') as string
-        },
-        is_dynamic: formData.get('is_dynamic') === 'on'
-      };
-
-      if (selectedItem) {
-        segmentData.id = selectedItem.id;
-      }
-      segmentMutation.mutate(segmentData);
-    } else if (dialogType === 'offer') {
-      const offerData: any = {
-        title: formData.get('title') as string,
-        description: formData.get('description') as string,
-        offer_type: formData.get('offer_type') as string,
-        discount_value: parseFloat(formData.get('discount_value') as string) || 0,
-        min_order_amount: parseFloat(formData.get('min_order_amount') as string) || 0,
-        max_discount_amount: parseFloat(formData.get('max_discount_amount') as string) || null,
-        usage_limit: parseInt(formData.get('usage_limit') as string) || null,
-        valid_from: formData.get('valid_from') as string,
-        valid_until: formData.get('valid_until') as string,
-        is_active: formData.get('is_active') === 'on'
-      };
-
-      if (selectedItem) {
-        offerData.id = selectedItem.id;
-      }
-      offerMutation.mutate(offerData);
+    onError: (error) => {
+      toast.error('Failed to delete pricing rule');
+      console.error(error);
     }
-  };
+  });
 
-  const openDialog = (type: 'campaign' | 'segment' | 'offer', item: any = null) => {
-    setDialogType(type);
-    setSelectedItem(item);
-    setIsDialogOpen(true);
-  };
-
-  const getCampaignIcon = (type: string) => {
-    switch (type) {
-      case 'email': return <Mail className="h-4 w-4" />;
-      case 'sms': return <MessageSquare className="h-4 w-4" />;
-      case 'push': return <Bell className="h-4 w-4" />;
-      case 'discount': return <Gift className="h-4 w-4" />;
-      default: return <Megaphone className="h-4 w-4" />;
-    }
-  };
-
-  return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
+  const renderPricingRules = () => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Marketing Management</h1>
-          <p className="text-muted-foreground">Create campaigns, manage segments, and boost conversions</p>
+          <h3 className="text-lg font-semibold">Dynamic Pricing Rules</h3>
+          <p className="text-sm text-muted-foreground">
+            Configure automatic pricing adjustments based on demand, inventory, and customer tiers
+          </p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => openDialog('campaign')}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Campaign
-          </Button>
-          <Button variant="outline" onClick={() => openDialog('segment')}>
-            <Users className="mr-2 h-4 w-4" />
-            New Segment
-          </Button>
-          <Button variant="outline" onClick={() => openDialog('offer')}>
-            <Gift className="mr-2 h-4 w-4" />
-            New Offer
-          </Button>
+        <Button onClick={() => setShowForm(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Rule
+        </Button>
+      </div>
+
+      <div className="grid gap-4">
+        {pricingRules.map((rule) => (
+          <Card key={rule.id}>
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-base">{rule.rule_name}</CardTitle>
+                  <div className="flex gap-2 mt-2">
+                    <Badge variant={rule.is_active ? 'default' : 'secondary'}>
+                      {rule.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                    <Badge variant="outline">{rule.rule_type}</Badge>
+                    <Badge variant="outline">Priority: {rule.priority}</Badge>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditingItem(rule)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => deletePricingRule.mutate(rule.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <Label className="text-xs font-medium">Target Products</Label>
+                  <p className="text-muted-foreground">
+                    {rule.target_products.length > 0 ? `${rule.target_products.length} selected` : 'All products'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs font-medium">Valid Period</Label>
+                  <p className="text-muted-foreground">
+                    {rule.valid_from && rule.valid_until 
+                      ? `${new Date(rule.valid_from).toLocaleDateString()} - ${new Date(rule.valid_until).toLocaleDateString()}`
+                      : 'Always active'
+                    }
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderRecommendations = () => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold">Recommendation Engine</h3>
+          <p className="text-sm text-muted-foreground">
+            Configure cross-selling and upselling recommendations
+          </p>
+        </div>
+        <Button onClick={() => setShowForm(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Rule
+        </Button>
+      </div>
+
+      <div className="grid gap-4">
+        {recommendationRules.map((rule) => (
+          <Card key={rule.id}>
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-base">{rule.rule_name}</CardTitle>
+                  <div className="flex gap-2 mt-2">
+                    <Badge variant={rule.is_active ? 'default' : 'secondary'}>
+                      {rule.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                    <Badge variant="outline">{rule.rule_type}</Badge>
+                    {rule.discount_percentage > 0 && (
+                      <Badge variant="outline">{rule.discount_percentage}% discount</Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditingItem(rule)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {/* Delete logic */}}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <Label className="text-xs font-medium">Trigger Products</Label>
+                  <p className="text-muted-foreground">
+                    {rule.trigger_products.length} products
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs font-medium">Recommended Products</Label>
+                  <p className="text-muted-foreground">
+                    {rule.recommended_products.length} products
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderAbandonedCart = () => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold">Abandoned Cart Recovery</h3>
+          <p className="text-sm text-muted-foreground">
+            Setup automated email, SMS, and WhatsApp campaigns for cart recovery
+          </p>
+        </div>
+        <Button onClick={() => setShowForm(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Campaign
+        </Button>
+      </div>
+
+      <div className="grid gap-4">
+        {cartCampaigns.map((campaign) => (
+          <Card key={campaign.id}>
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-base">{campaign.campaign_name}</CardTitle>
+                  <div className="flex gap-2 mt-2">
+                    <Badge variant={campaign.is_active ? 'default' : 'secondary'}>
+                      {campaign.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                    <Badge variant="outline">
+                      Trigger: {campaign.trigger_delay_minutes}min
+                    </Badge>
+                    {campaign.discount_percentage > 0 && (
+                      <Badge variant="outline">{campaign.discount_percentage}% off</Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditingItem(campaign)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {/* Delete logic */}}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <Label className="text-xs font-medium">Email Template</Label>
+                  <p className="text-muted-foreground">
+                    {campaign.email_template ? 'Active' : 'Not set'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs font-medium">SMS Template</Label>
+                  <p className="text-muted-foreground">
+                    {campaign.sms_template ? 'Active' : 'Not set'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs font-medium">WhatsApp Template</Label>
+                  <p className="text-muted-foreground">
+                    {campaign.whatsapp_template ? 'Active' : 'Not set'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderLoyaltyProgram = () => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold">Loyalty Program</h3>
+          <p className="text-sm text-muted-foreground">
+            Configure points, rewards, and tier management
+          </p>
+        </div>
+        <Button onClick={() => setShowForm(true)}>
+          <Settings className="h-4 w-4 mr-2" />
+          Configure
+        </Button>
+      </div>
+
+      {loyaltyProgram && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5" />
+              {loyaltyProgram.program_name}
+              <Badge variant={loyaltyProgram.is_active ? 'default' : 'secondary'}>
+                {loyaltyProgram.is_active ? 'Active' : 'Inactive'}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <Label className="text-xs font-medium">Points per ₹</Label>
+                <p className="text-2xl font-bold">{loyaltyProgram.points_per_rupee}</p>
+              </div>
+              <div>
+                <Label className="text-xs font-medium">Referral Points</Label>
+                <p className="text-2xl font-bold">{loyaltyProgram.referral_points}</p>
+              </div>
+              <div>
+                <Label className="text-xs font-medium">Birthday Bonus</Label>
+                <p className="text-2xl font-bold">{loyaltyProgram.birthday_bonus_points}</p>
+              </div>
+              <div>
+                <Label className="text-xs font-medium">Point Expiry</Label>
+                <p className="text-2xl font-bold">{loyaltyProgram.point_expiry_months}mo</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+
+  const renderReviews = () => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold">Reviews & Ratings</h3>
+          <p className="text-sm text-muted-foreground">
+            Manage product reviews and social proof
+          </p>
         </div>
       </div>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedItem 
-                ? `Edit ${dialogType.charAt(0).toUpperCase() + dialogType.slice(1)}`
-                : `Create New ${dialogType.charAt(0).toUpperCase() + dialogType.slice(1)}`
-              }
-            </DialogTitle>
-          </DialogHeader>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {dialogType === 'campaign' && (
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="name">Campaign Name</Label>
-                    <Input id="name" name="name" defaultValue={selectedItem?.name} required />
-                  </div>
-                  <div>
-                    <Label htmlFor="campaign_type">Campaign Type</Label>
-                    <Select name="campaign_type" defaultValue={selectedItem?.campaign_type}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="email">Email</SelectItem>
-                        <SelectItem value="sms">SMS</SelectItem>
-                        <SelectItem value="push">Push Notification</SelectItem>
-                        <SelectItem value="banner">Banner</SelectItem>
-                        <SelectItem value="discount">Discount</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
+      <div className="grid gap-4">
+        {productReviews.slice(0, 10).map((review: any) => (
+          <Card key={review.id}>
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start">
                 <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea id="description" name="description" defaultValue={selectedItem?.description} />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="status">Status</Label>
-                    <Select name="status" defaultValue={selectedItem?.status || 'draft'}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="paused">Paused</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="budget">Budget (₹)</Label>
-                    <Input id="budget" name="budget" type="number" defaultValue={selectedItem?.budget} />
-                  </div>
-                  <div></div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="schedule_start">Start Date</Label>
-                    <Input 
-                      id="schedule_start" 
-                      name="schedule_start" 
-                      type="datetime-local" 
-                      defaultValue={selectedItem?.schedule_start?.slice(0, 16)} 
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="schedule_end">End Date</Label>
-                    <Input 
-                      id="schedule_end" 
-                      name="schedule_end" 
-                      type="datetime-local" 
-                      defaultValue={selectedItem?.schedule_end?.slice(0, 16)} 
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h4 className="font-medium">Target Audience</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="age_range">Age Range</Label>
-                      <Input 
-                        id="age_range" 
-                        name="age_range" 
-                        placeholder="e.g., 18-35"
-                        defaultValue={selectedItem?.target_audience?.age_range} 
-                      />
+                  <CardTitle className="text-base">{review.products?.name_en}</CardTitle>
+                  <div className="flex gap-2 mt-2">
+                    <div className="flex items-center gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                          }`}
+                        />
+                      ))}
                     </div>
-                    <div>
-                      <Label htmlFor="location">Location</Label>
-                      <Input 
-                        id="location" 
-                        name="location" 
-                        placeholder="e.g., Kurnool"
-                        defaultValue={selectedItem?.target_audience?.location} 
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="interests">Interests (comma-separated)</Label>
-                    <Input 
-                      id="interests" 
-                      name="interests" 
-                      placeholder="e.g., healthcare, fitness, medicines"
-                      defaultValue={selectedItem?.target_audience?.interests?.join(', ')} 
-                    />
+                    <Badge variant={review.is_approved ? 'default' : 'secondary'}>
+                      {review.is_approved ? 'Approved' : 'Pending'}
+                    </Badge>
+                    {review.is_verified_purchase && (
+                      <Badge variant="outline">Verified Purchase</Badge>
+                    )}
                   </div>
                 </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditingItem(review)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {review.review_title && (
+                  <h4 className="font-medium">{review.review_title}</h4>
+                )}
+                {review.review_text && (
+                  <p className="text-sm text-muted-foreground line-clamp-3">
+                    {review.review_text}
+                  </p>
+                )}
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <span>{new Date(review.created_at).toLocaleDateString()}</span>
+                  <span>{review.helpful_count} helpful</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
 
-                <div className="space-y-4">
-                  <h4 className="font-medium">Campaign Content</h4>
-                  <div>
-                    <Label htmlFor="subject">Subject/Title</Label>
-                    <Input 
-                      id="subject" 
-                      name="subject" 
-                      defaultValue={selectedItem?.content?.subject} 
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="message">Message</Label>
-                    <Textarea 
-                      id="message" 
-                      name="message" 
-                      defaultValue={selectedItem?.content?.message} 
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="call_to_action">Call to Action</Label>
-                    <Input 
-                      id="call_to_action" 
-                      name="call_to_action" 
-                      placeholder="e.g., Shop Now, Learn More"
-                      defaultValue={selectedItem?.content?.call_to_action} 
-                    />
-                  </div>
-                </div>
-              </>
-            )}
+  const renderLimitedOffers = () => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold">Limited Time Offers</h3>
+          <p className="text-sm text-muted-foreground">
+            Create flash sales and urgent promotions with countdown timers
+          </p>
+        </div>
+        <Button onClick={() => setShowForm(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Offer
+        </Button>
+      </div>
 
-            {dialogType === 'segment' && (
-              <>
-                <div>
-                  <Label htmlFor="name">Segment Name</Label>
-                  <Input id="name" name="name" defaultValue={selectedItem?.name} required />
-                </div>
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea id="description" name="description" defaultValue={selectedItem?.description} />
-                </div>
-                <div className="space-y-4">
-                  <h4 className="font-medium">Segmentation Criteria</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="min_orders">Minimum Orders</Label>
-                      <Input 
-                        id="min_orders" 
-                        name="min_orders" 
-                        type="number" 
-                        defaultValue={selectedItem?.criteria?.min_orders || 0} 
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="min_amount">Minimum Amount (₹)</Label>
-                      <Input 
-                        id="min_amount" 
-                        name="min_amount" 
-                        type="number" 
-                        defaultValue={selectedItem?.criteria?.min_amount || 0} 
-                      />
+      <div className="grid gap-4">
+        {limitedOffers.map((offer) => {
+          const now = new Date();
+          const startTime = new Date(offer.start_time);
+          const endTime = new Date(offer.end_time);
+          const isActive = now >= startTime && now <= endTime && offer.is_active;
+          const isUpcoming = now < startTime;
+          const isExpired = now > endTime;
+
+          return (
+            <Card key={offer.id}>
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Zap className="h-4 w-4" />
+                      {offer.offer_name}
+                    </CardTitle>
+                    <div className="flex gap-2 mt-2">
+                      <Badge variant={
+                        isActive ? 'default' : 
+                        isUpcoming ? 'secondary' : 
+                        isExpired ? 'destructive' : 'outline'
+                      }>
+                        {isActive ? 'Live' : isUpcoming ? 'Upcoming' : 'Expired'}
+                      </Badge>
+                      <Badge variant="outline">{offer.offer_type}</Badge>
+                      <Badge variant="outline">
+                        {offer.discount_value}{offer.discount_type === 'percentage' ? '%' : '₹'} off
+                      </Badge>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="last_order_days">Last Order (days ago)</Label>
-                      <Input 
-                        id="last_order_days" 
-                        name="last_order_days" 
-                        type="number" 
-                        defaultValue={selectedItem?.criteria?.last_order_days || 30} 
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="location">Location</Label>
-                      <Input 
-                        id="location" 
-                        name="location" 
-                        defaultValue={selectedItem?.criteria?.location} 
-                      />
-                    </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingItem(offer)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {/* Delete logic */}}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="is_dynamic" 
-                    name="is_dynamic" 
-                    defaultChecked={selectedItem?.is_dynamic ?? true} 
-                  />
-                  <Label htmlFor="is_dynamic">Dynamic Segment (auto-update)</Label>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <Label className="text-xs font-medium">Duration</Label>
+                    <p className="text-muted-foreground">
+                      {startTime.toLocaleDateString()} - {endTime.toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs font-medium">Usage</Label>
+                    <p className="text-muted-foreground">
+                      {offer.usage_count} / {offer.usage_limit || '∞'} used
+                    </p>
+                  </div>
                 </div>
-              </>
-            )}
+                {offer.urgency_message && (
+                  <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded text-sm text-orange-800">
+                    {offer.urgency_message}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
 
-            {dialogType === 'offer' && (
-              <>
-                <div>
-                  <Label htmlFor="title">Offer Title</Label>
-                  <Input id="title" name="title" defaultValue={selectedItem?.title} required />
-                </div>
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea id="description" name="description" defaultValue={selectedItem?.description} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="offer_type">Offer Type</Label>
-                    <Select name="offer_type" defaultValue={selectedItem?.offer_type}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="discount_percentage">Percentage Discount</SelectItem>
-                        <SelectItem value="discount_amount">Fixed Amount Discount</SelectItem>
-                        <SelectItem value="buy_one_get_one">Buy One Get One</SelectItem>
-                        <SelectItem value="free_shipping">Free Shipping</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="discount_value">Discount Value</Label>
-                    <Input 
-                      id="discount_value" 
-                      name="discount_value" 
-                      type="number" 
-                      step="0.01"
-                      defaultValue={selectedItem?.discount_value} 
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="min_order_amount">Min Order Amount (₹)</Label>
-                    <Input 
-                      id="min_order_amount" 
-                      name="min_order_amount" 
-                      type="number" 
-                      step="0.01"
-                      defaultValue={selectedItem?.min_order_amount || 0} 
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="max_discount_amount">Max Discount (₹)</Label>
-                    <Input 
-                      id="max_discount_amount" 
-                      name="max_discount_amount" 
-                      type="number" 
-                      step="0.01"
-                      defaultValue={selectedItem?.max_discount_amount} 
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="usage_limit">Usage Limit</Label>
-                    <Input 
-                      id="usage_limit" 
-                      name="usage_limit" 
-                      type="number" 
-                      defaultValue={selectedItem?.usage_limit} 
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="valid_from">Valid From</Label>
-                    <Input 
-                      id="valid_from" 
-                      name="valid_from" 
-                      type="datetime-local" 
-                      defaultValue={selectedItem?.valid_from?.slice(0, 16)} 
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="valid_until">Valid Until</Label>
-                    <Input 
-                      id="valid_until" 
-                      name="valid_until" 
-                      type="datetime-local" 
-                      defaultValue={selectedItem?.valid_until?.slice(0, 16)} 
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="is_active" 
-                    name="is_active" 
-                    defaultChecked={selectedItem?.is_active ?? true} 
-                  />
-                  <Label htmlFor="is_active">Active Offer</Label>
-                </div>
-              </>
-            )}
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Marketing & Sales</h1>
+          <p className="text-muted-foreground">
+            Comprehensive sales conversion and marketing automation tools
+          </p>
+        </div>
+      </div>
 
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                Save {dialogType.charAt(0).toUpperCase() + dialogType.slice(1)}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-          <TabsTrigger value="segments">Customer Segments</TabsTrigger>
-          <TabsTrigger value="offers">Promotional Offers</TabsTrigger>
-          <TabsTrigger value="analytics">Marketing Analytics</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="pricing" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Pricing
+          </TabsTrigger>
+          <TabsTrigger value="recommendations" className="flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            Recommendations
+          </TabsTrigger>
+          <TabsTrigger value="abandoned-cart" className="flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            Cart Recovery
+          </TabsTrigger>
+          <TabsTrigger value="loyalty" className="flex items-center gap-2">
+            <Gift className="h-4 w-4" />
+            Loyalty
+          </TabsTrigger>
+          <TabsTrigger value="reviews" className="flex items-center gap-2">
+            <Star className="h-4 w-4" />
+            Reviews
+          </TabsTrigger>
+          <TabsTrigger value="offers" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Offers
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="campaigns">
-          <div className="grid gap-4">
-            {campaignsLoading ? (
-              <div>Loading campaigns...</div>
-            ) : (
-              campaigns?.map((campaign) => (
-                <Card key={campaign.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          {getCampaignIcon(campaign.campaign_type)}
-                          {campaign.name}
-                        </CardTitle>
-                        <CardDescription>{campaign.description}</CardDescription>
-                      </div>
-                      <div className="flex gap-2">
-                        <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
-                          {campaign.status}
-                        </Badge>
-                        <Badge variant="outline">{campaign.campaign_type}</Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-                      <div><span className="font-medium">Budget:</span> ₹{campaign.budget?.toLocaleString()}</div>
-                      <div><span className="font-medium">Impressions:</span> {campaign.impressions}</div>
-                      <div><span className="font-medium">Clicks:</span> {campaign.clicks}</div>
-                      <div><span className="font-medium">Conversions:</span> {campaign.conversions}</div>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4 mr-1" />View
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => openDialog('campaign', campaign)}>
-                        <Edit className="h-4 w-4 mr-1" />Edit
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        {campaign.status === 'active' ? (
-                          <>
-                            <Pause className="h-4 w-4 mr-1" />Pause
-                          </>
-                        ) : (
-                          <>
-                            <Play className="h-4 w-4 mr-1" />Start
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+        <TabsContent value="pricing" className="space-y-6">
+          {renderPricingRules()}
         </TabsContent>
 
-        <TabsContent value="segments">
-          <div className="grid gap-4">
-            {segmentsLoading ? (
-              <div>Loading segments...</div>
-            ) : (
-              segments?.map((segment) => (
-                <Card key={segment.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          <Users className="h-5 w-5" />
-                          {segment.name}
-                        </CardTitle>
-                        <CardDescription>{segment.description}</CardDescription>
-                      </div>
-                      <div className="flex gap-2">
-                        <Badge variant="secondary">{segment.customer_count} customers</Badge>
-                        <Badge variant={segment.is_dynamic ? 'default' : 'outline'}>
-                          {segment.is_dynamic ? 'Dynamic' : 'Static'}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => openDialog('segment', segment)}>
-                        <Edit className="h-4 w-4 mr-1" />Edit
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Target className="h-4 w-4 mr-1" />Target
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+        <TabsContent value="recommendations" className="space-y-6">
+          {renderRecommendations()}
         </TabsContent>
 
-        <TabsContent value="offers">
-          <div className="grid gap-4">
-            {offersLoading ? (
-              <div>Loading offers...</div>
-            ) : (
-              offers?.map((offer) => (
-                <Card key={offer.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          <Gift className="h-5 w-5" />
-                          {offer.title}
-                        </CardTitle>
-                        <CardDescription>{offer.description}</CardDescription>
-                      </div>
-                      <div className="flex gap-2">
-                        <Badge variant={offer.is_active ? 'default' : 'secondary'}>
-                          {offer.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                        <Badge variant="outline">{offer.offer_type}</Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-                      <div><span className="font-medium">Discount:</span> {offer.discount_value}%</div>
-                      <div><span className="font-medium">Min Order:</span> ₹{offer.min_order_amount}</div>
-                      <div><span className="font-medium">Used:</span> {offer.usage_count}/{offer.usage_limit || '∞'}</div>
-                      <div><span className="font-medium">Valid Until:</span> {new Date(offer.valid_until).toLocaleDateString()}</div>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => openDialog('offer', offer)}>
-                        <Edit className="h-4 w-4 mr-1" />Edit
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+        <TabsContent value="abandoned-cart" className="space-y-6">
+          {renderAbandonedCart()}
         </TabsContent>
 
-        <TabsContent value="analytics">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2">
-                  <Megaphone className="h-8 w-8 text-blue-600" />
-                  <div>
-                    <p className="text-2xl font-bold">{campaigns?.length || 0}</p>
-                    <p className="text-sm text-muted-foreground">Active Campaigns</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2">
-                  <Users className="h-8 w-8 text-green-600" />
-                  <div>
-                    <p className="text-2xl font-bold">{segments?.length || 0}</p>
-                    <p className="text-sm text-muted-foreground">Customer Segments</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2">
-                  <Gift className="h-8 w-8 text-purple-600" />
-                  <div>
-                    <p className="text-2xl font-bold">{offers?.filter(o => o.is_active).length || 0}</p>
-                    <p className="text-sm text-muted-foreground">Active Offers</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        <TabsContent value="loyalty" className="space-y-6">
+          {renderLoyaltyProgram()}
+        </TabsContent>
+
+        <TabsContent value="reviews" className="space-y-6">
+          {renderReviews()}
+        </TabsContent>
+
+        <TabsContent value="offers" className="space-y-6">
+          {renderLimitedOffers()}
         </TabsContent>
       </Tabs>
     </div>

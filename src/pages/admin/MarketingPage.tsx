@@ -1,8 +1,8 @@
 
-import MarketingManagement from '@/components/admin/MarketingManagement';
+import SalesConversionManager from '@/components/admin/SalesConversionManager';
 
 const MarketingPage = () => {
-  return <MarketingManagement />;
+  return <SalesConversionManager />;
 };
 
 export default MarketingPage;

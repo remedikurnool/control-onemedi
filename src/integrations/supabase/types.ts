@@ -63,6 +63,54 @@ export type Database = {
         }
         Relationships: []
       }
+      abandoned_cart_campaigns: {
+        Row: {
+          campaign_name: string
+          created_at: string | null
+          created_by: string | null
+          discount_code: string | null
+          discount_percentage: number | null
+          email_template: string | null
+          follow_up_sequence: Json | null
+          id: string
+          is_active: boolean | null
+          sms_template: string | null
+          trigger_delay_minutes: number | null
+          updated_at: string | null
+          whatsapp_template: string | null
+        }
+        Insert: {
+          campaign_name: string
+          created_at?: string | null
+          created_by?: string | null
+          discount_code?: string | null
+          discount_percentage?: number | null
+          email_template?: string | null
+          follow_up_sequence?: Json | null
+          id?: string
+          is_active?: boolean | null
+          sms_template?: string | null
+          trigger_delay_minutes?: number | null
+          updated_at?: string | null
+          whatsapp_template?: string | null
+        }
+        Update: {
+          campaign_name?: string
+          created_at?: string | null
+          created_by?: string | null
+          discount_code?: string | null
+          discount_percentage?: number | null
+          email_template?: string | null
+          follow_up_sequence?: Json | null
+          id?: string
+          is_active?: boolean | null
+          sms_template?: string | null
+          trigger_delay_minutes?: number | null
+          updated_at?: string | null
+          whatsapp_template?: string | null
+        }
+        Relationships: []
+      }
       ambulance_bookings: {
         Row: {
           admin_notes: string | null
@@ -1859,6 +1907,54 @@ export type Database = {
           },
         ]
       }
+      dynamic_pricing_rules: {
+        Row: {
+          adjustments: Json
+          conditions: Json
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          priority: number | null
+          rule_name: string
+          rule_type: string
+          target_products: Json | null
+          updated_at: string | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          adjustments?: Json
+          conditions?: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          rule_name: string
+          rule_type: string
+          target_products?: Json | null
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          adjustments?: Json
+          conditions?: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          rule_name?: string
+          rule_type?: string
+          target_products?: Json | null
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       hero_banners: {
         Row: {
           created_at: string | null
@@ -2455,6 +2551,72 @@ export type Database = {
         }
         Relationships: []
       }
+      limited_time_offers: {
+        Row: {
+          applicable_categories: Json | null
+          applicable_products: Json | null
+          banner_image_url: string | null
+          created_at: string | null
+          created_by: string | null
+          discount_type: string
+          discount_value: number
+          end_time: string
+          id: string
+          is_active: boolean | null
+          max_discount_amount: number | null
+          minimum_order_amount: number | null
+          offer_name: string
+          offer_type: string
+          start_time: string
+          updated_at: string | null
+          urgency_message: string | null
+          usage_count: number | null
+          usage_limit: number | null
+        }
+        Insert: {
+          applicable_categories?: Json | null
+          applicable_products?: Json | null
+          banner_image_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          discount_type: string
+          discount_value: number
+          end_time: string
+          id?: string
+          is_active?: boolean | null
+          max_discount_amount?: number | null
+          minimum_order_amount?: number | null
+          offer_name: string
+          offer_type: string
+          start_time: string
+          updated_at?: string | null
+          urgency_message?: string | null
+          usage_count?: number | null
+          usage_limit?: number | null
+        }
+        Update: {
+          applicable_categories?: Json | null
+          applicable_products?: Json | null
+          banner_image_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          discount_type?: string
+          discount_value?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          max_discount_amount?: number | null
+          minimum_order_amount?: number | null
+          offer_name?: string
+          offer_type?: string
+          start_time?: string
+          updated_at?: string | null
+          urgency_message?: string | null
+          usage_count?: number | null
+          usage_limit?: number | null
+        }
+        Relationships: []
+      }
       locations: {
         Row: {
           coordinates: Json | null
@@ -2516,6 +2678,90 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      loyalty_points_transactions: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          expires_at: string | null
+          id: string
+          points: number
+          reference_id: string | null
+          reference_type: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          points: number
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          points?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      loyalty_program_config: {
+        Row: {
+          birthday_bonus_points: number | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          min_redemption_points: number | null
+          point_expiry_months: number | null
+          points_per_rupee: number | null
+          program_name: string
+          redemption_rate: number | null
+          referral_points: number | null
+          tier_benefits: Json | null
+          tier_thresholds: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          birthday_bonus_points?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          min_redemption_points?: number | null
+          point_expiry_months?: number | null
+          points_per_rupee?: number | null
+          program_name?: string
+          redemption_rate?: number | null
+          referral_points?: number | null
+          tier_benefits?: Json | null
+          tier_thresholds?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          birthday_bonus_points?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          min_redemption_points?: number | null
+          point_expiry_months?: number | null
+          points_per_rupee?: number | null
+          program_name?: string
+          redemption_rate?: number | null
+          referral_points?: number | null
+          tier_benefits?: Json | null
+          tier_thresholds?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       marketing_campaigns: {
         Row: {
@@ -2615,6 +2861,48 @@ export type Database = {
           name_te?: string
         }
         Relationships: []
+      }
+      offer_usage_tracking: {
+        Row: {
+          discount_applied: number
+          id: string
+          offer_id: string
+          order_id: string | null
+          used_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          discount_applied: number
+          id?: string
+          offer_id: string
+          order_id?: string | null
+          used_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          discount_applied?: number
+          id?: string
+          offer_id?: string
+          order_id?: string | null
+          used_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_usage_tracking_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "limited_time_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_usage_tracking_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "customer_orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       offers: {
         Row: {
@@ -3203,6 +3491,75 @@ export type Database = {
           },
         ]
       }
+      product_reviews: {
+        Row: {
+          admin_response: string | null
+          created_at: string | null
+          helpful_count: number | null
+          id: string
+          images: Json | null
+          is_approved: boolean | null
+          is_verified_purchase: boolean | null
+          order_id: string | null
+          product_id: string
+          rating: number
+          reported_count: number | null
+          review_text: string | null
+          review_title: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          admin_response?: string | null
+          created_at?: string | null
+          helpful_count?: number | null
+          id?: string
+          images?: Json | null
+          is_approved?: boolean | null
+          is_verified_purchase?: boolean | null
+          order_id?: string | null
+          product_id: string
+          rating: number
+          reported_count?: number | null
+          review_text?: string | null
+          review_title?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          admin_response?: string | null
+          created_at?: string | null
+          helpful_count?: number | null
+          id?: string
+          images?: Json | null
+          is_approved?: boolean | null
+          is_verified_purchase?: boolean | null
+          order_id?: string | null
+          product_id?: string
+          rating?: number
+          reported_count?: number | null
+          review_text?: string | null
+          review_title?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "customer_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category_id: string | null
@@ -3554,6 +3911,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      recommendation_rules: {
+        Row: {
+          conditions: Json | null
+          created_at: string | null
+          created_by: string | null
+          discount_percentage: number | null
+          id: string
+          is_active: boolean | null
+          priority: number | null
+          recommended_products: Json | null
+          rule_name: string
+          rule_type: string
+          trigger_products: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          conditions?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          discount_percentage?: number | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          recommended_products?: Json | null
+          rule_name: string
+          rule_type: string
+          trigger_products?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          conditions?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          discount_percentage?: number | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          recommended_products?: Json | null
+          rule_name?: string
+          rule_type?: string
+          trigger_products?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       scan_services: {
         Row: {
@@ -3992,6 +4394,45 @@ export type Database = {
           },
         ]
       }
+      user_loyalty_accounts: {
+        Row: {
+          available_points: number | null
+          created_at: string | null
+          current_tier: string | null
+          id: string
+          lifetime_points: number | null
+          referral_code: string | null
+          tier_progress: number | null
+          total_points: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          available_points?: number | null
+          created_at?: string | null
+          current_tier?: string | null
+          id?: string
+          lifetime_points?: number | null
+          referral_code?: string | null
+          tier_progress?: number | null
+          total_points?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          available_points?: number | null
+          created_at?: string | null
+          current_tier?: string | null
+          id?: string
+          lifetime_points?: number | null
+          referral_code?: string | null
+          tier_progress?: number | null
+          total_points?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           created_at: string | null
@@ -4106,6 +4547,10 @@ export type Database = {
         Args: { doctor_uuid: string }
         Returns: number
       }
+      calculate_loyalty_tier: {
+        Args: { total_points: number }
+        Returns: string
+      }
       can_access_claim_document: {
         Args: { document_uuid: string }
         Returns: boolean
@@ -4135,6 +4580,10 @@ export type Database = {
         Returns: string
       }
       generate_preauth_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_referral_code: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
