@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,7 +24,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Lookup product by barcode/SKU
+  // Lookup product by barcode/SKU with inventory information
   const { data: scannedProduct, isLoading: isLookingUp, error: lookupError } = useQuery({
     queryKey: ['product-lookup', lastScannedCode],
     queryFn: async () => {
@@ -31,7 +32,10 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
       
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select(`
+          *,
+          product_inventory(available_quantity, reserved_quantity)
+        `)
         .or(`sku.eq.${lastScannedCode},barcode.eq.${lastScannedCode}`)
         .eq('is_available', true)
         .maybeSingle();
@@ -245,7 +249,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">₹{scannedProduct.price}</span>
                 <Badge variant="outline">
-                  Stock: {scannedProduct.stock_quantity || 0}
+                  Stock: {scannedProduct.product_inventory?.[0]?.available_quantity || 0}
                 </Badge>
               </div>
             </div>
