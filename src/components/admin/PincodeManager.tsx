@@ -86,7 +86,7 @@ const PincodeManager = () => {
         .order('pincode');
 
       if (selectedServiceType !== 'all') {
-        query = query.eq('service_type', selectedServiceType);
+        query = query.eq('service_type', selectedServiceType as any);
       }
 
       if (selectedState !== 'all') {

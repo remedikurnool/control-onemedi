@@ -80,7 +80,7 @@ const EnhancedLocationManagement = () => {
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [isCenterDialogOpen, setIsCenterDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('locations');
-  const [selectedServiceType, setSelectedServiceType] = useState<string>('all');
+  const [selectedServiceType, setSelectedServiceType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [googleApiKey, setGoogleApiKey] = useState('');
   const [showApiKeyInput, setShowApiKeyInput] = useState(true);
@@ -247,7 +247,7 @@ const EnhancedLocationManagement = () => {
         .order('created_at', { ascending: false });
 
       if (selectedServiceType !== 'all') {
-        query = query.eq('service_type', selectedServiceType);
+        query = query.eq('service_type', selectedServiceType as any);
       }
 
       const { data, error } = await query;
@@ -273,7 +273,7 @@ const EnhancedLocationManagement = () => {
         .order('created_at', { ascending: false });
 
       if (selectedServiceType !== 'all') {
-        query = query.eq('service_type', selectedServiceType);
+        query = query.eq('service_type', selectedServiceType as any);
       }
 
       const { data, error } = await query;
