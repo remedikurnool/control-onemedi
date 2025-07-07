@@ -6,26 +6,102 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Heart } from 'lucide-react';
+import { Heart, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loginAttempts, setLoginAttempts] = useState(0);
   const navigate = useNavigate();
+
+  // Password strength validation
+  const validatePassword = (password: string) => {
+    const minLength = password.length >= 8;
+    const hasUpper = /[A-Z]/.test(password);
+    const hasLower = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+    return {
+      isValid: minLength && hasUpper && hasLower && hasNumber,
+      checks: {
+        minLength,
+        hasUpper,
+        hasLower,
+        hasNumber,
+        hasSpecial
+      }
+    };
+  };
+
+  // Clean up auth state
+  const cleanupAuthState = () => {
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        localStorage.removeItem(key);
+      }
+    });
+    Object.keys(sessionStorage || {}).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  };
+
+  // Log security events
+  const logSecurityEvent = async (action: string, success: boolean, details: any = {}) => {
+    try {
+      await supabase.rpc('log_security_event', {
+        p_action: action,
+        p_resource: 'login',
+        p_details: details,
+        p_success: success
+      });
+    } catch (error) {
+      console.error('Failed to log security event:', error);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check for rate limiting
+    if (loginAttempts >= 5) {
+      toast.error('Too many failed attempts. Please try again later.');
+      await logSecurityEvent('login_blocked', false, { email, attempts: loginAttempts });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
+      // Clean up existing auth state
+      cleanupAuthState();
+      
+      // Attempt global sign out first
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        setLoginAttempts(prev => prev + 1);
+        await logSecurityEvent('login_failed', false, { 
+          email, 
+          error: error.message,
+          attempts: loginAttempts + 1 
+        });
+        throw error;
+      }
 
       // Check if user is admin
       const { data: profile } = await supabase
@@ -35,12 +111,27 @@ const LoginForm = () => {
         .single();
 
       if (!profile || !['super_admin', 'admin', 'manager'].includes(profile.role)) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: 'global' });
+        await logSecurityEvent('unauthorized_access_attempt', false, { 
+          email, 
+          role: profile?.role || 'none' 
+        });
         throw new Error('You do not have admin access');
       }
 
+      // Log successful login
+      await logSecurityEvent('login_success', true, { 
+        email, 
+        role: profile.role 
+      });
+
+      // Reset login attempts on success
+      setLoginAttempts(0);
+      
       toast.success('Login successful');
-      navigate('/admin');
+      
+      // Force page reload for clean state
+      window.location.href = '/admin';
     } catch (error: any) {
       toast.error(error.message || 'Login failed');
     } finally {
@@ -81,17 +172,33 @@ const LoginForm = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  required
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign In'}
+            {loginAttempts > 0 && (
+              <div className="flex items-center gap-2 text-yellow-600 text-sm">
+                <AlertTriangle className="h-4 w-4" />
+                <span>Failed attempts: {loginAttempts}/5</span>
+              </div>
+            )}
+            <Button type="submit" className="w-full" disabled={isLoading || loginAttempts >= 5}>
+              {isLoading ? 'Signing in...' : loginAttempts >= 5 ? 'Account Locked' : 'Sign In'}
             </Button>
           </form>
           
@@ -104,7 +211,16 @@ const LoginForm = () => {
               <p><strong>Pharmacist:</strong> pharmacist@onemedi.com</p>
               <p><strong>Front Desk:</strong> frontdesk@onemedi.com</p>
               <p><strong>Customer:</strong> customer@onemedi.com</p>
-              <p className="mt-2"><strong>Password:</strong> password123</p>
+              <p className="mt-2"><strong>Password:</strong> SecurePass123!</p>
+            </div>
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
+              <div className="flex items-center gap-2 text-yellow-700 mb-1">
+                <AlertTriangle className="h-3 w-3" />
+                <span className="font-semibold">Security Notice</span>
+              </div>
+              <p className="text-yellow-600">
+                These are demo credentials. In production, use strong passwords with uppercase, lowercase, numbers, and special characters.
+              </p>
             </div>
           </div>
         </CardContent>

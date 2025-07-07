@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
+import { sanitizeHtml, validateEmail } from '@/lib/security';
 import { 
   Users, 
   Search, 
@@ -20,7 +21,8 @@ import {
   Mail,
   Phone,
   Calendar,
-  Activity
+  Activity,
+  AlertTriangle
 } from 'lucide-react';
 
 type UserRole = 'doctor' | 'admin' | 'user' | 'pharmacist' | 'lab_technician';
@@ -30,10 +32,27 @@ const UsersManagement = () => {
   const [roleFilter, setRoleFilter] = useState('all');
   const queryClient = useQueryClient();
 
-  // Fetch users
-  const { data: users, isLoading } = useQuery({
+  // Security: Log security events
+  const logSecurityEvent = async (action: string, details: any = {}) => {
+    try {
+      await supabase.rpc('log_security_event', {
+        p_action: action,
+        p_resource: 'user_management',
+        p_details: details,
+        p_success: true
+      });
+    } catch (error) {
+      console.error('Failed to log security event:', error);
+    }
+  };
+
+  // Fetch users with security logging
+  const { data: users, isLoading, error } = useQuery({
     queryKey: ['users', roleFilter, searchTerm],
     queryFn: async () => {
+      // Security: Sanitize search input
+      const sanitizedSearch = sanitizeHtml(searchTerm);
+      
       let query = supabase
         .from('user_profiles')
         .select('*')
@@ -43,25 +62,56 @@ const UsersManagement = () => {
         query = query.eq('role', roleFilter as UserRole);
       }
 
-      if (searchTerm) {
-        query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      if (sanitizedSearch) {
+        const emailValidation = validateEmail(sanitizedSearch);
+        if (emailValidation.isValid) {
+          query = query.or(`full_name.ilike.%${sanitizedSearch}%,email.ilike.%${sanitizedSearch}%`);
+        } else {
+          query = query.ilike('full_name', `%${sanitizedSearch}%`);
+        }
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        await logSecurityEvent('user_query_failed', { error: error.message, filter: roleFilter, search: sanitizedSearch });
+        throw error;
+      }
+      
+      await logSecurityEvent('user_query_success', { count: data?.length || 0, filter: roleFilter });
       return data || [];
     }
   });
 
-  // Update user role
+  // Update user role with security logging
   const updateUserRole = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: UserRole }) => {
+    mutationFn: async ({ userId, role, oldRole }: { userId: string; role: UserRole; oldRole?: string }) => {
+      // Security: Log role change attempt
+      await logSecurityEvent('role_change_attempt', { 
+        targetUserId: userId, 
+        newRole: role, 
+        oldRole: oldRole 
+      });
+
       const { error } = await supabase
         .from('user_profiles')
         .update({ role, updated_at: new Date().toISOString() })
         .eq('id', userId);
       
-      if (error) throw error;
+      if (error) {
+        await logSecurityEvent('role_change_failed', { 
+          targetUserId: userId, 
+          newRole: role, 
+          error: error.message 
+        });
+        throw error;
+      }
+
+      // Security: Log successful role change
+      await logSecurityEvent('role_change_success', { 
+        targetUserId: userId, 
+        newRole: role, 
+        oldRole: oldRole 
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -144,7 +194,21 @@ const UsersManagement = () => {
               </div>
               <Select 
                 value={user.role} 
-                onValueChange={(role) => updateUserRole.mutate({ userId: user.id, role: role as UserRole })}
+                onValueChange={(role) => {
+                  // Security: Confirm role change for sensitive roles
+                  if (['super_admin', 'admin'].includes(role) && !['super_admin', 'admin'].includes(user.role)) {
+                    const confirmed = window.confirm(
+                      `Are you sure you want to grant ${role} access to this user? This action will be logged.`
+                    );
+                    if (!confirmed) return;
+                  }
+                  
+                  updateUserRole.mutate({ 
+                    userId: user.id, 
+                    role: role as UserRole, 
+                    oldRole: user.role 
+                  });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -208,6 +272,14 @@ const UsersManagement = () => {
       {/* Users List */}
       {isLoading ? (
         <div className="text-center py-8">Loading users...</div>
+      ) : error ? (
+        <div className="text-center py-8">
+          <div className="flex items-center justify-center gap-2 text-destructive mb-4">
+            <AlertTriangle className="h-5 w-5" />
+            <span>Failed to load users</span>
+          </div>
+          <p className="text-sm text-muted-foreground">Please try again or contact support if the problem persists.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {users?.map((user) => (
@@ -215,11 +287,11 @@ const UsersManagement = () => {
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <Avatar>
-                    <AvatarFallback>{user.full_name?.charAt(0) || 'U'}</AvatarFallback>
+                    <AvatarFallback>{sanitizeHtml(user.full_name?.charAt(0) || 'U')}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <h3 className="font-semibold">{user.full_name}</h3>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <h3 className="font-semibold">{sanitizeHtml(user.full_name || '')}</h3>
+                    <p className="text-sm text-muted-foreground">{sanitizeHtml(user.email || '')}</p>
                   </div>
                 </div>
                 

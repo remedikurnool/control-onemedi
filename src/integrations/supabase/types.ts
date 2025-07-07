@@ -4564,6 +4564,42 @@ export type Database = {
         }
         Relationships: []
       }
+      security_audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: unknown | null
+          resource: string | null
+          success: boolean | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          resource?: string | null
+          success?: boolean | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          resource?: string | null
+          success?: boolean | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       service_analytics: {
         Row: {
           additional_data: Json | null
@@ -5358,6 +5394,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_caregiver_owner: {
         Args: { caregiver_uuid: string }
         Returns: boolean
@@ -5373,6 +5413,15 @@ export type Database = {
       is_inventory_manager: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      log_security_event: {
+        Args: {
+          p_action: string
+          p_resource?: string
+          p_details?: Json
+          p_success?: boolean
+        }
+        Returns: undefined
       }
       owns_cart_item: {
         Args: { cart_item_id: string }
