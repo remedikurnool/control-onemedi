@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,9 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Camera, X, Scan, Package, AlertCircle } from 'lucide-react';
+import { Camera, X, Scan, Package, AlertCircle, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import LoadingSpinner from '@/components/ui/loading-spinner';
+import BarcodeDetector from './BarcodeDetector';
 
 interface BarcodeScannerProps {
   onScan: (product: any) => void;
@@ -18,10 +20,9 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
   const [manualCode, setManualCode] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [lastScannedCode, setLastScannedCode] = useState('');
+  const [scanHistory, setScanHistory] = useState<string[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Lookup product by barcode/SKU with inventory information
   const { data: scannedProduct, isLoading: isLookingUp, error: lookupError } = useQuery({
@@ -48,12 +49,20 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
     enabled: !!lastScannedCode
   });
 
-  // camera functions
+  const handleBarcodeDetected = (code: string) => {
+    if (code && code !== lastScannedCode) {
+      console.log('New barcode detected:', code);
+      setLastScannedCode(code);
+      setScanHistory(prev => [code, ...prev.slice(0, 4)]); // Keep last 5 scans
+      toast.info(`Barcode detected: ${code}`);
+    }
+  };
+
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
-          facingMode: 'environment', // Use back camera
+          facingMode: 'environment',
           width: { ideal: 1280 },
           height: { ideal: 720 }
         }
@@ -63,7 +72,6 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
         setIsScanning(true);
-        startBarcodeDetection();
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
@@ -71,36 +79,11 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
     }
   };
 
-  const startBarcodeDetection = () => {
-    scanIntervalRef.current = setInterval(() => {
-      if (videoRef.current && canvasRef.current && isScanning) {
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        
-        if (ctx && video.readyState === video.HAVE_ENOUGH_DATA) {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          ctx.drawImage(video, 0, 0);
-          
-          // In a real implementation, you would use a barcode detection library here
-          // For now, we'll simulate detection with a placeholder
-          // You could integrate libraries like ZXing or QuaggaJS here
-        }
-      }
-    }, 100);
-  };
-
   const stopCamera = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
       setIsScanning(false);
-    }
-    
-    if (scanIntervalRef.current) {
-      clearInterval(scanIntervalRef.current);
-      scanIntervalRef.current = null;
     }
   };
 
@@ -126,31 +109,27 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
     e.preventDefault();
     if (manualCode.trim()) {
       setLastScannedCode(manualCode.trim());
+      setScanHistory(prev => [manualCode.trim(), ...prev.slice(0, 4)]);
       setManualCode('');
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleManualSubmit(e);
-    }
-  };
-
-  // Simulate barcode detection for demo purposes
   const simulateBarcodeScan = () => {
-    // Demo codes - in reality these would come from camera detection
     const demoCodes = ['MED001', 'MED002', 'SUP001', 'EQP001'];
     const randomCode = demoCodes[Math.floor(Math.random() * demoCodes.length)];
-    setLastScannedCode(randomCode);
-    toast.info(`Simulated scan: ${randomCode}`);
+    handleBarcodeDetected(randomCode);
+  };
+
+  const rescanCode = (code: string) => {
+    setLastScannedCode(code);
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-lg mx-auto">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
           <Scan className="h-5 w-5" />
-          Barcode Scanner
+          Enhanced Barcode Scanner
         </CardTitle>
         <Button variant="ghost" size="sm" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -168,12 +147,12 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
                 onClick={isScanning ? stopCamera : startCamera}
               >
                 <Camera className="h-4 w-4 mr-2" />
-                {isScanning ? 'Stop Camera' : 'Start Camera'}
+                {isScanning ? 'Stop' : 'Start'} Camera
               </Button>
               {isScanning && (
                 <Button variant="outline" size="sm" onClick={simulateBarcodeScan}>
-                  <Scan className="h-4 w-4 mr-2" />
-                  Simulate Scan
+                  <Zap className="h-4 w-4 mr-2" />
+                  Demo Scan
                 </Button>
               )}
             </div>
@@ -185,18 +164,22 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
                 ref={videoRef}
                 autoPlay
                 playsInline
-                className="w-full h-48 object-cover rounded border"
+                muted
+                className="w-full h-48 object-cover rounded border bg-black"
               />
-              <canvas
-                ref={canvasRef}
-                className="hidden"
+              <BarcodeDetector
+                onDetected={handleBarcodeDetected}
+                isActive={isScanning}
+                videoRef={videoRef}
               />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-48 h-24 border-2 border-red-500 border-dashed rounded bg-transparent" />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-48 h-24 border-2 border-red-500 border-dashed rounded bg-transparent opacity-70" />
               </div>
-              <p className="text-xs text-center text-muted-foreground mt-2">
-                Position barcode within the red rectangle or use simulate button
-              </p>
+              <div className="absolute bottom-2 left-2 right-2">
+                <p className="text-xs text-white bg-black bg-opacity-50 p-1 rounded text-center">
+                  Position barcode within the red rectangle
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -210,7 +193,6 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
               placeholder="Enter barcode/SKU manually..."
               value={manualCode}
               onChange={(e) => setManualCode(e.target.value)}
-              onKeyPress={handleKeyPress}
               className="flex-1"
             />
             <Button type="submit" disabled={!manualCode.trim() || isLookingUp}>
@@ -218,6 +200,26 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
             </Button>
           </form>
         </div>
+
+        {/* Scan History */}
+        {scanHistory.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Recent Scans</h3>
+            <div className="flex flex-wrap gap-1">
+              {scanHistory.map((code, index) => (
+                <Button
+                  key={`${code}-${index}`}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => rescanCode(code)}
+                  className="text-xs h-7"
+                >
+                  {code}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Loading State */}
         {isLookingUp && (
@@ -255,10 +257,10 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
         )}
 
         <div className="text-xs text-muted-foreground space-y-1">
-          <p>• Scan barcodes using your device's camera</p>
-          <p>• Or enter barcode/SKU numbers manually</p>
-          <p>• Use "Simulate Scan" for demo purposes</p>
-          <p>• Supports EAN13, UPC, Code128 formats</p>
+          <p>• Real-time barcode detection with camera</p>
+          <p>• Supports EAN13, UPC, Code128, Code39 formats</p>
+          <p>• Manual entry for difficult-to-scan codes</p>
+          <p>• Recent scan history for quick re-lookup</p>
         </div>
       </CardContent>
     </Card>
