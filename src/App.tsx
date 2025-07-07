@@ -2,76 +2,89 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "next-themes";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import NotFound from "./pages/NotFound";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./hooks/useAuth";
+import ErrorBoundary from "./components/ui/error-boundary";
 import AdminLayout from "./components/admin/AdminLayout";
+import LoginForm from "./components/admin/LoginForm";
 import Dashboard from "./components/admin/Dashboard";
+import UsersManagement from "./components/admin/UsersManagement";
+import InventoryManagement from "./components/admin/InventoryManagement";
+import OrdersManagement from "./components/admin/OrdersManagement";
 import MedicineManagement from "./components/admin/MedicineManagement";
-import LabTestManagement from "./components/admin/LabTestManagement";
-import ScanManagement from "./components/admin/ScanManagement";
-import DoctorsManagement from "./components/admin/DoctorsManagement";
-import SurgeryOpinionManagement from "./components/admin/SurgeryOpinionManagement";
-import HomeCareManagement from "./components/admin/HomeCareManagement";
-import DiabetesCareManagement from "./components/admin/DiabetesCareManagement";
-import AmbulanceManagement from "./components/admin/AmbulanceManagement";
-import BloodBankManagement from "./components/admin/BloodBankManagement";
-import DietGuideManagement from "./components/admin/DietGuideManagement";
-import HospitalManagement from "./components/admin/HospitalManagement";
-import PhysiotherapyManagement from "./components/admin/PhysiotherapyManagement";
 import LocationsPage from "./pages/admin/LocationsPage";
+import EnhancedPOSPage from "./pages/admin/EnhancedPOSPage";
 import AnalyticsPage from "./pages/admin/AnalyticsPage";
 import MarketingPage from "./pages/admin/MarketingPage";
 import SettingsPage from "./pages/admin/SettingsPage";
-import OrdersPage from "./pages/admin/OrdersPage";
-import UsersPage from "./pages/admin/UsersPage";
-import InventoryPage from "./pages/admin/InventoryPage";
-import POSPage from "./pages/admin/POSPage";
+import "./App.css";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <Toaster />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="orders" element={<OrdersPage />} />
-                <Route path="users" element={<UsersPage />} />
-                <Route path="inventory" element={<InventoryPage />} />
-                <Route path="pos" element={<POSPage />} />
-                <Route path="medicines" element={<MedicineManagement />} />
-                <Route path="lab-tests" element={<LabTestManagement />} />
-                <Route path="scans" element={<ScanManagement />} />
-                <Route path="doctors" element={<DoctorsManagement />} />
-                <Route path="surgery-opinion" element={<SurgeryOpinionManagement />} />
-                <Route path="home-care" element={<HomeCareManagement />} />
-                <Route path="diabetes-care" element={<DiabetesCareManagement />} />
-                <Route path="ambulance" element={<AmbulanceManagement />} />
-                <Route path="blood-bank" element={<BloodBankManagement />} />
-                <Route path="diet-guide" element={<DietGuideManagement />} />
-                <Route path="hospital" element={<HospitalManagement />} />
-                <Route path="physiotherapy" element={<PhysiotherapyManagement />} />
-                <Route path="locations" element={<LocationsPage />} />
-                <Route path="analytics" element={<AnalyticsPage />} />
-                <Route path="marketing" element={<MarketingPage />} />
-                <Route path="settings" element={<SettingsPage />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+          <div className="min-h-screen bg-background">
+            <Toaster />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/login" element={<LoginForm />} />
+                <Route path="/admin/*" element={
+                  <ProtectedRoute>
+                    <AdminLayout>
+                      <Routes>
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/users" element={<UsersManagement />} />
+                        <Route path="/inventory" element={<InventoryManagement />} />
+                        <Route path="/orders" element={<OrdersManagement />} />
+                        <Route path="/medicines" element={<MedicineManagement />} />
+                        <Route path="/locations" element={<LocationsPage />} />
+                        <Route path="/pos" element={<EnhancedPOSPage />} />
+                        <Route path="/analytics" element={<AnalyticsPage />} />
+                        <Route path="/marketing" element={<MarketingPage />} />
+                        <Route path="/settings" element={<SettingsPage />} />
+                      </Routes>
+                    </AdminLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+                <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+              </Routes>
+            </BrowserRouter>
+          </div>
         </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
+}
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
 }
 
 export default App;
