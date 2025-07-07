@@ -49,9 +49,9 @@ const POSReports = () => {
         .from('pos_transactions')
         .select(`
           *,
-          cashier:cashier_id(
+          cashier:user_profiles!pos_transactions_cashier_id_fkey(
             id,
-            user_profiles!inner(full_name)
+            full_name
           )
         `)
         .gte('created_at', dateRange.from?.toISOString())
@@ -89,7 +89,7 @@ const POSReports = () => {
         const cashierId = t.cashier_id;
         if (!acc[cashierId]) {
           acc[cashierId] = {
-            name: t.cashier?.user_profiles?.full_name || 'Unknown',
+            name: t.cashier?.full_name || 'Unknown',
             transactions: 0,
             sales: 0
           };
@@ -119,8 +119,8 @@ const POSReports = () => {
         .from('staff_performance')
         .select(`
           *,
-          staff:staff_id(
-            user_profiles(full_name)
+          staff:user_profiles!staff_performance_staff_id_fkey(
+            full_name
           )
         `)
         .gte('performance_date', dateRange.from?.toISOString().split('T')[0])
