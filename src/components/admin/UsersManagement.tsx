@@ -23,6 +23,8 @@ import {
   Activity
 } from 'lucide-react';
 
+type UserRole = 'doctor' | 'admin' | 'user' | 'pharmacist' | 'lab_technician';
+
 const UsersManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -38,7 +40,7 @@ const UsersManagement = () => {
         .order('created_at', { ascending: false });
 
       if (roleFilter !== 'all') {
-        query = query.eq('role', roleFilter);
+        query = query.eq('role', roleFilter as UserRole);
       }
 
       if (searchTerm) {
@@ -53,7 +55,7 @@ const UsersManagement = () => {
 
   // Update user role
   const updateUserRole = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+    mutationFn: async ({ userId, role }: { userId: string; role: UserRole }) => {
       const { error } = await supabase
         .from('user_profiles')
         .update({ role, updated_at: new Date().toISOString() })
@@ -73,12 +75,11 @@ const UsersManagement = () => {
 
   const getRoleBadge = (role: string) => {
     const roleConfig = {
-      super_admin: { variant: 'destructive' as const, label: 'Super Admin' },
       admin: { variant: 'default' as const, label: 'Admin' },
-      manager: { variant: 'secondary' as const, label: 'Manager' },
-      pharmacist: { variant: 'outline' as const, label: 'Pharmacist' },
       doctor: { variant: 'default' as const, label: 'Doctor' },
-      customer: { variant: 'secondary' as const, label: 'Customer' }
+      pharmacist: { variant: 'outline' as const, label: 'Pharmacist' },
+      lab_technician: { variant: 'secondary' as const, label: 'Lab Technician' },
+      user: { variant: 'secondary' as const, label: 'User' }
     };
 
     const config = roleConfig[role as keyof typeof roleConfig] || { variant: 'secondary' as const, label: role };
@@ -103,7 +104,6 @@ const UsersManagement = () => {
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16">
-            <AvatarImage src={user.avatar_url} />
             <AvatarFallback>{user.full_name?.charAt(0) || 'U'}</AvatarFallback>
           </Avatar>
           <div>
@@ -144,18 +144,17 @@ const UsersManagement = () => {
               </div>
               <Select 
                 value={user.role} 
-                onValueChange={(role) => updateUserRole.mutate({ userId: user.id, role })}
+                onValueChange={(role) => updateUserRole.mutate({ userId: user.id, role: role as UserRole })}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="customer">Customer</SelectItem>
+                  <SelectItem value="user">User</SelectItem>
                   <SelectItem value="pharmacist">Pharmacist</SelectItem>
                   <SelectItem value="doctor">Doctor</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="lab_technician">Lab Technician</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="super_admin">Super Admin</SelectItem>
                 </SelectContent>
               </Select>
             </CardContent>
@@ -195,12 +194,11 @@ const UsersManagement = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="customer">Customer</SelectItem>
+                <SelectItem value="user">User</SelectItem>
                 <SelectItem value="pharmacist">Pharmacist</SelectItem>
                 <SelectItem value="doctor">Doctor</SelectItem>
-                <SelectItem value="manager">Manager</SelectItem>
+                <SelectItem value="lab_technician">Lab Technician</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="super_admin">Super Admin</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -217,7 +215,6 @@ const UsersManagement = () => {
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <Avatar>
-                    <AvatarImage src={user.avatar_url} />
                     <AvatarFallback>{user.full_name?.charAt(0) || 'U'}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">

@@ -45,7 +45,7 @@ const POSSystem = () => {
         .from('products')
         .select(`
           *,
-          inventory:product_inventory(current_stock, reserved_quantity)
+          inventory:product_inventory(available_quantity, reserved_quantity)
         `)
         .eq('is_active', true)
         .order('name_en');
@@ -63,7 +63,7 @@ const POSSystem = () => {
   // Add item to cart
   const addToCart = (product: any) => {
     const existingItem = cart.find(item => item.id === product.id);
-    const availableStock = product.inventory?.[0]?.current_stock - (product.inventory?.[0]?.reserved_quantity || 0) || 0;
+    const availableStock = product.inventory?.[0]?.available_quantity - (product.inventory?.[0]?.reserved_quantity || 0) || 0;
     
     if (existingItem) {
       if (existingItem.quantity >= availableStock) {
@@ -95,7 +95,7 @@ const POSSystem = () => {
       setCart(cart.filter(item => item.id !== itemId));
     } else {
       const item = cart.find(item => item.id === itemId);
-      const availableStock = item?.product.inventory?.[0]?.current_stock - (item?.product.inventory?.[0]?.reserved_quantity || 0) || 0;
+      const availableStock = item?.product.inventory?.[0]?.available_quantity - (item?.product.inventory?.[0]?.reserved_quantity || 0) || 0;
       
       if (newQuantity > availableStock) {
         toast.error('Insufficient stock available');
@@ -115,43 +115,59 @@ const POSSystem = () => {
   const tax = subtotal * 0.18; // 18% GST
   const total = subtotal + tax;
 
+  // Get current user for cashier_id
+  const getCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id;
+  };
+
   // Process sale
   const processSale = useMutation({
     mutationFn: async () => {
       setIsProcessing(true);
       
+      const cashierId = await getCurrentUser();
+      if (!cashierId) {
+        throw new Error('User not authenticated');
+      }
+      
       // Create POS transaction
       const { data: transaction, error: transactionError } = await supabase
         .from('pos_transactions')
         .insert({
-          customer_phone: customerPhone || null,
+          cashier_id: cashierId,
+          customer_id: customerPhone ? null : null, // We'll implement customer lookup later
           subtotal,
           tax_amount: tax,
           total_amount: total,
-          payment_method,
+          payment_method: paymentMethod as 'cash' | 'card' | 'upi' | 'wallet' | 'insurance',
           payment_status: 'completed',
-          transaction_items: cart.map(item => ({
-            product_id: item.id,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            total_price: item.unit_price * item.quantity
-          }))
+          notes: customerPhone ? `Customer phone: ${customerPhone}` : null
         })
         .select()
         .single();
 
       if (transactionError) throw transactionError;
 
-      // Update inventory
+      // Update inventory quantities
       for (const item of cart) {
-        const { error: inventoryError } = await supabase
+        const currentInventory = await supabase
           .from('product_inventory')
-          .update({
-            current_stock: supabase.raw(`current_stock - ${item.quantity}`)
-          })
-          .eq('product_id', item.id);
-        
-        if (inventoryError) throw inventoryError;
+          .select('available_quantity')
+          .eq('product_id', item.id)
+          .single();
+
+        if (currentInventory.data) {
+          const newQuantity = currentInventory.data.available_quantity - item.quantity;
+          const { error: inventoryError } = await supabase
+            .from('product_inventory')
+            .update({
+              available_quantity: Math.max(0, newQuantity)
+            })
+            .eq('product_id', item.id);
+          
+          if (inventoryError) throw inventoryError;
+        }
       }
 
       return transaction;
@@ -162,7 +178,6 @@ const POSSystem = () => {
       setCustomerPhone('');
       queryClient.invalidateQueries({ queryKey: ['pos-products'] });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      // Print receipt or show receipt modal
       console.log('Transaction completed:', transaction);
     },
     onError: (error) => {
@@ -175,7 +190,7 @@ const POSSystem = () => {
   });
 
   const ProductCard = ({ product }: { product: any }) => {
-    const availableStock = product.inventory?.[0]?.current_stock - (product.inventory?.[0]?.reserved_quantity || 0) || 0;
+    const availableStock = product.inventory?.[0]?.available_quantity - (product.inventory?.[0]?.reserved_quantity || 0) || 0;
     const isOutOfStock = availableStock <= 0;
     
     return (

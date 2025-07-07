@@ -24,6 +24,8 @@ import {
   MapPin
 } from 'lucide-react';
 
+type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
+
 const OrdersManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -47,7 +49,7 @@ const OrdersManagement = () => {
         .order('created_at', { ascending: false });
 
       if (statusFilter !== 'all') {
-        query = query.eq('order_status', statusFilter);
+        query = query.eq('order_status', statusFilter as OrderStatus);
       }
 
       if (searchTerm) {
@@ -62,7 +64,7 @@ const OrdersManagement = () => {
 
   // Update order status
   const updateOrderStatus = useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
+    mutationFn: async ({ orderId, status }: { orderId: string; status: OrderStatus }) => {
       const { error } = await supabase
         .from('customer_orders')
         .update({ 
@@ -138,7 +140,7 @@ const OrdersManagement = () => {
             </div>
             <Select 
               value={order.order_status} 
-              onValueChange={(status) => updateOrderStatus.mutate({ orderId: order.id, status })}
+              onValueChange={(status) => updateOrderStatus.mutate({ orderId: order.id, status: status as OrderStatus })}
             >
               <SelectTrigger>
                 <SelectValue />

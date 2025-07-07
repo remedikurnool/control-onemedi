@@ -39,10 +39,8 @@ const InventoryManagement = () => {
           product:product_id(
             name_en,
             name_te,
-            category,
             image_url,
-            price,
-            requires_prescription
+            price
           )
         `)
         .order('created_at', { ascending: false });
@@ -67,8 +65,8 @@ const InventoryManagement = () => {
           *,
           product:product_id(name_en, name_te)
         `)
-        .lt('current_stock', 10)
-        .order('current_stock', { ascending: true });
+        .lt('available_quantity', 10)
+        .order('available_quantity', { ascending: true });
 
       if (error) throw error;
       return data || [];
@@ -81,7 +79,7 @@ const InventoryManagement = () => {
       const { error } = await supabase
         .from('product_inventory')
         .update({ 
-          current_stock: newStock,
+          available_quantity: newStock,
           updated_at: new Date().toISOString()
         })
         .eq('id', inventoryId);
@@ -99,10 +97,10 @@ const InventoryManagement = () => {
     }
   });
 
-  const getStockStatus = (currentStock: number, minStock: number = 10) => {
-    if (currentStock === 0) {
+  const getStockStatus = (availableQuantity: number, minStock: number = 10) => {
+    if (availableQuantity === 0) {
       return { status: 'Out of Stock', variant: 'destructive' as const, icon: AlertTriangle };
-    } else if (currentStock <= minStock) {
+    } else if (availableQuantity <= minStock) {
       return { status: 'Low Stock', variant: 'secondary' as const, icon: TrendingDown };
     } else {
       return { status: 'In Stock', variant: 'default' as const, icon: TrendingUp };
@@ -110,14 +108,14 @@ const InventoryManagement = () => {
   };
 
   const StockUpdateModal = ({ item }: { item: any }) => {
-    const [newStock, setNewStock] = useState(item.current_stock);
+    const [newStock, setNewStock] = useState(item.available_quantity);
 
     return (
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Update Stock - {item.product?.name_en}</DialogTitle>
           <DialogDescription>
-            Current stock: {item.current_stock} units
+            Current stock: {item.available_quantity} units
           </DialogDescription>
         </DialogHeader>
         
@@ -139,7 +137,7 @@ const InventoryManagement = () => {
             >
               Update Stock
             </Button>
-            <Button variant="outline" onClick={() => setNewStock(item.current_stock)}>
+            <Button variant="outline" onClick={() => setNewStock(item.available_quantity)}>
               Reset
             </Button>
           </div>
@@ -208,7 +206,7 @@ const InventoryManagement = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {inventory?.map((item) => {
-                const stockStatus = getStockStatus(item.current_stock);
+                const stockStatus = getStockStatus(item.available_quantity);
                 const StatusIcon = stockStatus.icon;
                 
                 return (
@@ -224,31 +222,33 @@ const InventoryManagement = () => {
                         )}
                         <div className="flex-1">
                           <h3 className="font-semibold">{item.product?.name_en}</h3>
-                          <p className="text-sm text-muted-foreground">{item.product?.category}</p>
+                          <p className="text-sm text-muted-foreground">Batch: {item.batch_number}</p>
                         </div>
                       </div>
                       
                       <div className="space-y-2 mb-4">
                         <div className="flex justify-between items-center">
-                          <span className="text-sm">Current Stock:</span>
-                          <span className="font-semibold">{item.current_stock}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm">Reserved:</span>
-                          <span>{item.reserved_quantity || 0}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
                           <span className="text-sm">Available:</span>
-                          <span>{item.current_stock - (item.reserved_quantity || 0)}</span>
+                          <span className="font-semibold">{item.available_quantity}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Reorder Level:</span>
+                          <span>{item.reorder_level || 10}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Status:</span>
+                          <Badge variant={stockStatus.variant}>
+                            <StatusIcon className="h-3 w-3 mr-1" />
+                            {stockStatus.status}
+                          </Badge>
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between mb-4">
-                        <Badge variant={stockStatus.variant}>
-                          <StatusIcon className="h-3 w-3 mr-1" />
-                          {stockStatus.status}
-                        </Badge>
                         <span className="text-sm font-medium">₹{item.product?.price}</span>
+                        <span className="text-xs text-muted-foreground">
+                          Exp: {new Date(item.expiry_date).toLocaleDateString()}
+                        </span>
                       </div>
 
                       <Dialog>
@@ -287,7 +287,7 @@ const InventoryManagement = () => {
                       <div>
                         <h4 className="font-medium">{item.product?.name_en}</h4>
                         <p className="text-sm text-muted-foreground">
-                          Current stock: {item.current_stock} units
+                          Current stock: {item.available_quantity} units
                         </p>
                       </div>
                       <Dialog>
