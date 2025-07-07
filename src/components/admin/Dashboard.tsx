@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { 
   Users, 
   Package, 
@@ -33,36 +35,41 @@ const Dashboard = () => {
   const queryClient = useQueryClient();
 
   // Fetch dashboard statistics
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
-      const [usersResult, productsResult, ordersResult, revenueResult] = await Promise.all([
-        supabase.from('user_profiles').select('id').eq('role', 'user'),
-        supabase.from('products').select('id, quantity').eq('is_active', true),
-        supabase.from('customer_orders').select('id, total_amount, order_status').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
-        supabase.from('customer_orders').select('total_amount').eq('order_status', 'delivered').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
-      ]);
+      try {
+        const [usersResult, productsResult, ordersResult, revenueResult] = await Promise.all([
+          supabase.from('user_profiles').select('id').eq('role', 'user'),
+          supabase.from('products').select('id, stock_quantity').eq('is_active', true),
+          supabase.from('customer_orders').select('id, total_amount, order_status').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
+          supabase.from('customer_orders').select('total_amount').eq('order_status', 'delivered').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+        ]);
 
-      const totalUsers = usersResult.data?.length || 0;
-      const totalProducts = productsResult.data?.length || 0;
-      const lowStockProducts = productsResult.data?.filter(p => (p.quantity || 0) < 10).length || 0;
-      const totalOrders = ordersResult.data?.length || 0;
-      const pendingOrders = ordersResult.data?.filter(o => o.order_status === 'pending').length || 0;
-      const totalRevenue = revenueResult.data?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+        const totalUsers = usersResult.data?.length || 0;
+        const totalProducts = productsResult.data?.length || 0;
+        const lowStockProducts = productsResult.data?.filter(p => (p.stock_quantity || 0) < 10).length || 0;
+        const totalOrders = ordersResult.data?.length || 0;
+        const pendingOrders = ordersResult.data?.filter(o => o.order_status === 'pending').length || 0;
+        const totalRevenue = revenueResult.data?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
 
-      return {
-        totalUsers,
-        totalProducts,
-        lowStockProducts,
-        totalOrders,
-        pendingOrders,
-        totalRevenue
-      };
+        return {
+          totalUsers,
+          totalProducts,
+          lowStockProducts,
+          totalOrders,
+          pendingOrders,
+          totalRevenue
+        };
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+        throw error;
+      }
     }
   });
 
   // Fetch recent activities
-  const { data: recentOrders } = useQuery({
+  const { data: recentOrders, isLoading: ordersLoading } = useQuery({
     queryKey: ['recent-orders'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -79,24 +86,24 @@ const Dashboard = () => {
         .limit(5);
 
       if (error) throw error;
-      return data;
+      return data || [];
     }
   });
 
   // Quick search functionality
-  const { data: searchResults } = useQuery({
+  const { data: searchResults, isLoading: searchLoading } = useQuery({
     queryKey: ['quick-search', quickSearchQuery],
     queryFn: async () => {
       if (!quickSearchQuery.trim()) return [];
       
       const { data, error } = await supabase
         .from('products')
-        .select('id, name_en, price, quantity')
+        .select('id, name_en, price, stock_quantity')
         .or(`name_en.ilike.%${quickSearchQuery}%,sku.ilike.%${quickSearchQuery}%`)
         .limit(5);
 
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: quickSearchQuery.length > 2
   });
@@ -154,7 +161,7 @@ const Dashboard = () => {
       name_en: formData.get('name_en') as string,
       name_te: formData.get('name_te') as string,
       price: parseFloat(formData.get('price') as string),
-      quantity: parseInt(formData.get('quantity') as string),
+      stock_quantity: parseInt(formData.get('stock_quantity') as string),
       sku: formData.get('sku') as string,
       description_en: formData.get('description_en') as string,
       category: formData.get('category') as string,
@@ -191,8 +198,23 @@ const Dashboard = () => {
   if (statsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <LoadingSpinner size="lg" />
       </div>
+    );
+  }
+
+  if (statsError) {
+    return (
+      <EmptyState
+        icon={AlertTriangle}
+        title="Error loading dashboard"
+        description="There was an error loading the dashboard data. Please try refreshing the page."
+        action={
+          <Button onClick={() => window.location.reload()}>
+            Refresh Page
+          </Button>
+        }
+      />
     );
   }
 
@@ -233,8 +255,8 @@ const Dashboard = () => {
                     <Input id="price" name="price" type="number" step="0.01" required />
                   </div>
                   <div>
-                    <Label htmlFor="quantity">Quantity</Label>
-                    <Input id="quantity" name="quantity" type="number" required />
+                    <Label htmlFor="stock_quantity">Stock Quantity</Label>
+                    <Input id="stock_quantity" name="stock_quantity" type="number" required />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -344,13 +366,18 @@ const Dashboard = () => {
             />
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           </div>
+          {searchLoading && (
+            <div className="mt-4 flex justify-center">
+              <LoadingSpinner />
+            </div>
+          )}
           {searchResults && searchResults.length > 0 && (
             <div className="mt-4 space-y-2">
               {searchResults.map((product) => (
                 <div key={product.id} className="flex items-center justify-between p-2 border rounded">
                   <div>
                     <p className="font-medium">{product.name_en}</p>
-                    <p className="text-sm text-muted-foreground">Stock: {product.quantity || 0}</p>
+                    <p className="text-sm text-muted-foreground">Stock: {product.stock_quantity || 0}</p>
                   </div>
                   <div className="text-right">
                     <p className="font-medium">₹{product.price}</p>
@@ -358,6 +385,13 @@ const Dashboard = () => {
                 </div>
               ))}
             </div>
+          )}
+          {quickSearchQuery.length > 2 && searchResults && searchResults.length === 0 && !searchLoading && (
+            <EmptyState
+              title="No products found"
+              description="Try searching with different keywords"
+              className="mt-4"
+            />
           )}
         </CardContent>
       </Card>
@@ -435,7 +469,11 @@ const Dashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {recentOrders && recentOrders.length > 0 ? (
+            {ordersLoading ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : recentOrders && recentOrders.length > 0 ? (
               <div className="space-y-3">
                 {recentOrders.map((order) => (
                   <div key={order.id} className="flex items-center justify-between p-3 border rounded">
@@ -455,7 +493,11 @@ const Dashboard = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-center text-muted-foreground py-8">No recent orders</p>
+              <EmptyState
+                title="No recent orders"
+                description="Orders will appear here once customers start placing them"
+                className="py-8"
+              />
             )}
           </CardContent>
         </Card>

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Camera, X, Scan, Package, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface BarcodeScannerProps {
   onScan: (product: any) => void;
@@ -24,7 +25,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
   const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Lookup product by barcode/SKU
-  const { data: scannedProduct, isLoading: isLookingUp } = useQuery({
+  const { data: scannedProduct, isLoading: isLookingUp, error: lookupError } = useQuery({
     queryKey: ['product-lookup', lastScannedCode],
     queryFn: async () => {
       if (!lastScannedCode) return null;
@@ -34,7 +35,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
         .select('*')
         .or(`sku.eq.${lastScannedCode},barcode.eq.${lastScannedCode}`)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         throw error;
@@ -114,11 +115,11 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
       onScan(scannedProduct);
       toast.success(`Product found: ${scannedProduct.name_en}`);
       onClose();
-    } else if (lastScannedCode && !isLookingUp) {
+    } else if (lastScannedCode && !isLookingUp && lookupError) {
       toast.error(`No product found with code: ${lastScannedCode}`);
       setLastScannedCode('');
     }
-  }, [scannedProduct, lastScannedCode, isLookingUp, onScan, onClose]);
+  }, [scannedProduct, lastScannedCode, isLookingUp, lookupError, onScan, onClose]);
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,8 +221,16 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
         {/* Loading State */}
         {isLookingUp && (
           <div className="flex items-center justify-center gap-2 py-4">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+            <LoadingSpinner />
             <span className="text-sm">Looking up product...</span>
+          </div>
+        )}
+
+        {/* Error State */}
+        {lookupError && (
+          <div className="flex items-center justify-center gap-2 py-4 text-destructive">
+            <AlertCircle className="h-4 w-4" />
+            <span className="text-sm">Error looking up product</span>
           </div>
         )}
 
@@ -237,7 +246,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">₹{scannedProduct.price}</span>
                 <Badge variant="outline">
-                  Stock: {scannedProduct.quantity || 0}
+                  Stock: {scannedProduct.stock_quantity || 0}
                 </Badge>
               </div>
             </div>
