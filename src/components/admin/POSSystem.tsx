@@ -22,9 +22,24 @@ import {
   Scan
 } from 'lucide-react';
 
+// Simplified interfaces to avoid deep type instantiation
+interface Product {
+  id: string;
+  name_en: string;
+  name_te: string;
+  price: number;
+  category: string;
+  image_url?: string;
+  is_active: boolean;
+  inventory?: Array<{
+    available_quantity: number;
+    reserved_quantity: number;
+  }>;
+}
+
 interface CartItem {
   id: string;
-  product: any;
+  product: Product;
   quantity: number;
   unit_price: number;
 }
@@ -131,16 +146,19 @@ const POSSystem = () => {
         throw new Error('User not authenticated');
       }
       
-      // Create POS transaction
+      // Create POS transaction with correct field names
       const { data: transaction, error: transactionError } = await supabase
         .from('pos_transactions')
         .insert({
-          user_id: userId,
+          cashier_id: userId, // Using cashier_id as per database schema
           customer_id: customerPhone ? null : null, // We'll implement customer lookup later
           subtotal,
           tax_amount: tax,
           total_amount: total,
+          amount_paid: total, // Assuming full payment
+          change_amount: 0, // No change for exact payment
           payment_method: paymentMethod as 'cash' | 'card' | 'upi' | 'wallet' | 'insurance',
+          transaction_type: 'sale' as const,
           notes: customerPhone ? `Customer phone: ${customerPhone}` : null
         })
         .select()
