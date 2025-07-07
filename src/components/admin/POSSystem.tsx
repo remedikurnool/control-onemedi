@@ -28,9 +28,7 @@ interface Product {
   name_en: string;
   name_te: string;
   price: number;
-  category: string;
   image_url?: string;
-  is_active: boolean;
   inventory?: Array<{
     available_quantity: number;
     reserved_quantity: number;
@@ -63,12 +61,9 @@ const POSSystem = () => {
           name_en,
           name_te,
           price,
-          category,
           image_url,
-          is_active,
           inventory:product_inventory(available_quantity, reserved_quantity)
         `)
-        .eq('is_active', true)
         .order('name_en');
 
       if (searchTerm) {
@@ -240,7 +235,7 @@ const POSSystem = () => {
             )}
             <div className="flex-1">
               <h3 className="font-medium text-sm">{product.name_en}</h3>
-              <p className="text-xs text-muted-foreground">{product.category}</p>
+              <p className="text-xs text-muted-foreground">Medicine</p>
               <div className="flex justify-between items-center mt-2">
                 <span className="font-semibold text-sm">₹{product.price}</span>
                 <Badge variant={isOutOfStock ? 'destructive' : 'secondary'} className="text-xs">
