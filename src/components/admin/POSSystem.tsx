@@ -115,7 +115,7 @@ const POSSystem = () => {
   const tax = subtotal * 0.18; // 18% GST
   const total = subtotal + tax;
 
-  // Get current user for cashier_id
+  // Get current user for transaction
   const getCurrentUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     return user?.id;
@@ -126,8 +126,8 @@ const POSSystem = () => {
     mutationFn: async () => {
       setIsProcessing(true);
       
-      const cashierId = await getCurrentUser();
-      if (!cashierId) {
+      const userId = await getCurrentUser();
+      if (!userId) {
         throw new Error('User not authenticated');
       }
       
@@ -135,13 +135,12 @@ const POSSystem = () => {
       const { data: transaction, error: transactionError } = await supabase
         .from('pos_transactions')
         .insert({
-          cashier_id: cashierId,
+          user_id: userId,
           customer_id: customerPhone ? null : null, // We'll implement customer lookup later
           subtotal,
           tax_amount: tax,
           total_amount: total,
           payment_method: paymentMethod as 'cash' | 'card' | 'upi' | 'wallet' | 'insurance',
-          payment_status: 'completed',
           notes: customerPhone ? `Customer phone: ${customerPhone}` : null
         })
         .select()

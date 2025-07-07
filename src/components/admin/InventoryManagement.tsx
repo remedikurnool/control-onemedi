@@ -232,8 +232,8 @@ const InventoryManagement = () => {
                           <span className="font-semibold">{item.available_quantity}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-sm">Reorder Level:</span>
-                          <span>{item.reorder_level || 10}</span>
+                          <span className="text-sm">Reserved:</span>
+                          <span>{item.reserved_quantity || 0}</span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-sm">Status:</span>
