@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Camera, X, Scan, Package, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
 interface BarcodeScannerProps {
   onScan: (product: any) => void;
@@ -34,7 +33,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
         .from('products')
         .select('*')
         .or(`sku.eq.${lastScannedCode},barcode.eq.${lastScannedCode}`)
-        .eq('is_active', true)
+        .eq('is_available', true)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
@@ -246,7 +245,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">₹{scannedProduct.price}</span>
                 <Badge variant="outline">
-                  Stock: {scannedProduct.stock_quantity || 0}
+                  Stock: {scannedProduct.quantity || 0}
                 </Badge>
               </div>
             </div>
