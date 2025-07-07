@@ -41,25 +41,23 @@ function App() {
               <BrowserRouter>
                 <Routes>
                   <Route path="/login" element={<LoginForm />} />
-                  <Route path="/admin/*" element={
+                  <Route path="/admin" element={
                     <ProtectedRoute>
-                      <AdminLayout>
-                        <Routes>
-                          <Route path="/" element={<Dashboard />} />
-                          <Route path="/dashboard" element={<Dashboard />} />
-                          <Route path="/users" element={<UsersManagement />} />
-                          <Route path="/inventory" element={<InventoryManagement />} />
-                          <Route path="/orders" element={<OrdersManagement />} />
-                          <Route path="/medicines" element={<MedicineManagement />} />
-                          <Route path="/locations" element={<LocationsPage />} />
-                          <Route path="/pos" element={<EnhancedPOSPage />} />
-                          <Route path="/analytics" element={<AnalyticsPage />} />
-                          <Route path="/marketing" element={<MarketingPage />} />
-                          <Route path="/settings" element={<SettingsPage />} />
-                        </Routes>
-                      </AdminLayout>
+                      <AdminLayout />
                     </ProtectedRoute>
-                  } />
+                  }>
+                    <Route index element={<Dashboard />} />
+                    <Route path="dashboard" element={<Dashboard />} />
+                    <Route path="users" element={<UsersManagement />} />
+                    <Route path="inventory" element={<InventoryManagement />} />
+                    <Route path="orders" element={<OrdersManagement />} />
+                    <Route path="medicines" element={<MedicineManagement />} />
+                    <Route path="locations" element={<LocationsPage />} />
+                    <Route path="pos" element={<EnhancedPOSPage />} />
+                    <Route path="analytics" element={<AnalyticsPage />} />
+                    <Route path="marketing" element={<MarketingPage />} />
+                    <Route path="settings" element={<SettingsPage />} />
+                  </Route>
                   <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
                   <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
                 </Routes>
