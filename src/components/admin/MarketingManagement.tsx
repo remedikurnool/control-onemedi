@@ -101,10 +101,12 @@ interface LimitedTimeOffer {
   is_active: boolean;
 }
 
-const MarketingManagement = () => {
+interface MarketingManagementProps {
+  onOpenForm: (formType: string, item?: any) => void;
+}
+
+const MarketingManagement: React.FC<MarketingManagementProps> = ({ onOpenForm }) => {
   const [activeTab, setActiveTab] = useState('pricing');
-  const [editingItem, setEditingItem] = useState<any>(null);
-  const [showForm, setShowForm] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch dynamic pricing rules
@@ -186,51 +188,7 @@ const MarketingManagement = () => {
     }
   });
 
-  // Create/Update mutations
-  const createPricingRule = useMutation({
-    mutationFn: async (rule: Partial<DynamicPricingRule>) => {
-      const { data, error } = await supabase
-        .from('dynamic_pricing_rules')
-        .insert([rule])
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dynamic-pricing-rules'] });
-      toast.success('Pricing rule created successfully');
-      setShowForm(false);
-      setEditingItem(null);
-    },
-    onError: (error) => {
-      toast.error('Failed to create pricing rule');
-      console.error(error);
-    }
-  });
-
-  const updatePricingRule = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<DynamicPricingRule> & { id: string }) => {
-      const { data, error } = await supabase
-        .from('dynamic_pricing_rules')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dynamic-pricing-rules'] });
-      toast.success('Pricing rule updated successfully');
-      setEditingItem(null);
-    },
-    onError: (error) => {
-      toast.error('Failed to update pricing rule');
-      console.error(error);
-    }
-  });
-
+  // Delete mutations
   const deletePricingRule = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
@@ -258,7 +216,7 @@ const MarketingManagement = () => {
             Configure automatic pricing adjustments based on demand, inventory, and customer tiers
           </p>
         </div>
-        <Button onClick={() => setShowForm(true)}>
+        <Button onClick={() => onOpenForm('pricing')}>
           <Plus className="h-4 w-4 mr-2" />
           Add Rule
         </Button>
@@ -283,7 +241,7 @@ const MarketingManagement = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setEditingItem(rule)}
+                    onClick={() => onOpenForm('pricing', rule)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -331,7 +289,7 @@ const MarketingManagement = () => {
             Configure cross-selling and upselling recommendations
           </p>
         </div>
-        <Button onClick={() => setShowForm(true)}>
+        <Button onClick={() => onOpenForm('recommendations')}>
           <Plus className="h-4 w-4 mr-2" />
           Add Rule
         </Button>
@@ -358,7 +316,7 @@ const MarketingManagement = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setEditingItem(rule)}
+                    onClick={() => onOpenForm('recommendations', rule)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -403,7 +361,7 @@ const MarketingManagement = () => {
             Setup automated email, SMS, and WhatsApp campaigns for cart recovery
           </p>
         </div>
-        <Button onClick={() => setShowForm(true)}>
+        <Button onClick={() => onOpenForm('campaign')}>
           <Plus className="h-4 w-4 mr-2" />
           Add Campaign
         </Button>
@@ -432,7 +390,7 @@ const MarketingManagement = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setEditingItem(campaign)}
+                    onClick={() => onOpenForm('campaign', campaign)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -483,7 +441,7 @@ const MarketingManagement = () => {
             Configure points, rewards, and tier management
           </p>
         </div>
-        <Button onClick={() => setShowForm(true)}>
+        <Button onClick={() => onOpenForm('loyalty')}>
           <Settings className="h-4 w-4 mr-2" />
           Configure
         </Button>
@@ -566,7 +524,7 @@ const MarketingManagement = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setEditingItem(review)}
+                    onClick={() => onOpenForm('review', review)}
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
@@ -604,7 +562,7 @@ const MarketingManagement = () => {
             Create flash sales and urgent promotions with countdown timers
           </p>
         </div>
-        <Button onClick={() => setShowForm(true)}>
+        <Button onClick={() => onOpenForm('offer')}>
           <Plus className="h-4 w-4 mr-2" />
           Add Offer
         </Button>
@@ -646,7 +604,7 @@ const MarketingManagement = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setEditingItem(offer)}
+                      onClick={() => onOpenForm('offer', offer)}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
