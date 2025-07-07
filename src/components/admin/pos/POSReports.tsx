@@ -51,7 +51,7 @@ const POSReports = () => {
           *,
           cashier:cashier_id(
             id,
-            user_profiles(full_name)
+            user_profiles!inner(full_name)
           )
         `)
         .gte('created_at', dateRange.from?.toISOString())

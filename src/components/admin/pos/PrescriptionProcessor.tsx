@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -367,11 +366,14 @@ const PrescriptionProcessor: React.FC<PrescriptionProcessorProps> = ({ onAddToCa
                     <Button 
                       size="sm"
                       onClick={() => {
-                        // Add medications to cart
-                        prescription.medications?.forEach((med: any) => {
-                          // This would need to match medications to products
-                          toast.info(`Add ${med.text} to cart`);
-                        });
+                        // Add medications to cart - safely handle medications array
+                        const medications = prescription.medications;
+                        if (Array.isArray(medications)) {
+                          medications.forEach((med: any) => {
+                            // This would need to match medications to products
+                            toast.info(`Add ${med.text} to cart`);
+                          });
+                        }
                       }}
                     >
                       <Pill className="h-4 w-4 mr-1" />

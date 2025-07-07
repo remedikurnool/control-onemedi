@@ -49,6 +49,11 @@ interface Product {
     available_quantity: number;
     reserved_quantity: number;
   }>;
+  barcodes?: Array<{
+    barcode_value: string;
+    barcode_type: string;
+    is_primary: boolean;
+  }>;
 }
 
 interface CartItem {
@@ -65,6 +70,7 @@ interface CustomerProfile {
   phone: string;
   email?: string;
   loyalty_points: number;
+  total_purchases: number;
   insurance_info?: any;
 }
 

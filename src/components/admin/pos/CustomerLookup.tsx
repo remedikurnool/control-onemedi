@@ -68,7 +68,7 @@ const CustomerLookup: React.FC<CustomerLookupProps> = ({
         .from('customer_profiles')
         .select('*')
         .or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
-        .order('last_visit_date', { ascending: false, nullsLast: true })
+        .order('last_visit_date', { ascending: false, nullsFirst: false })
         .limit(10);
 
       if (error) throw error;
