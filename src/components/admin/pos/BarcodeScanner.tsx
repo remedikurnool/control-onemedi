@@ -245,7 +245,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">₹{scannedProduct.price}</span>
                 <Badge variant="outline">
-                  Stock: {scannedProduct.quantity || 0}
+                  Stock: {scannedProduct.stock_quantity || 0}
                 </Badge>
               </div>
             </div>
