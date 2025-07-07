@@ -52,14 +52,20 @@ const POSSystem = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const queryClient = useQueryClient();
 
-  // Fetch products for POS
+  // Fetch products for POS with simplified query to avoid deep type instantiation
   const { data: products, isLoading } = useQuery({
     queryKey: ['pos-products', searchTerm],
     queryFn: async () => {
       let query = supabase
         .from('products')
         .select(`
-          *,
+          id,
+          name_en,
+          name_te,
+          price,
+          category,
+          image_url,
+          is_active,
           inventory:product_inventory(available_quantity, reserved_quantity)
         `)
         .eq('is_active', true)
@@ -76,7 +82,7 @@ const POSSystem = () => {
   });
 
   // Add item to cart
-  const addToCart = (product: any) => {
+  const addToCart = (product: Product) => {
     const existingItem = cart.find(item => item.id === product.id);
     const availableStock = product.inventory?.[0]?.available_quantity - (product.inventory?.[0]?.reserved_quantity || 0) || 0;
     
@@ -136,6 +142,14 @@ const POSSystem = () => {
     return user?.id;
   };
 
+  // Generate transaction number
+  const generateTransactionNumber = () => {
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '');
+    return `TXN${dateStr}${timeStr}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+  };
+
   // Process sale
   const processSale = useMutation({
     mutationFn: async () => {
@@ -146,11 +160,14 @@ const POSSystem = () => {
         throw new Error('User not authenticated');
       }
       
+      const transactionNumber = generateTransactionNumber();
+      
       // Create POS transaction with correct field names
       const { data: transaction, error: transactionError } = await supabase
         .from('pos_transactions')
         .insert({
-          cashier_id: userId, // Using cashier_id as per database schema
+          transaction_number: transactionNumber,
+          cashier_id: userId,
           customer_id: customerPhone ? null : null, // We'll implement customer lookup later
           subtotal,
           tax_amount: tax,
@@ -206,7 +223,7 @@ const POSSystem = () => {
     }
   });
 
-  const ProductCard = ({ product }: { product: any }) => {
+  const ProductCard = ({ product }: { product: Product }) => {
     const availableStock = product.inventory?.[0]?.available_quantity - (product.inventory?.[0]?.reserved_quantity || 0) || 0;
     const isOutOfStock = availableStock <= 0;
     
