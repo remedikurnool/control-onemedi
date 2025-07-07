@@ -101,9 +101,9 @@ const AnalyticsManagement = () => {
     const totalEvents = analyticsData.length;
     const uniqueUsers = new Set(analyticsData.map(e => e.user_id).filter(Boolean)).size;
     const pageViews = analyticsData.filter(e => e.event_type === 'page_view').length;
-    const purchases = ordersData.filter(o => o.order_status === 'completed').length;
+    const purchases = ordersData.filter(o => o.order_status === 'delivered').length;
     const totalRevenue = ordersData
-      .filter(o => o.order_status === 'completed')
+      .filter(o => o.order_status === 'delivered')
       .reduce((sum, o) => sum + (o.total_amount || 0), 0);
 
     // Daily trends
@@ -119,11 +119,11 @@ const AnalyticsManagement = () => {
       ).length;
       
       const dayOrders = ordersData.filter(o => 
-        o.created_at?.split('T')[0] === dateStr && o.order_status === 'completed'
+        o.created_at?.split('T')[0] === dateStr && o.order_status === 'delivered'
       ).length;
       
       const dayRevenue = ordersData
-        .filter(o => o.created_at?.split('T')[0] === dateStr && o.order_status === 'completed')
+        .filter(o => o.created_at?.split('T')[0] === dateStr && o.order_status === 'delivered')
         .reduce((sum, o) => sum + (o.total_amount || 0), 0);
 
       dailyData.push({
