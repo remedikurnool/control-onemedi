@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,7 +48,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
     enabled: !!lastScannedCode
   });
 
-  // Initialize camera for barcode scanning
+  // camera functions
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -72,7 +71,6 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
     }
   };
 
-  // Simple barcode detection using canvas
   const startBarcodeDetection = () => {
     scanIntervalRef.current = setInterval(() => {
       if (videoRef.current && canvasRef.current && isScanning) {

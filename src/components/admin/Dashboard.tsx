@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -103,7 +102,7 @@ const Dashboard = () => {
           id, 
           name_en, 
           price,
-          product_inventory!inner(available_quantity)
+          product_inventory(available_quantity)
         `)
         .or(`name_en.ilike.%${quickSearchQuery}%,sku.ilike.%${quickSearchQuery}%`)
         .limit(5);
