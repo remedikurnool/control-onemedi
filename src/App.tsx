@@ -17,6 +17,10 @@ import SurgeryOpinionManagement from "./components/admin/SurgeryOpinionManagemen
 import HomeCareManagement from "./components/admin/HomeCareManagement";
 import DiabetesCareManagement from "./components/admin/DiabetesCareManagement";
 import AmbulanceManagement from "./components/admin/AmbulanceManagement";
+import BloodBankManagement from "./components/admin/BloodBankManagement";
+import DietGuideManagement from "./components/admin/DietGuideManagement";
+import HospitalManagement from "./components/admin/HospitalManagement";
+import PhysiotherapyManagement from "./components/admin/PhysiotherapyManagement";
 import LocationsPage from "./pages/admin/LocationsPage";
 import AnalyticsPage from "./pages/admin/AnalyticsPage";
 import MarketingPage from "./pages/admin/MarketingPage";
@@ -52,6 +56,10 @@ function App() {
                 <Route path="home-care" element={<HomeCareManagement />} />
                 <Route path="diabetes-care" element={<DiabetesCareManagement />} />
                 <Route path="ambulance" element={<AmbulanceManagement />} />
+                <Route path="blood-bank" element={<BloodBankManagement />} />
+                <Route path="diet-guide" element={<DietGuideManagement />} />
+                <Route path="hospital" element={<HospitalManagement />} />
+                <Route path="physiotherapy" element={<PhysiotherapyManagement />} />
                 <Route path="locations" element={<LocationsPage />} />
                 <Route path="analytics" element={<AnalyticsPage />} />
                 <Route path="marketing" element={<MarketingPage />} />

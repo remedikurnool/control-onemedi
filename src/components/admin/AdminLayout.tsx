@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Input } from '@/components/ui/input';
 import { 
   LayoutDashboard, 
   Pill, 
@@ -24,18 +25,27 @@ import {
   Menu,
   Sun,
   Moon,
-  Bell,
   LogOut,
   CreditCard,
-  Activity
+  Activity,
+  Search,
+  Plus,
+  Beaker,
+  Building2,
+  Dumbbell
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
+import NotificationSystem from './NotificationSystem';
+import AdvancedSearch from './AdvancedSearch';
+import CustomerOnboardingWizard from './CustomerOnboardingWizard';
 
 const AdminLayout = () => {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Check if user is admin
   const { data: userProfile, isLoading } = useQuery({
@@ -61,6 +71,16 @@ const AdminLayout = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     toast.success('Logged out successfully');
+  };
+
+  const handleSearch = (query: string, filters: any[]) => {
+    console.log('Search:', query, filters);
+    // Implement global search functionality
+  };
+
+  const handleOnboardingComplete = (data: any) => {
+    console.log('Onboarding completed:', data);
+    // Process customer onboarding data
   };
 
   if (isLoading) {
@@ -94,10 +114,40 @@ const AdminLayout = () => {
     { name: 'Home Care', href: '/admin/home-care', icon: Heart },
     { name: 'Diabetes Care', href: '/admin/diabetes-care', icon: Droplets },
     { name: 'Ambulance', href: '/admin/ambulance', icon: Ambulance },
+    { name: 'Blood Bank', href: '/admin/blood-bank', icon: Beaker },
+    { name: 'Diet Guide', href: '/admin/diet-guide', icon: Activity },
+    { name: 'Hospital', href: '/admin/hospital', icon: Building2 },
+    { name: 'Physiotherapy', href: '/admin/physiotherapy', icon: Dumbbell },
     { name: 'Locations', href: '/admin/locations', icon: MapPin },
     { name: 'Marketing', href: '/admin/marketing', icon: Megaphone },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
   ];
+
+  const searchFilterOptions = {
+    module: {
+      label: 'Module',
+      type: 'select' as const,
+      options: [
+        { value: 'orders', label: 'Orders' },
+        { value: 'users', label: 'Users' },
+        { value: 'products', label: 'Products' },
+        { value: 'inventory', label: 'Inventory' }
+      ]
+    },
+    status: {
+      label: 'Status',
+      type: 'select' as const,
+      options: [
+        { value: 'active', label: 'Active' },
+        { value: 'inactive', label: 'Inactive' },
+        { value: 'pending', label: 'Pending' }
+      ]
+    },
+    date: {
+      label: 'Date',
+      type: 'date' as const
+    }
+  };
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -111,7 +161,7 @@ const AdminLayout = () => {
         </div>
       </div>
       
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href || 
             (item.href !== '/admin' && location.pathname.startsWith(item.href));
@@ -207,7 +257,7 @@ const AdminLayout = () => {
                         }`}
                       >
                         <item.icon className="w-4 h-4" />
-                        {item.name}
+                        <span className="hidden sm:inline">{item.name}</span>
                       </Link>
                     );
                   })}
@@ -215,16 +265,34 @@ const AdminLayout = () => {
               </div>
 
               <div className="flex items-center gap-2">
+                {/* Global Search */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSearch(!showSearch)}
+                >
+                  <Search className="w-4 h-4" />
+                </Button>
+
+                {/* Quick Actions */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowOnboarding(true)}
+                  title="Add Customer"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+
+                {/* Notifications */}
+                <NotificationSystem />
+                
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 >
                   {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </Button>
-                
-                <Button variant="ghost" size="sm">
-                  <Bell className="w-4 h-4" />
                 </Button>
 
                 <div className="flex items-center gap-2 ml-2">
@@ -239,6 +307,17 @@ const AdminLayout = () => {
               </div>
             </div>
           </div>
+
+          {/* Global Search Bar */}
+          {showSearch && (
+            <div className="px-6 py-3 border-b bg-muted/10">
+              <AdvancedSearch
+                onSearch={handleSearch}
+                filterOptions={searchFilterOptions}
+                placeholder="Search across all modules..."
+              />
+            </div>
+          )}
 
           {/* Page Title Bar */}
           <div className="px-6 py-4">
@@ -256,6 +335,13 @@ const AdminLayout = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* Customer Onboarding Wizard */}
+      <CustomerOnboardingWizard
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        onComplete={handleOnboardingComplete}
+      />
     </div>
   );
 };
