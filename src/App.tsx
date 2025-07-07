@@ -21,6 +21,10 @@ import LocationsPage from "./pages/admin/LocationsPage";
 import AnalyticsPage from "./pages/admin/AnalyticsPage";
 import MarketingPage from "./pages/admin/MarketingPage";
 import SettingsPage from "./pages/admin/SettingsPage";
+import OrdersPage from "./pages/admin/OrdersPage";
+import UsersPage from "./pages/admin/UsersPage";
+import InventoryPage from "./pages/admin/InventoryPage";
+import POSPage from "./pages/admin/POSPage";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +40,10 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<Dashboard />} />
+                <Route path="orders" element={<OrdersPage />} />
+                <Route path="users" element={<UsersPage />} />
+                <Route path="inventory" element={<InventoryPage />} />
+                <Route path="pos" element={<POSPage />} />
                 <Route path="medicines" element={<MedicineManagement />} />
                 <Route path="lab-tests" element={<LabTestManagement />} />
                 <Route path="scans" element={<ScanManagement />} />

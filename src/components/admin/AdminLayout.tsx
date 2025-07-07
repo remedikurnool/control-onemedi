@@ -25,7 +25,9 @@ import {
   Sun,
   Moon,
   Bell,
-  LogOut
+  LogOut,
+  CreditCard,
+  Activity
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
@@ -73,8 +75,17 @@ const AdminLayout = () => {
     return <Navigate to="/login" replace />;
   }
 
-  const navigation = [
+  // Quick access items for top header
+  const quickAccessItems = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+    { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+    { name: 'POS', href: '/admin/pos', icon: CreditCard },
+  ];
+
+  const navigation = [
+    { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
+    { name: 'Users', href: '/admin/users', icon: Users },
+    { name: 'Inventory', href: '/admin/inventory', icon: Package },
     { name: 'Medicines', href: '/admin/medicines', icon: Pill },
     { name: 'Lab Tests', href: '/admin/lab-tests', icon: TestTube },
     { name: 'Scans', href: '/admin/scans', icon: Scan },
@@ -83,11 +94,7 @@ const AdminLayout = () => {
     { name: 'Home Care', href: '/admin/home-care', icon: Heart },
     { name: 'Diabetes Care', href: '/admin/diabetes-care', icon: Droplets },
     { name: 'Ambulance', href: '/admin/ambulance', icon: Ambulance },
-    { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
-    { name: 'Users', href: '/admin/users', icon: Users },
-    { name: 'Inventory', href: '/admin/inventory', icon: Package },
     { name: 'Locations', href: '/admin/locations', icon: MapPin },
-    { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
     { name: 'Marketing', href: '/admin/marketing', icon: Megaphone },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
   ];
@@ -166,47 +173,86 @@ const AdminLayout = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
-        <header className="flex items-center justify-between px-6 py-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex items-center gap-4">
-            <Sheet>
-              <SheetTrigger asChild>
+        {/* Enhanced Top Header */}
+        <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+          {/* Quick Access Bar */}
+          <div className="px-6 py-2 border-b bg-muted/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="lg:hidden"
+                      onClick={() => setSidebarOpen(true)}
+                    >
+                      <Menu className="w-5 h-5" />
+                    </Button>
+                  </SheetTrigger>
+                </Sheet>
+                
+                {/* Quick Access Items */}
+                <div className="flex items-center gap-2">
+                  {quickAccessItems.map((item) => {
+                    const isActive = location.pathname === item.href;
+                    return (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <item.icon className="w-4 h-4" />
+                        {item.name}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="lg:hidden"
-                  onClick={() => setSidebarOpen(true)}
+                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 >
-                  <Menu className="w-5 h-5" />
+                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 </Button>
-              </SheetTrigger>
-            </Sheet>
-            
+                
+                <Button variant="ghost" size="sm">
+                  <Bell className="w-4 h-4" />
+                </Button>
+
+                <div className="flex items-center gap-2 ml-2">
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm">
+                    {userProfile.full_name?.charAt(0) || 'A'}
+                  </div>
+                  <div className="hidden md:block">
+                    <p className="text-sm font-medium">{userProfile.full_name}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{userProfile.role?.replace('_', ' ')}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Page Title Bar */}
+          <div className="px-6 py-4">
             <h2 className="text-lg font-semibold">
               {navigation.find(item => 
                 location.pathname === item.href || 
                 (item.href !== '/admin' && location.pathname.startsWith(item.href))
-              )?.name || 'Dashboard'}
+              )?.name || quickAccessItems.find(item => location.pathname === item.href)?.name || 'Dashboard'}
             </h2>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
-            
-            <Button variant="ghost" size="sm">
-              <Bell className="w-4 h-4" />
-            </Button>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto">
           <Outlet />
         </main>
       </div>
