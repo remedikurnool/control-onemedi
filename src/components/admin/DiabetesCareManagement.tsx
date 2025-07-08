@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Activity, Package, Calendar, UserCheck } from 'lucide-react';
+import { Plus, Edit, Trash2, Activity, Package, Calendar, UserCheck, Clock, User, Phone, MapPin, CheckCircle, XCircle, Stethoscope } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface DiabetesService {
@@ -507,12 +507,226 @@ const DiabetesCareManagement = () => {
         </TabsContent>
 
         <TabsContent value="appointments">
-          <div className="text-center py-8 text-muted-foreground">
-            <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            Diabetes appointments management coming soon...
-          </div>
+          <DiabetesAppointments />
         </TabsContent>
       </Tabs>
+    </div>
+  );
+};
+
+// Diabetes Appointments Component
+const DiabetesAppointments = () => {
+  const [appointments, setAppointments] = useState([
+    {
+      id: '1',
+      patient_name: 'Alice Johnson',
+      specialist: 'Dr. Sarah Wilson',
+      appointment_type: 'consultation',
+      date: '2024-01-15',
+      time: '10:00 AM',
+      duration: '30 minutes',
+      status: 'confirmed',
+      phone: '+1234567890',
+      notes: 'Regular diabetes checkup',
+      test_required: 'HbA1c, Fasting Glucose',
+      is_online: false
+    },
+    {
+      id: '2',
+      patient_name: 'Bob Smith',
+      specialist: 'Dr. Mike Davis',
+      appointment_type: 'follow_up',
+      date: '2024-01-16',
+      time: '2:00 PM',
+      duration: '20 minutes',
+      status: 'pending',
+      phone: '+1234567891',
+      notes: 'Review test results',
+      test_required: 'Blood Sugar Monitoring',
+      is_online: true
+    },
+    {
+      id: '3',
+      patient_name: 'Carol Brown',
+      specialist: 'Dr. Lisa Anderson',
+      appointment_type: 'emergency',
+      date: '2024-01-14',
+      time: '9:00 AM',
+      duration: '45 minutes',
+      status: 'completed',
+      phone: '+1234567892',
+      notes: 'High blood sugar emergency',
+      test_required: 'Immediate glucose test',
+      is_online: false
+    }
+  ]);
+
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [isAppointmentDialogOpen, setIsAppointmentDialogOpen] = useState(false);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmed': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'completed': return 'bg-blue-100 text-blue-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'confirmed': return <CheckCircle className="h-4 w-4" />;
+      case 'pending': return <Clock className="h-4 w-4" />;
+      case 'completed': return <CheckCircle className="h-4 w-4" />;
+      case 'cancelled': return <XCircle className="h-4 w-4" />;
+      default: return <Clock className="h-4 w-4" />;
+    }
+  };
+
+  const getAppointmentTypeColor = (type: string) => {
+    switch (type) {
+      case 'consultation': return 'bg-blue-100 text-blue-800';
+      case 'follow_up': return 'bg-green-100 text-green-800';
+      case 'emergency': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const filteredAppointments = statusFilter === 'all'
+    ? appointments
+    : appointments.filter(appointment => appointment.status === statusFilter);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2">
+          <Button
+            variant={statusFilter === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setStatusFilter('all')}
+          >
+            All ({appointments.length})
+          </Button>
+          <Button
+            variant={statusFilter === 'pending' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setStatusFilter('pending')}
+          >
+            Pending ({appointments.filter(a => a.status === 'pending').length})
+          </Button>
+          <Button
+            variant={statusFilter === 'confirmed' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setStatusFilter('confirmed')}
+          >
+            Confirmed ({appointments.filter(a => a.status === 'confirmed').length})
+          </Button>
+          <Button
+            variant={statusFilter === 'completed' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setStatusFilter('completed')}
+          >
+            Completed ({appointments.filter(a => a.status === 'completed').length})
+          </Button>
+        </div>
+
+        <Button onClick={() => setIsAppointmentDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          New Appointment
+        </Button>
+      </div>
+
+      <div className="grid gap-4">
+        {filteredAppointments.map((appointment) => (
+          <Card key={appointment.id} className="hover:shadow-md transition-shadow">
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5 text-blue-600" />
+                    {appointment.patient_name}
+                    {appointment.is_online && <Badge variant="secondary">Online</Badge>}
+                  </CardTitle>
+                  <CardDescription className="flex items-center gap-4 mt-1">
+                    <span className="flex items-center gap-1">
+                      <Stethoscope className="h-4 w-4" />
+                      {appointment.specialist}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {appointment.date} at {appointment.time}
+                    </span>
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Badge className={getAppointmentTypeColor(appointment.appointment_type)}>
+                    {appointment.appointment_type.replace('_', ' ').toUpperCase()}
+                  </Badge>
+                  <Badge className={getStatusColor(appointment.status)}>
+                    <div className="flex items-center gap-1">
+                      {getStatusIcon(appointment.status)}
+                      {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                    </div>
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span><strong>Duration:</strong> {appointment.duration}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span><strong>Phone:</strong> {appointment.phone}</span>
+                  </div>
+                  <div>
+                    <strong>Tests Required:</strong> {appointment.test_required}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <strong>Notes:</strong> {appointment.notes}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-4">
+                <Button size="sm" variant="outline">
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+                {appointment.status === 'pending' && (
+                  <Button size="sm" variant="default">
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Confirm
+                  </Button>
+                )}
+                {appointment.status === 'confirmed' && (
+                  <Button size="sm" variant="secondary">
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Complete
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredAppointments.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-8">
+            <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <p className="text-muted-foreground">
+              No {statusFilter === 'all' ? '' : statusFilter} appointments found
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

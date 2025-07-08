@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Scan, Building } from 'lucide-react';
+import { Plus, Edit, Trash2, Scan, Building, Calendar, Clock, AlertTriangle, User, Phone, MapPin, CheckCircle, XCircle, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 const SCAN_TYPES = [
@@ -435,11 +435,227 @@ const ScanManagement = () => {
         </TabsContent>
 
         <TabsContent value="bookings">
-          <div className="text-center py-8 text-muted-foreground">
-            Scan bookings management coming soon...
-          </div>
+          <ScanBookings />
         </TabsContent>
       </Tabs>
+    </div>
+  );
+};
+
+// Scan Bookings Component
+const ScanBookings = () => {
+  const [bookings, setBookings] = useState([
+    {
+      id: '1',
+      patient_name: 'Emma Wilson',
+      scan_type: 'MRI Brain',
+      center: 'City Diagnostic Center',
+      date: '2024-01-15',
+      time: '10:00 AM',
+      status: 'scheduled',
+      phone: '+1234567890',
+      contrast_required: true,
+      preparation_followed: false,
+      special_instructions: 'Patient has claustrophobia',
+      reports_uploaded: false
+    },
+    {
+      id: '2',
+      patient_name: 'James Brown',
+      scan_type: 'CT Chest',
+      center: 'Metro Scan Center',
+      date: '2024-01-16',
+      time: '2:00 PM',
+      status: 'confirmed',
+      phone: '+1234567891',
+      contrast_required: false,
+      preparation_followed: true,
+      special_instructions: 'Follow-up scan',
+      reports_uploaded: false
+    },
+    {
+      id: '3',
+      patient_name: 'Sarah Davis',
+      scan_type: 'Ultrasound Abdomen',
+      center: 'Health Plus Diagnostics',
+      date: '2024-01-14',
+      time: '9:00 AM',
+      status: 'completed',
+      phone: '+1234567892',
+      contrast_required: false,
+      preparation_followed: true,
+      special_instructions: 'Fasting required',
+      reports_uploaded: true
+    }
+  ]);
+
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'scheduled': return 'bg-blue-100 text-blue-800';
+      case 'confirmed': return 'bg-green-100 text-green-800';
+      case 'completed': return 'bg-purple-100 text-purple-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'scheduled': return <Clock className="h-4 w-4" />;
+      case 'confirmed': return <CheckCircle className="h-4 w-4" />;
+      case 'completed': return <CheckCircle className="h-4 w-4" />;
+      case 'cancelled': return <XCircle className="h-4 w-4" />;
+      default: return <Clock className="h-4 w-4" />;
+    }
+  };
+
+  const filteredBookings = statusFilter === 'all'
+    ? bookings
+    : bookings.filter(booking => booking.status === statusFilter);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2">
+          <Button
+            variant={statusFilter === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setStatusFilter('all')}
+          >
+            All ({bookings.length})
+          </Button>
+          <Button
+            variant={statusFilter === 'scheduled' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setStatusFilter('scheduled')}
+          >
+            Scheduled ({bookings.filter(b => b.status === 'scheduled').length})
+          </Button>
+          <Button
+            variant={statusFilter === 'confirmed' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setStatusFilter('confirmed')}
+          >
+            Confirmed ({bookings.filter(b => b.status === 'confirmed').length})
+          </Button>
+          <Button
+            variant={statusFilter === 'completed' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setStatusFilter('completed')}
+          >
+            Completed ({bookings.filter(b => b.status === 'completed').length})
+          </Button>
+        </div>
+
+        <Button onClick={() => setIsBookingDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          New Booking
+        </Button>
+      </div>
+
+      <div className="grid gap-4">
+        {filteredBookings.map((booking) => (
+          <Card key={booking.id} className="hover:shadow-md transition-shadow">
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5 text-blue-600" />
+                    {booking.patient_name}
+                    {booking.contrast_required && <Badge variant="secondary">Contrast</Badge>}
+                  </CardTitle>
+                  <CardDescription className="flex items-center gap-4 mt-1">
+                    <span className="flex items-center gap-1">
+                      <Scan className="h-4 w-4" />
+                      {booking.scan_type}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {booking.date} at {booking.time}
+                    </span>
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  {booking.reports_uploaded && (
+                    <Badge variant="outline" className="text-green-600">
+                      <FileText className="h-3 w-3 mr-1" />
+                      Reports
+                    </Badge>
+                  )}
+                  <Badge className={getStatusColor(booking.status)}>
+                    <div className="flex items-center gap-1">
+                      {getStatusIcon(booking.status)}
+                      {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                    </div>
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Building className="h-4 w-4 text-muted-foreground" />
+                    <span><strong>Center:</strong> {booking.center}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span><strong>Phone:</strong> {booking.phone}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className={`h-4 w-4 ${booking.preparation_followed ? 'text-green-500' : 'text-red-500'}`} />
+                    <span><strong>Preparation:</strong> {booking.preparation_followed ? 'Followed' : 'Not Followed'}</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <strong>Instructions:</strong> {booking.special_instructions}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-4">
+                <Button size="sm" variant="outline">
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+                {booking.status === 'scheduled' && (
+                  <Button size="sm" variant="default">
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Confirm
+                  </Button>
+                )}
+                {booking.status === 'confirmed' && (
+                  <Button size="sm" variant="secondary">
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Complete
+                  </Button>
+                )}
+                {booking.status === 'completed' && !booking.reports_uploaded && (
+                  <Button size="sm" variant="outline">
+                    <FileText className="h-4 w-4 mr-1" />
+                    Upload Reports
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredBookings.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-8">
+            <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <p className="text-muted-foreground">
+              No {statusFilter === 'all' ? '' : statusFilter} scan bookings found
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

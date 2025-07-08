@@ -1,6 +1,6 @@
 
 import React from 'react';
-import EnhancedLocationManagement from './EnhancedLocationManagement';
+import EnhancedLocationManager from './EnhancedLocationManager';
 import PincodeManager from './PincodeManager';
 import BusinessConfigManager from './BusinessConfigManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -38,7 +38,7 @@ const LocationManagement = () => {
         </TabsList>
 
         <TabsContent value="enhanced">
-          <EnhancedLocationManagement />
+          <EnhancedLocationManager />
         </TabsContent>
 
         <TabsContent value="pincodes">

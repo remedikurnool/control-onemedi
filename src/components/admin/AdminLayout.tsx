@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -43,9 +43,11 @@ import CustomerOnboardingWizard from './CustomerOnboardingWizard';
 const AdminLayout = () => {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
+  const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [searchResults, setSearchResults] = useState<any>(null);
 
   // Check if user is admin
   const { data: userProfile, isLoading } = useQuery({
@@ -73,14 +75,118 @@ const AdminLayout = () => {
     toast.success('Logged out successfully');
   };
 
-  const handleSearch = (query: string, filters: any[]) => {
-    console.log('Search:', query, filters);
-    // Implement global search functionality
+  const handleSearch = async (query: string, filters: any[]) => {
+    if (!query.trim()) return;
+
+    try {
+      // Search across multiple healthcare modules
+      const searchPromises = [];
+
+      // Search patients/users
+      searchPromises.push(
+        supabase
+          .from('user_profiles')
+          .select('id, full_name, email, phone, role')
+          .or(`full_name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${query}%`)
+          .eq('role', 'user')
+          .limit(5)
+          .then(result => ({ type: 'patients', data: result.data || [] }))
+      );
+
+      // Search medicines/products
+      searchPromises.push(
+        supabase
+          .from('products')
+          .select('id, name_en, name_te, price, sku')
+          .or(`name_en.ilike.%${query}%,name_te.ilike.%${query}%,sku.ilike.%${query}%`)
+          .limit(5)
+          .then(result => ({ type: 'medicines', data: result.data || [] }))
+      );
+
+      // Search orders
+      searchPromises.push(
+        supabase
+          .from('customer_orders')
+          .select('id, order_number, total_amount, order_status, created_at')
+          .ilike('order_number', `%${query}%`)
+          .limit(5)
+          .then(result => ({ type: 'orders', data: result.data || [] }))
+      );
+
+      // Apply filters if any
+      const moduleFilter = filters.find(f => f.key === 'module');
+
+      const results = await Promise.all(searchPromises);
+      const searchResults = results.reduce((acc, result) => {
+        if (!moduleFilter || moduleFilter.value === 'all' || result.type === moduleFilter.value) {
+          acc[result.type] = result.data;
+        }
+        return acc;
+      }, {} as any);
+
+      // Show search results in a modal or navigate to results page
+      setSearchResults(searchResults);
+      toast.success(`Found results across ${Object.keys(searchResults).length} modules`);
+
+    } catch (error) {
+      console.error('Search error:', error);
+      toast.error('Search failed. Please try again.');
+    }
   };
 
-  const handleOnboardingComplete = (data: any) => {
-    console.log('Onboarding completed:', data);
-    // Process customer onboarding data
+  const handleOnboardingComplete = async (data: any) => {
+    try {
+      // Create new patient/customer profile
+      const { data: newCustomer, error } = await supabase
+        .from('user_profiles')
+        .insert({
+          full_name: data.fullName,
+          email: data.email,
+          phone: data.phone,
+          date_of_birth: data.dateOfBirth,
+          gender: data.gender,
+          address: data.address,
+          emergency_contact: data.emergencyContact,
+          medical_conditions: data.medicalConditions || [],
+          allergies: data.allergies || [],
+          role: 'user',
+          is_active: true,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Create customer profile entry
+      await supabase
+        .from('customer_profiles')
+        .insert({
+          user_id: newCustomer.id,
+          name: data.fullName,
+          phone: data.phone,
+          email: data.email,
+          address: data.address,
+          date_of_birth: data.dateOfBirth,
+          gender: data.gender,
+          emergency_contact: data.emergencyContact,
+          medical_history: data.medicalConditions || [],
+          allergies: data.allergies || [],
+          preferred_language: data.preferredLanguage || 'en',
+          is_active: true
+        });
+
+      toast.success('Patient registered successfully!');
+      setShowOnboarding(false);
+
+      // Refresh any relevant queries
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+
+    } catch (error) {
+      console.error('Customer onboarding error:', error);
+      toast.error('Failed to register patient. Please try again.');
+    }
   };
 
   if (isLoading) {
@@ -125,13 +231,17 @@ const AdminLayout = () => {
 
   const searchFilterOptions = {
     module: {
-      label: 'Module',
+      label: 'Healthcare Module',
       type: 'select' as const,
       options: [
-        { value: 'orders', label: 'Orders' },
-        { value: 'users', label: 'Users' },
-        { value: 'products', label: 'Products' },
-        { value: 'inventory', label: 'Inventory' }
+        { value: 'all', label: 'All Modules' },
+        { value: 'patients', label: 'Patients' },
+        { value: 'medicines', label: 'Medicines' },
+        { value: 'orders', label: 'Medicine Orders' },
+        { value: 'appointments', label: 'Appointments' },
+        { value: 'lab-tests', label: 'Lab Tests' },
+        { value: 'ambulance', label: 'Ambulance' },
+        { value: 'blood-bank', label: 'Blood Bank' }
       ]
     },
     status: {
@@ -140,12 +250,24 @@ const AdminLayout = () => {
       options: [
         { value: 'active', label: 'Active' },
         { value: 'inactive', label: 'Inactive' },
-        { value: 'pending', label: 'Pending' }
+        { value: 'pending', label: 'Pending' },
+        { value: 'completed', label: 'Completed' },
+        { value: 'emergency', label: 'Emergency' }
       ]
     },
     date: {
       label: 'Date',
       type: 'date' as const
+    },
+    priority: {
+      label: 'Priority',
+      type: 'select' as const,
+      options: [
+        { value: 'low', label: 'Low' },
+        { value: 'medium', label: 'Medium' },
+        { value: 'high', label: 'High' },
+        { value: 'critical', label: 'Critical' }
+      ]
     }
   };
 
@@ -314,8 +436,51 @@ const AdminLayout = () => {
               <AdvancedSearch
                 onSearch={handleSearch}
                 filterOptions={searchFilterOptions}
-                placeholder="Search across all modules..."
+                placeholder="Search patients, medicines, orders, appointments..."
               />
+
+              {/* Search Results */}
+              {searchResults && (
+                <div className="mt-4 space-y-4">
+                  {Object.entries(searchResults).map(([type, results]: [string, any]) => (
+                    results.length > 0 && (
+                      <div key={type} className="space-y-2">
+                        <h4 className="text-sm font-medium text-muted-foreground capitalize">
+                          {type} ({results.length})
+                        </h4>
+                        <div className="space-y-1">
+                          {results.map((item: any) => (
+                            <div key={item.id} className="flex items-center justify-between p-2 bg-background rounded border hover:bg-muted/50 cursor-pointer">
+                              <div>
+                                <p className="text-sm font-medium">
+                                  {type === 'patients' ? item.full_name :
+                                   type === 'medicines' ? item.name_en :
+                                   type === 'orders' ? item.order_number : item.name}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {type === 'patients' ? item.email :
+                                   type === 'medicines' ? `₹${item.price}` :
+                                   type === 'orders' ? `₹${item.total_amount}` : ''}
+                                </p>
+                              </div>
+                              <Button size="sm" variant="ghost">
+                                View
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  ))}
+
+                  {Object.values(searchResults).every((results: any) => results.length === 0) && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p>No results found</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

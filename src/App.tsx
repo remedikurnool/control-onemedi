@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import { sanitizeHtml, validateEmail, validatePassword } from "./lib/security";
-import ErrorBoundary from "./components/ui/error-boundary";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { NotificationProvider } from "./components/ui/notification-system";
 import AdminLayout from "./components/admin/AdminLayout";
 import LoginForm from "./components/admin/LoginForm";
@@ -14,6 +14,17 @@ import UsersManagement from "./components/admin/UsersManagement";
 import InventoryManagement from "./components/admin/InventoryManagement";
 import OrdersManagement from "./components/admin/OrdersManagement";
 import MedicineManagement from "./components/admin/MedicineManagement";
+import LabTestManagement from "./components/admin/LabTestManagement";
+import ScanManagement from "./components/admin/ScanManagement";
+import DoctorsManagement from "./components/admin/DoctorsManagement";
+import SurgeryOpinionManagement from "./components/admin/SurgeryOpinionManagement";
+import HomeCareManagement from "./components/admin/HomeCareManagement";
+import DiabetesCareManagement from "./components/admin/DiabetesCareManagement";
+import AmbulanceManagement from "./components/admin/AmbulanceManagement";
+import BloodBankManagement from "./components/admin/BloodBankManagement";
+import DietGuideManagement from "./components/admin/DietGuideManagement";
+import HospitalManagement from "./components/admin/HospitalManagement";
+import PhysiotherapyManagement from "./components/admin/PhysiotherapyManagement";
 import LocationsPage from "./pages/admin/LocationsPage";
 import EnhancedPOSPage from "./pages/admin/EnhancedPOSPage";
 import AnalyticsPage from "./pages/admin/AnalyticsPage";
@@ -53,6 +64,17 @@ function App() {
                     <Route path="inventory" element={<InventoryManagement />} />
                     <Route path="orders" element={<OrdersManagement />} />
                     <Route path="medicines" element={<MedicineManagement />} />
+                    <Route path="lab-tests" element={<LabTestManagement />} />
+                    <Route path="scans" element={<ScanManagement />} />
+                    <Route path="doctors" element={<DoctorsManagement />} />
+                    <Route path="surgery-opinion" element={<SurgeryOpinionManagement />} />
+                    <Route path="home-care" element={<HomeCareManagement />} />
+                    <Route path="diabetes-care" element={<DiabetesCareManagement />} />
+                    <Route path="ambulance" element={<AmbulanceManagement />} />
+                    <Route path="blood-bank" element={<BloodBankManagement />} />
+                    <Route path="diet-guide" element={<DietGuideManagement />} />
+                    <Route path="hospital" element={<HospitalManagement />} />
+                    <Route path="physiotherapy" element={<PhysiotherapyManagement />} />
                     <Route path="locations" element={<LocationsPage />} />
                     <Route path="pos" element={<EnhancedPOSPage />} />
                     <Route path="analytics" element={<AnalyticsPage />} />
