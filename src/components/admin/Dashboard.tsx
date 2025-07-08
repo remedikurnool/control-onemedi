@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -121,9 +122,6 @@ const Dashboard = () => {
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     staleTime: 5 * 60 * 1000, // 5 minutes
-    onError: (error) => {
-      handleError(error as Error, 'Dashboard Statistics');
-    }
   });
 
   // Fetch recent activities
@@ -150,9 +148,6 @@ const Dashboard = () => {
       return data || [];
     },
     retry: 2,
-    onError: (error) => {
-      handleError(error as Error, 'Recent Orders');
-    }
   });
 
   // Quick search functionality
@@ -180,9 +175,6 @@ const Dashboard = () => {
     },
     enabled: quickSearchQuery.length > 2,
     retry: 1,
-    onError: (error) => {
-      handleError(error as Error, 'Product Search');
-    }
   });
 
   // Quick add product mutation
@@ -270,6 +262,13 @@ const Dashboard = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  // Handle errors properly
+  React.useEffect(() => {
+    if (statsError) {
+      handleError(statsError as Error, 'Dashboard Statistics');
+    }
+  }, [statsError, handleError]);
 
   if (statsLoading) {
     return (

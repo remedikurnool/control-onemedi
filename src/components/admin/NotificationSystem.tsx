@@ -1,241 +1,113 @@
 
-import React, { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bell, Package, ShoppingCart, Users, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import { Bell, Check, X } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
-interface Notification {
-  id: string;
-  type: 'order' | 'inventory' | 'user' | 'system';
-  title: string;
-  description: string;
-  read: boolean;
-  created_at: string;
-  data?: any;
-}
-
-const NotificationSystem = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  // Fetch initial notifications
-  const { data: initialNotifications } = useQuery({
-    queryKey: ['notifications'],
-    queryFn: async () => {
-      // For now, we'll create mock notifications
-      // In a real app, you'd fetch from a notifications table
-      const mockNotifications: Notification[] = [
-        {
-          id: '1',
-          type: 'order',
-          title: 'New Order Received',
-          description: 'Order #12345 requires your attention',
-          read: false,
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          type: 'inventory',
-          title: 'Low Stock Alert',
-          description: 'Paracetamol 500mg is running low',
-          read: false,
-          created_at: new Date(Date.now() - 60000).toISOString(),
-        }
-      ];
-      return mockNotifications;
+const NotificationSystem: React.FC = () => {
+  const [notifications] = useState([
+    {
+      id: '1',
+      title: 'Low Stock Alert',
+      message: '5 medicines are running low on stock',
+      type: 'warning',
+      time: '2 minutes ago',
+      unread: true
     },
-  });
-
-  useEffect(() => {
-    if (initialNotifications) {
-      setNotifications(initialNotifications);
-      setUnreadCount(initialNotifications.filter(n => !n.read).length);
+    {
+      id: '2',
+      title: 'New Emergency Call',
+      message: 'Ambulance requested for chest pain',
+      type: 'urgent',
+      time: '5 minutes ago',
+      unread: true
+    },
+    {
+      id: '3',
+      title: 'Order Completed',
+      message: 'Order #ORD202501234 has been delivered',
+      type: 'success',
+      time: '10 minutes ago',
+      unread: false
     }
-  }, [initialNotifications]);
+  ]);
 
-  // Set up real-time subscriptions
-  useEffect(() => {
-    const channels = [
-      // Listen to new orders
-      supabase
-        .channel('new-orders')
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'customer_orders'
-        }, (payload) => {
-          const newNotification: Notification = {
-            id: `order-${payload.new.id}`,
-            type: 'order',
-            title: 'New Order Received',
-            description: `Order #${payload.new.order_number} has been placed`,
-            read: false,
-            created_at: new Date().toISOString(),
-            data: payload.new
-          };
-          
-          setNotifications(prev => [newNotification, ...prev]);
-          setUnreadCount(prev => prev + 1);
-          toast.success('New order received!');
-        })
-        .subscribe(),
+  const unreadCount = notifications.filter(n => n.unread).length;
 
-      // Listen to inventory changes
-      supabase
-        .channel('inventory-alerts')
-        .on('postgres_changes', {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'product_inventory'
-        }, (payload) => {
-          if (payload.new.available_quantity < 10) {
-            const newNotification: Notification = {
-              id: `inventory-${payload.new.id}`,
-              type: 'inventory',
-              title: 'Low Stock Alert',
-              description: 'Product inventory is running low',
-              read: false,
-              created_at: new Date().toISOString(),
-              data: payload.new
-            };
-            
-            setNotifications(prev => [newNotification, ...prev]);
-            setUnreadCount(prev => prev + 1);
-            toast.warning('Low stock alert!');
-          }
-        })
-        .subscribe(),
-
-      // Listen to new users
-      supabase
-        .channel('new-users')
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'user_profiles'
-        }, (payload) => {
-          const newNotification: Notification = {
-            id: `user-${payload.new.id}`,
-            type: 'user',
-            title: 'New User Registered',
-            description: `${payload.new.full_name || 'New user'} has joined`,
-            read: false,
-            created_at: new Date().toISOString(),
-            data: payload.new
-          };
-          
-          setNotifications(prev => [newNotification, ...prev]);
-          setUnreadCount(prev => prev + 1);
-          toast.info('New user registered!');
-        })
-        .subscribe()
-    ];
-
-    return () => {
-      channels.forEach(channel => supabase.removeChannel(channel));
-    };
-  }, []);
-
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
-    );
-    setUnreadCount(prev => Math.max(0, prev - 1));
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    setUnreadCount(0);
-  };
-
-  const getNotificationIcon = (type: string) => {
+  const getTypeColor = (type: string) => {
     switch (type) {
-      case 'order':
-        return <ShoppingCart className="h-4 w-4" />;
-      case 'inventory':
-        return <Package className="h-4 w-4" />;
-      case 'user':
-        return <Users className="h-4 w-4" />;
-      default:
-        return <AlertCircle className="h-4 w-4" />;
+      case 'urgent': return 'text-red-600';
+      case 'warning': return 'text-yellow-600';
+      case 'success': return 'text-green-600';
+      default: return 'text-blue-600';
     }
   };
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs p-0"
+            <Badge 
+              variant="destructive" 
+              className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
             >
-              {unreadCount > 9 ? '9+' : unreadCount}
+              {unreadCount}
             </Badge>
           )}
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80" align="end">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="font-semibold">Notifications</h4>
-            {unreadCount > 0 && (
-              <Button variant="ghost" size="sm" onClick={markAllAsRead}>
-                Mark all as read
-              </Button>
-            )}
-          </div>
-          
-          <ScrollArea className="max-h-96">
-            {notifications.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">
-                No notifications
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                      notification.read 
-                        ? 'bg-background' 
-                        : 'bg-muted/50 border-primary/20'
-                    }`}
-                    onClick={() => markAsRead(notification.id)}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5">
-                        {getNotificationIcon(notification.type)}
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium leading-none">
-                          {notification.title}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {notification.description}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(notification.created_at).toLocaleString()}
-                        </p>
-                      </div>
-                      {!notification.read && (
-                        <div className="w-2 h-2 bg-primary rounded-full mt-2" />
-                      )}
-                    </div>
-                  </div>
-                ))}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80">
+        <DropdownMenuLabel className="flex justify-between items-center">
+          Notifications
+          {unreadCount > 0 && (
+            <Button variant="ghost" size="sm">
+              <Check className="h-3 w-3 mr-1" />
+              Mark all read
+            </Button>
+          )}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        
+        {notifications.map((notification) => (
+          <DropdownMenuItem key={notification.id} className="flex flex-col items-start p-3">
+            <div className="flex w-full justify-between items-start">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className={`text-sm font-medium ${getTypeColor(notification.type)}`}>
+                    {notification.title}
+                  </h4>
+                  {notification.unread && (
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground">{notification.message}</p>
+                <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
               </div>
-            )}
-          </ScrollArea>
-        </div>
-      </PopoverContent>
-    </Popover>
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          </DropdownMenuItem>
+        ))}
+        
+        {notifications.length === 0 && (
+          <div className="text-center py-6 text-muted-foreground">
+            <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">No notifications</p>
+          </div>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

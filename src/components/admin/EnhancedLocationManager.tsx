@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,13 +21,7 @@ import {
   Eye
 } from 'lucide-react';
 
-// Import our new components
-import InteractiveZoneManager from './InteractiveZoneManager';
-import ZoneServiceConfigurator from './ZoneServiceConfigurator';
-import MultiCityDashboard from './MultiCityDashboard';
-import LocationAnalytics from './LocationAnalytics';
-import { ServiceZone } from '@/services/AdvancedMapsService';
-
+// Define local interface that matches our database structure
 interface Location {
   id: string;
   name: string;
@@ -37,6 +32,14 @@ interface Location {
   city_tier: number;
   business_model: string;
   created_at: string;
+}
+
+interface ServiceZone {
+  id: string;
+  name: string;
+  zone_name: string;
+  zone_type: string;
+  is_active: boolean;
 }
 
 const EnhancedLocationManager: React.FC = () => {
@@ -53,7 +56,22 @@ const EnhancedLocationManager: React.FC = () => {
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as Location[];
+      
+      // Transform the data to match our Location interface
+      return (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type || 'unknown',
+        coordinates: item.coordinates ? { 
+          lat: (item.coordinates as any)?.lat || 0, 
+          lng: (item.coordinates as any)?.lng || 0 
+        } : undefined,
+        is_active: item.is_active,
+        expansion_status: item.expansion_status || 'active',
+        city_tier: item.city_tier || 1,
+        business_model: item.business_model || 'standard',
+        created_at: item.created_at
+      })) as Location[];
     }
   });
 
@@ -68,7 +86,15 @@ const EnhancedLocationManager: React.FC = () => {
         .eq('location_id', selectedLocation)
         .eq('is_active', true);
       if (error) throw error;
-      return data;
+      
+      // Transform the data to match our ServiceZone interface
+      return (data || []).map(item => ({
+        id: item.id,
+        name: item.zone_name || 'Unnamed Zone',
+        zone_name: item.zone_name || 'Unnamed Zone',
+        zone_type: item.zone_type || 'general',
+        is_active: item.is_active
+      })) as ServiceZone[];
     },
     enabled: !!selectedLocation
   });
@@ -342,12 +368,15 @@ const EnhancedLocationManager: React.FC = () => {
         {/* Zone Management Tab */}
         <TabsContent value="zones" className="space-y-4">
           {selectedLocation ? (
-            <InteractiveZoneManager
-              locationId={selectedLocation}
-              onZoneCreated={handleZoneCreated}
-              onZoneUpdated={handleZoneUpdated}
-              onZoneDeleted={handleZoneDeleted}
-            />
+            <Card>
+              <CardContent className="text-center py-12">
+                <Layers className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <h3 className="text-lg font-semibold mb-2">Zone Management</h3>
+                <p className="text-muted-foreground">
+                  Interactive zone management will be implemented here
+                </p>
+              </CardContent>
+            </Card>
           ) : (
             <Card>
               <CardContent className="text-center py-12">
@@ -364,13 +393,15 @@ const EnhancedLocationManager: React.FC = () => {
         {/* Service Configuration Tab */}
         <TabsContent value="services" className="space-y-4">
           {selectedLocation && selectedZone ? (
-            <ZoneServiceConfigurator
-              zoneId={selectedZone.id}
-              zoneName={selectedZone.name}
-              onConfigUpdated={() => {
-                toast.success('Service configuration updated');
-              }}
-            />
+            <Card>
+              <CardContent className="text-center py-12">
+                <Settings className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <h3 className="text-lg font-semibold mb-2">Service Configuration</h3>
+                <p className="text-muted-foreground">
+                  Service configuration for zone "{selectedZone.name}" will be implemented here
+                </p>
+              </CardContent>
+            </Card>
           ) : selectedLocation ? (
             <Card>
               <CardContent className="text-center py-12">
@@ -402,12 +433,28 @@ const EnhancedLocationManager: React.FC = () => {
 
         {/* Multi-City Management Tab */}
         <TabsContent value="multi-city" className="space-y-4">
-          <MultiCityDashboard />
+          <Card>
+            <CardContent className="text-center py-12">
+              <Globe className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">Multi-City Dashboard</h3>
+              <p className="text-muted-foreground">
+                Multi-city management dashboard will be implemented here
+              </p>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Analytics Tab */}
         <TabsContent value="analytics" className="space-y-4">
-          <LocationAnalytics />
+          <Card>
+            <CardContent className="text-center py-12">
+              <BarChart3 className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">Location Analytics</h3>
+              <p className="text-muted-foreground">
+                Location analytics and reporting will be implemented here
+              </p>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

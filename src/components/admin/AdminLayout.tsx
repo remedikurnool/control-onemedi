@@ -136,21 +136,14 @@ const AdminLayout = () => {
 
   const handleOnboardingComplete = async (data: any) => {
     try {
-      // Create new patient/customer profile
+      // Create new patient/customer profile - using only valid fields for user_profiles
       const { data: newCustomer, error } = await supabase
         .from('user_profiles')
         .insert({
           full_name: data.fullName,
           email: data.email,
           phone: data.phone,
-          date_of_birth: data.dateOfBirth,
-          gender: data.gender,
-          address: data.address,
-          emergency_contact: data.emergencyContact,
-          medical_conditions: data.medicalConditions || [],
-          allergies: data.allergies || [],
           role: 'user',
-          is_active: true,
           created_at: new Date().toISOString()
         })
         .select()
@@ -158,22 +151,17 @@ const AdminLayout = () => {
 
       if (error) throw error;
 
-      // Create customer profile entry
+      // Create customer profile entry with additional healthcare data
       await supabase
         .from('customer_profiles')
         .insert({
-          user_id: newCustomer.id,
           name: data.fullName,
           phone: data.phone,
           email: data.email,
           address: data.address,
           date_of_birth: data.dateOfBirth,
-          gender: data.gender,
-          emergency_contact: data.emergencyContact,
-          medical_history: data.medicalConditions || [],
-          allergies: data.allergies || [],
-          preferred_language: data.preferredLanguage || 'en',
-          is_active: true
+          medical_conditions: data.medicalConditions || [],
+          allergies: data.allergies || []
         });
 
       toast.success('Patient registered successfully!');
