@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { sanitizeHtml, validateEmail } from '@/lib/security';
+import { sanitizeHtml } from '@/lib/security';
 import { 
   Users, 
   Search, 
@@ -64,8 +65,8 @@ const UsersManagement = () => {
       }
 
       if (sanitizedSearch) {
-        const emailValidation = validateEmail(sanitizedSearch);
-        if (emailValidation.isValid) {
+        const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitizedSearch);
+        if (isValidEmail) {
           query = query.or(`full_name.ilike.%${sanitizedSearch}%,email.ilike.%${sanitizedSearch}%`);
         } else {
           query = query.ilike('full_name', `%${sanitizedSearch}%`);
@@ -250,14 +251,14 @@ const UsersManagement = () => {
     try {
       const { data, error } = await supabase
         .from('user_profiles')
-        .insert([{
+        .insert({
           id: crypto.randomUUID(),
           email: newUser.email,
           full_name: newUser.full_name,
           phone: newUser.phone,
-          role: newUser.role,
+          role: newUser.role as UserRole,
           created_at: new Date().toISOString(),
-        }]);
+        });
 
       if (error) throw error;
 
