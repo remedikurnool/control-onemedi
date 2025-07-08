@@ -216,6 +216,13 @@ const HEALTHCARE_SERVICE_CONFIGS = {
   }
 };
 
+// Mock data for demonstration
+const mockPincodeZones = [
+  { pincode: '518001', zone_id: 'zone-1', verified: true },
+  { pincode: '518002', zone_id: 'zone-2', verified: true },
+  { pincode: '518003', zone_id: 'zone-1', verified: true },
+];
+
 // Service Customization Engine
 export class ServiceCustomizationEngine {
   // Get service configuration for a zone (mock implementation)
@@ -245,52 +252,32 @@ export class ServiceCustomizationEngine {
     }
   }
 
-  // Get service availability for a pincode
+  // Get service availability for a pincode (mock implementation)
   async getServiceAvailability(
     pincode: string,
     serviceType: ServiceType
   ): Promise<ServiceAvailability> {
     try {
-      // First, find the zone for this pincode using existing table
-      const { data: pincodeData, error: pincodeError } = await supabase
-        .from('enhanced_pincode_zones')
-        .select('zone_id')
-        .eq('pincode', pincode)
-        .eq('verified', true)
-        .single();
-
-      if (pincodeError || !pincodeData) {
+      // Mock implementation using mock data
+      console.log(`Mock: Checking availability for pincode ${pincode}, service ${serviceType}`);
+      
+      const pincodeData = mockPincodeZones.find(p => p.pincode === pincode && p.verified);
+      
+      if (!pincodeData) {
         return { 
           available: false, 
           reason: 'Pincode not serviceable' 
         };
       }
 
-      // Get zone service configuration (mock)
-      const config = await this.getZoneServiceConfig(pincodeData.zone_id, serviceType);
+      // Mock service configuration
+      const mockConfig = this.getDefaultServiceConfig(serviceType);
       
-      if (!config || !config.isEnabled) {
-        return { 
-          available: false, 
-          reason: 'Service not available in this zone' 
-        };
-      }
-
-      // Check operational hours
-      const isOperational = this.isServiceOperational(config);
-      if (!isOperational) {
-        return { 
-          available: false, 
-          reason: 'Service not operational at this time' 
-        };
-      }
-
       return {
         available: true,
-        config,
-        estimatedDeliveryTime: config.estimatedDeliveryTime,
-        deliveryFee: config.deliveryFee,
-        minOrderAmount: config.minOrderAmount
+        estimatedDeliveryTime: mockConfig.estimatedDeliveryTime,
+        deliveryFee: mockConfig.deliveryFee,
+        minOrderAmount: mockConfig.minOrderAmount
       };
     } catch (error) {
       console.error('Error checking service availability:', error);
@@ -327,44 +314,43 @@ export class ServiceCustomizationEngine {
     return true;
   }
 
-  // Calculate dynamic pricing
+  // Calculate dynamic pricing (mock implementation)
   async calculateDynamicPrice(
     zoneId: string,
     serviceType: ServiceType,
     orderDetails: OrderDetails
   ): Promise<PriceCalculation> {
-    const config = await this.getZoneServiceConfig(zoneId, serviceType);
-    if (!config) {
-      throw new Error('Zone service configuration not found');
-    }
-
+    console.log(`Mock: Calculating price for zone ${zoneId}, service ${serviceType}`);
+    
+    const mockConfig = this.getDefaultServiceConfig(serviceType);
+    
     let finalPrice = orderDetails.orderValue;
     const breakdown: PriceBreakdown = {
       basePrice: orderDetails.orderValue,
-      deliveryFee: config.deliveryFee,
+      deliveryFee: mockConfig.deliveryFee,
       adjustments: []
     };
 
     // Add delivery fee
-    finalPrice += config.deliveryFee;
+    finalPrice += mockConfig.deliveryFee;
 
-    // Peak hour pricing
+    // Peak hour pricing (mock calculation)
     const currentHour = new Date().getHours();
     const isPeakHour = (currentHour >= 18 && currentHour <= 21) || (currentHour >= 8 && currentHour <= 10);
     
-    if (isPeakHour && config.peakHourMultiplier > 1) {
-      const peakAdjustment = orderDetails.orderValue * (config.peakHourMultiplier - 1);
+    if (isPeakHour) {
+      const peakAdjustment = orderDetails.orderValue * 0.2; // 20% surcharge
       finalPrice += peakAdjustment;
       breakdown.adjustments.push({
         type: 'peak_hour',
         amount: peakAdjustment,
-        description: `Peak hour surcharge (${((config.peakHourMultiplier - 1) * 100).toFixed(0)}%)`
+        description: 'Peak hour surcharge (20%)'
       });
     }
 
-    // Distance-based pricing
-    if (config.distanceBasedPricing && orderDetails.distance) {
-      const distanceCharge = Math.max(0, (orderDetails.distance - 5) * 10); // ₹10 per km after 5km
+    // Distance-based pricing (mock)
+    if (orderDetails.distance && orderDetails.distance > 5) {
+      const distanceCharge = (orderDetails.distance - 5) * 10; // ₹10 per km after 5km
       finalPrice += distanceCharge;
       breakdown.adjustments.push({
         type: 'distance',
@@ -385,50 +371,37 @@ export class ServiceCustomizationEngine {
     }
 
     return {
-      originalPrice: orderDetails.orderValue + config.deliveryFee,
+      originalPrice: orderDetails.orderValue + mockConfig.deliveryFee,
       finalPrice,
       breakdown,
-      savings: Math.max(0, (orderDetails.orderValue + config.deliveryFee) - finalPrice)
+      savings: Math.max(0, (orderDetails.orderValue + mockConfig.deliveryFee) - finalPrice)
     };
   }
 
-  // Check service capacity
+  // Check service capacity (mock implementation)
   async checkServiceCapacity(
     zoneId: string,
     serviceType: ServiceType,
     requestedDateTime: Date
   ): Promise<CapacityStatus> {
-    const config = await this.getZoneServiceConfig(zoneId, serviceType);
-    if (!config) {
-      return { 
-        available: false, 
-        reason: 'Zone configuration not found',
-        availableSlots: 0,
-        totalCapacity: 0
-      };
-    }
-
-    // Get existing bookings for the requested time slot
-    const startOfHour = new Date(requestedDateTime);
-    startOfHour.setMinutes(0, 0, 0);
-    const endOfHour = new Date(startOfHour);
-    endOfHour.setHours(endOfHour.getHours() + 1);
-
-    // This would typically query a bookings table
-    // For now, we'll simulate with random data
-    const existingBookings = Math.floor(Math.random() * config.capacityPerHour);
-    const availableSlots = config.capacityPerHour - existingBookings;
+    console.log(`Mock: Checking capacity for zone ${zoneId}, service ${serviceType}`);
+    
+    const mockConfig = this.getDefaultServiceConfig(serviceType);
+    
+    // Mock capacity calculation
+    const existingBookings = Math.floor(Math.random() * mockConfig.capacityPerHour);
+    const availableSlots = mockConfig.capacityPerHour - existingBookings;
     
     return {
       available: availableSlots > 0,
       availableSlots,
-      totalCapacity: config.capacityPerHour,
-      nextAvailableSlot: availableSlots > 0 ? requestedDateTime : this.getNextAvailableSlot(config, requestedDateTime)
+      totalCapacity: mockConfig.capacityPerHour,
+      nextAvailableSlot: availableSlots > 0 ? requestedDateTime : this.getNextAvailableSlot(mockConfig, requestedDateTime)
     };
   }
 
   // Get next available time slot
-  private getNextAvailableSlot(config: ZoneServiceConfig, fromDateTime: Date): Date {
+  private getNextAvailableSlot(config: Partial<ZoneServiceConfig>, fromDateTime: Date): Date {
     const nextSlot = new Date(fromDateTime);
     nextSlot.setHours(nextSlot.getHours() + 1);
     return nextSlot;
@@ -461,11 +434,13 @@ export class ServiceCustomizationEngine {
     };
   }
 
-  // Bulk configure services for a zone
+  // Bulk configure services for a zone (mock implementation)
   async bulkConfigureZoneServices(
     zoneId: string,
     serviceTypes: ServiceType[]
   ): Promise<ZoneServiceConfig[]> {
+    console.log(`Mock: Bulk configuring services for zone ${zoneId}`);
+    
     const configs: ZoneServiceConfig[] = [];
 
     for (const serviceType of serviceTypes) {
