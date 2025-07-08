@@ -9,15 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { 
   MapPin, 
   Edit, 
   Trash2, 
   Plus, 
-  Maximize, 
-  Activity, 
+  Activity,
   Settings,
   Circle,
   Square,
@@ -59,15 +57,12 @@ const ZONE_TYPES = [
 ];
 
 const SERVICE_TYPES = [
-  'medicine_delivery',
-  'doctor_consultation', 
-  'scan_diagnostic',
-  'blood_bank',
-  'ambulance',
+  'medicine',
+  'doctor', 
+  'lab_test',
+  'scan',
   'home_care',
-  'physiotherapy',
-  'diabetes_care',
-  'diet_consultation'
+  'diabetes_care'
 ];
 
 const InteractiveZoneManager: React.FC<InteractiveZoneManagerProps> = ({
@@ -134,7 +129,7 @@ const InteractiveZoneManager: React.FC<InteractiveZoneManagerProps> = ({
         .insert({
           location_id: locationId,
           zone_name: zoneData.name,
-          service_type: zoneData.serviceTypes[0] || 'medicine',
+          service_type: (zoneData.serviceTypes[0] || 'medicine') as 'medicine' | 'lab_test' | 'scan' | 'doctor' | 'home_care' | 'diabetes_care',
           is_active: zoneData.isActive,
           zone_boundary: {},
           pincodes: [],
@@ -164,7 +159,7 @@ const InteractiveZoneManager: React.FC<InteractiveZoneManagerProps> = ({
         .from('location_service_zones')
         .update({
           zone_name: zoneData.name,
-          service_type: zoneData.serviceTypes?.[0] || 'medicine',
+          service_type: (zoneData.serviceTypes?.[0] || 'medicine') as 'medicine' | 'lab_test' | 'scan' | 'doctor' | 'home_care' | 'diabetes_care',
           is_active: zoneData.isActive
         })
         .eq('id', zoneId)
@@ -203,7 +198,7 @@ const InteractiveZoneManager: React.FC<InteractiveZoneManagerProps> = ({
     }
   });
 
-  // Initialize Google Maps
+  // Initialize Mock Maps
   useEffect(() => {
     if (!mapRef.current || !location || isMapLoaded) return;
 
@@ -223,7 +218,7 @@ const InteractiveZoneManager: React.FC<InteractiveZoneManagerProps> = ({
         setIsMapLoaded(true);
       } catch (error) {
         console.error('Failed to initialize map:', error);
-        toast.error('Failed to load Google Maps. Please check your internet connection.');
+        toast.error('Failed to load map. Please check your internet connection.');
       }
     };
 

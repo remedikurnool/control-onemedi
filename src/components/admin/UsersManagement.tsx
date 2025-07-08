@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,6 +29,8 @@ type UserRole = 'doctor' | 'admin' | 'user' | 'pharmacist' | 'lab_technician';
 const UsersManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [newUser, setNewUser] = useState({ email: '', full_name: '', phone: '', role: 'user' });
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Security: Log security events
@@ -227,6 +228,48 @@ const UsersManagement = () => {
       </div>
     </DialogContent>
   );
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleUserCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newUser.email || !newUser.full_name || !newUser.phone) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    if (!validateEmail(newUser.email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .insert([{
+          id: crypto.randomUUID(),
+          email: newUser.email,
+          full_name: newUser.full_name,
+          phone: newUser.phone,
+          role: newUser.role,
+          created_at: new Date().toISOString(),
+        }]);
+
+      if (error) throw error;
+
+      toast.success('User created successfully');
+      setIsCreateUserOpen(false);
+      setNewUser({ email: '', full_name: '', phone: '', role: 'user' });
+      
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    } catch (error: any) {
+      toast.error('Failed to create user: ' + error.message);
+    }
+  };
 
   return (
     <div className="container mx-auto p-6">
