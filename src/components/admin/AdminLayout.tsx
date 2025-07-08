@@ -136,10 +136,14 @@ const AdminLayout = () => {
 
   const handleOnboardingComplete = async (data: any) => {
     try {
-      // Create new patient/customer profile - using only valid fields for user_profiles
+      // Generate a unique ID for the new user profile
+      const userId = crypto.randomUUID();
+      
+      // Create new patient/customer profile
       const { data: newCustomer, error } = await supabase
         .from('user_profiles')
         .insert({
+          id: userId,
           full_name: data.fullName,
           email: data.email,
           phone: data.phone,
@@ -160,8 +164,8 @@ const AdminLayout = () => {
           email: data.email,
           address: data.address,
           date_of_birth: data.dateOfBirth,
-          medical_conditions: data.medicalConditions || [],
-          allergies: data.allergies || []
+          medical_conditions: data.medicalConditions ? data.medicalConditions.split(',') : [],
+          allergies: data.allergies ? data.allergies.split(',') : []
         });
 
       toast.success('Patient registered successfully!');

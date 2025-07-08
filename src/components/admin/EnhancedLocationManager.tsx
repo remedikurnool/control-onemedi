@@ -28,9 +28,6 @@ interface Location {
   type: string;
   coordinates?: { lat: number; lng: number };
   is_active: boolean;
-  expansion_status: string;
-  city_tier: number;
-  business_model: string;
   created_at: string;
 }
 
@@ -38,7 +35,7 @@ interface ServiceZone {
   id: string;
   name: string;
   zone_name: string;
-  zone_type: string;
+  service_type: string;
   is_active: boolean;
 }
 
@@ -67,9 +64,6 @@ const EnhancedLocationManager: React.FC = () => {
           lng: (item.coordinates as any)?.lng || 0 
         } : undefined,
         is_active: item.is_active,
-        expansion_status: item.expansion_status || 'active',
-        city_tier: item.city_tier || 1,
-        business_model: item.business_model || 'standard',
         created_at: item.created_at
       })) as Location[];
     }
@@ -92,7 +86,7 @@ const EnhancedLocationManager: React.FC = () => {
         id: item.id,
         name: item.zone_name || 'Unnamed Zone',
         zone_name: item.zone_name || 'Unnamed Zone',
-        zone_type: item.zone_type || 'general',
+        service_type: item.service_type || 'general',
         is_active: item.is_active
       })) as ServiceZone[];
     },
@@ -122,12 +116,11 @@ const EnhancedLocationManager: React.FC = () => {
   const getLocationStats = () => {
     const activeLocations = locations?.filter(l => l.is_active).length || 0;
     const totalZones = zones?.length || 0;
-    const expandingLocations = locations?.filter(l => l.expansion_status === 'expanding').length || 0;
     
     return {
       activeLocations,
       totalZones,
-      expandingLocations,
+      expandingLocations: 0,
       totalLocations: locations?.length || 0
     };
   };
@@ -248,8 +241,6 @@ const EnhancedLocationManager: React.FC = () => {
               {selectedLocationData && (
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span>Type: {selectedLocationData.type}</span>
-                  <span>Tier: {selectedLocationData.city_tier}</span>
-                  <span>Model: {selectedLocationData.business_model}</span>
                 </div>
               )}
             </div>
@@ -288,16 +279,8 @@ const EnhancedLocationManager: React.FC = () => {
                       </Badge>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Expansion Status</p>
-                      <Badge variant="outline">{selectedLocationData?.expansion_status}</Badge>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">City Tier</p>
-                      <p className="font-medium">Tier {selectedLocationData?.city_tier}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Business Model</p>
-                      <p className="font-medium">{selectedLocationData?.business_model}</p>
+                      <p className="text-sm text-muted-foreground">Type</p>
+                      <p className="font-medium">{selectedLocationData?.type}</p>
                     </div>
                   </div>
                   
@@ -329,7 +312,7 @@ const EnhancedLocationManager: React.FC = () => {
                         <div key={zone.id} className="flex justify-between items-center p-2 border rounded">
                           <div>
                             <p className="font-medium">{zone.zone_name}</p>
-                            <p className="text-xs text-muted-foreground">{zone.zone_type}</p>
+                            <p className="text-xs text-muted-foreground">{zone.service_type}</p>
                           </div>
                           <Badge variant={zone.is_active ? 'default' : 'secondary'}>
                             {zone.is_active ? 'Active' : 'Inactive'}

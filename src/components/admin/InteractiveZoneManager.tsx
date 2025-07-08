@@ -19,13 +19,20 @@ import {
   Maximize, 
   Activity, 
   Settings,
-  Polygon,
   Circle,
   Square,
   Save,
   X
 } from 'lucide-react';
-import { AdvancedMapsService, ServiceZone } from '@/services/AdvancedMapsService';
+
+interface ServiceZone {
+  id: string;
+  name: string;
+  type: 'delivery' | 'pickup' | 'emergency' | 'restricted' | 'premium';
+  color: string;
+  serviceTypes: string[];
+  isActive: boolean;
+}
 
 interface InteractiveZoneManagerProps {
   locationId: string;
@@ -70,10 +77,8 @@ const InteractiveZoneManager: React.FC<InteractiveZoneManagerProps> = ({
   onZoneDeleted
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapsServiceRef = useRef<AdvancedMapsService | null>(null);
   const [selectedZone, setSelectedZone] = useState<ServiceZone | null>(null);
   const [isZoneDialogOpen, setIsZoneDialogOpen] = useState(false);
-  const [drawingMode, setDrawingMode] = useState<google.maps.drawing.OverlayType | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [zoneFormData, setZoneFormData] = useState<ZoneFormData>({
     name: '',
@@ -113,10 +118,9 @@ const InteractiveZoneManager: React.FC<InteractiveZoneManagerProps> = ({
       return data.map(zone => ({
         id: zone.id,
         name: zone.zone_name,
-        type: zone.zone_type as ServiceZone['type'],
-        geometry: zone.geometry as GeoJSON.Polygon,
-        color: zone.zone_color || '#3b82f6',
-        serviceTypes: zone.service_types || [],
+        type: 'delivery' as ServiceZone['type'],
+        color: '#3b82f6',
+        serviceTypes: [zone.service_type],
         isActive: zone.is_active
       })) as ServiceZone[];
     }
@@ -130,12 +134,13 @@ const InteractiveZoneManager: React.FC<InteractiveZoneManagerProps> = ({
         .insert({
           location_id: locationId,
           zone_name: zoneData.name,
-          zone_type: zoneData.type,
-          geometry: zoneData.geometry,
-          zone_color: zoneData.color,
-          service_types: zoneData.serviceTypes,
+          service_type: zoneData.serviceTypes[0] || 'medicine',
           is_active: zoneData.isActive,
-          description: zoneFormData.description
+          zone_boundary: {},
+          pincodes: [],
+          delivery_fee: 0,
+          estimated_delivery_time: '1-2 hours',
+          priority_order: 1
         })
         .select()
         .single();
@@ -159,12 +164,8 @@ const InteractiveZoneManager: React.FC<InteractiveZoneManagerProps> = ({
         .from('location_service_zones')
         .update({
           zone_name: zoneData.name,
-          zone_type: zoneData.type,
-          geometry: zoneData.geometry,
-          zone_color: zoneData.color,
-          service_types: zoneData.serviceTypes,
-          is_active: zoneData.isActive,
-          description: zoneFormData.description
+          service_type: zoneData.serviceTypes?.[0] || 'medicine',
+          is_active: zoneData.isActive
         })
         .eq('id', zoneId)
         .select()
@@ -208,28 +209,18 @@ const InteractiveZoneManager: React.FC<InteractiveZoneManagerProps> = ({
 
     const initializeMap = async () => {
       try {
-        const mapsService = new AdvancedMapsService();
-        mapsServiceRef.current = mapsService;
-
-        const center = location.coordinates 
-          ? new google.maps.LatLng(location.coordinates.lat, location.coordinates.lng)
-          : new google.maps.LatLng(15.8281, 78.0373); // Default to Kurnool
-
-        await mapsService.initializeMap(mapRef.current!, {
-          center,
-          zoom: 12,
-          apiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || ''
-        }, {
-          onZoneCreated: handleZoneCreated,
-          onZoneUpdated: handleZoneUpdated
-        });
-
+        // Mock map initialization
+        const mapDiv = mapRef.current!;
+        mapDiv.style.backgroundColor = '#f0f0f0';
+        mapDiv.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">
+            <div style="text-align: center;">
+              <p>Interactive Map</p>
+              <p style="font-size: 12px; margin-top: 8px;">Location: ${location.name}</p>
+            </div>
+          </div>
+        `;
         setIsMapLoaded(true);
-
-        // Load existing zones
-        if (zones && zones.length > 0) {
-          mapsService.loadZones(zones);
-        }
       } catch (error) {
         console.error('Failed to initialize map:', error);
         toast.error('Failed to load Google Maps. Please check your internet connection.');
@@ -237,54 +228,7 @@ const InteractiveZoneManager: React.FC<InteractiveZoneManagerProps> = ({
     };
 
     initializeMap();
-
-    return () => {
-      if (mapsServiceRef.current) {
-        mapsServiceRef.current.destroy();
-      }
-    };
   }, [location, isMapLoaded]);
-
-  // Load zones when data changes
-  useEffect(() => {
-    if (mapsServiceRef.current && zones && isMapLoaded) {
-      mapsServiceRef.current.loadZones(zones);
-    }
-  }, [zones, isMapLoaded]);
-
-  // Handle zone creation from map
-  const handleZoneCreated = (zone: ServiceZone) => {
-    setSelectedZone(zone);
-    setZoneFormData({
-      name: zone.name,
-      type: zone.type,
-      color: zone.color,
-      serviceTypes: zone.serviceTypes,
-      isActive: zone.isActive,
-      description: ''
-    });
-    setIsZoneDialogOpen(true);
-    if (onZoneCreated) onZoneCreated(zone);
-  };
-
-  // Handle zone update from map
-  const handleZoneUpdated = (zone: ServiceZone) => {
-    if (selectedZone) {
-      updateZoneMutation.mutate({
-        zoneId: selectedZone.id,
-        zoneData: { ...zone, ...zoneFormData }
-      });
-    }
-    if (onZoneUpdated) onZoneUpdated(zone);
-  };
-
-  // Handle drawing mode change
-  const handleDrawingModeChange = (mode: google.maps.drawing.OverlayType | null) => {
-    setDrawingMode(mode);
-    if (mapsServiceRef.current) {
-      mapsServiceRef.current.setDrawingMode(mode);
-    }
-  };
 
   // Handle zone form submission
   const handleZoneFormSubmit = (e: React.FormEvent) => {
@@ -347,11 +291,26 @@ const InteractiveZoneManager: React.FC<InteractiveZoneManagerProps> = ({
     }
   };
 
-  // Fit map to zones
-  const handleFitToZones = () => {
-    if (mapsServiceRef.current) {
-      mapsServiceRef.current.fitMapToZones();
-    }
+  // Handle create new zone
+  const handleCreateZone = () => {
+    const newZone: ServiceZone = {
+      id: 'zone_' + Date.now(),
+      name: '',
+      type: 'delivery',
+      color: '#3b82f6',
+      serviceTypes: [],
+      isActive: true
+    };
+    setSelectedZone(newZone);
+    setZoneFormData({
+      name: '',
+      type: 'delivery',
+      color: '#3b82f6',
+      serviceTypes: [],
+      isActive: true,
+      description: ''
+    });
+    setIsZoneDialogOpen(true);
   };
 
   return (
@@ -366,9 +325,9 @@ const InteractiveZoneManager: React.FC<InteractiveZoneManagerProps> = ({
         </div>
         
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleFitToZones}>
-            <Maximize className="h-4 w-4 mr-2" />
-            Fit to Zones
+          <Button onClick={handleCreateZone}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Zone
           </Button>
         </div>
       </div>
@@ -386,48 +345,15 @@ const InteractiveZoneManager: React.FC<InteractiveZoneManagerProps> = ({
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
-            <Button
-              variant={drawingMode === google.maps.drawing.OverlayType.POLYGON ? 'default' : 'outline'}
-              onClick={() => handleDrawingModeChange(
-                drawingMode === google.maps.drawing.OverlayType.POLYGON 
-                  ? null 
-                  : google.maps.drawing.OverlayType.POLYGON
-              )}
-            >
-              <Polygon className="h-4 w-4 mr-2" />
-              Draw Polygon
-            </Button>
-            
-            <Button
-              variant={drawingMode === google.maps.drawing.OverlayType.CIRCLE ? 'default' : 'outline'}
-              onClick={() => handleDrawingModeChange(
-                drawingMode === google.maps.drawing.OverlayType.CIRCLE 
-                  ? null 
-                  : google.maps.drawing.OverlayType.CIRCLE
-              )}
-            >
+            <Button variant="outline" onClick={handleCreateZone}>
               <Circle className="h-4 w-4 mr-2" />
               Draw Circle
             </Button>
             
-            <Button
-              variant={drawingMode === google.maps.drawing.OverlayType.RECTANGLE ? 'default' : 'outline'}
-              onClick={() => handleDrawingModeChange(
-                drawingMode === google.maps.drawing.OverlayType.RECTANGLE 
-                  ? null 
-                  : google.maps.drawing.OverlayType.RECTANGLE
-              )}
-            >
+            <Button variant="outline" onClick={handleCreateZone}>
               <Square className="h-4 w-4 mr-2" />
               Draw Rectangle
             </Button>
-
-            {drawingMode && (
-              <Button variant="outline" onClick={() => handleDrawingModeChange(null)}>
-                <X className="h-4 w-4 mr-2" />
-                Cancel Drawing
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -437,7 +363,7 @@ const InteractiveZoneManager: React.FC<InteractiveZoneManagerProps> = ({
         <CardContent className="p-0">
           <div 
             ref={mapRef} 
-            className="h-96 w-full rounded-lg"
+            className="h-96 w-full rounded-lg border"
             style={{ minHeight: '400px' }}
           />
         </CardContent>
@@ -467,7 +393,7 @@ const InteractiveZoneManager: React.FC<InteractiveZoneManagerProps> = ({
                       <div>
                         <h4 className="font-medium">{zone.name}</h4>
                         <p className="text-sm text-muted-foreground">
-                          {ZONE_TYPES.find(t => t.value === zone.type)?.label}
+                          {ZONE_TYPES.find(t => t.value === zone.type)?.label || 'Delivery Zone'}
                         </p>
                       </div>
                     </div>
