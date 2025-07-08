@@ -1,3 +1,4 @@
+
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,21 +40,16 @@ class ErrorBoundary extends Component<Props, State> {
       errorInfo,
     });
 
-    // Call custom error handler if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
 
-    // Log error to external service (replace with your error tracking service)
     this.logErrorToService(error, errorInfo);
     
-    // Show toast notification
     toast.error('An unexpected error occurred. Please try refreshing the page.');
   }
 
   private logErrorToService = (error: Error, errorInfo: ErrorInfo) => {
-    // Replace this with your actual error logging service
-    // Examples: Sentry, LogRocket, Bugsnag, etc.
     console.error('Error logged to service:', {
       message: error.message,
       stack: error.stack,
@@ -78,12 +74,10 @@ class ErrorBoundary extends Component<Props, State> {
 
   public render() {
     if (this.state.hasError) {
-      // Custom fallback UI
       if (this.props.fallback) {
         return this.props.fallback;
       }
 
-      // Default error UI
       return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900">
           <Card className="max-w-lg w-full">
@@ -100,7 +94,6 @@ class ErrorBoundary extends Component<Props, State> {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Error Details (only in development) */}
               {process.env.NODE_ENV === 'development' && this.state.error && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">
@@ -122,7 +115,6 @@ class ErrorBoundary extends Component<Props, State> {
                 </div>
               )}
 
-              {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button 
                   onClick={this.handleRetry} 
@@ -142,7 +134,6 @@ class ErrorBoundary extends Component<Props, State> {
                 </Button>
               </div>
 
-              {/* Help Text */}
               <div className="text-center text-sm text-gray-500 dark:text-gray-400">
                 <p>If this problem persists, please contact our support team.</p>
                 <p className="mt-1">
@@ -166,12 +157,10 @@ class ErrorBoundary extends Component<Props, State> {
 
 export default ErrorBoundary;
 
-// Hook for functional components to handle errors
 export const useErrorHandler = () => {
   const handleError = (error: Error, context?: string) => {
     console.error(`Error in ${context || 'component'}:`, error);
     
-    // Log to external service
     console.error('Error logged:', {
       message: error.message,
       stack: error.stack,
@@ -181,7 +170,6 @@ export const useErrorHandler = () => {
       url: window.location.href,
     });
 
-    // Show user-friendly error message
     toast.error(
       context 
         ? `Error in ${context}: ${error.message}` 
@@ -192,7 +180,6 @@ export const useErrorHandler = () => {
   return { handleError };
 };
 
-// Async error handler for promises
 export const handleAsyncError = (error: unknown, context?: string) => {
   const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
   console.error(`Async error in ${context || 'operation'}:`, error);

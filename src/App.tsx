@@ -4,7 +4,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
-import { sanitizeHtml, validateEmail, validatePassword } from "./lib/security";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { NotificationProvider } from "./components/ui/notification-system";
 import AdminLayout from "./components/admin/AdminLayout";
@@ -37,7 +36,7 @@ const queryClient = new QueryClient({
     queries: {
       retry: 2,
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 5 * 60 * 1000,
     },
   },
 });

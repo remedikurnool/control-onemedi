@@ -1,3 +1,4 @@
+
 import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { generateSessionId } from '@/lib/security';
@@ -12,10 +13,8 @@ export const useSessionSecurity = () => {
     
     if (session) {
       try {
-        // Update last activity timestamp
         localStorage.setItem('last_activity', Date.now().toString());
         
-        // Log session activity
         await supabase.rpc('log_security_event', {
           p_action: 'session_activity',
           p_resource: 'session',
@@ -35,12 +34,10 @@ export const useSessionSecurity = () => {
     const timeSinceLastActivity = Date.now() - parseInt(lastActivity);
     
     if (timeSinceLastActivity > SESSION_TIMEOUT) {
-      // Session expired
       toast.error('Session expired. Please log in again.');
       await supabase.auth.signOut({ scope: 'global' });
       window.location.href = '/login';
     } else if (timeSinceLastActivity > SESSION_TIMEOUT - WARNING_TIME) {
-      // Show warning
       const remainingTime = Math.ceil((SESSION_TIMEOUT - timeSinceLastActivity) / 60000);
       toast.warning(`Session will expire in ${remainingTime} minutes. Click here to extend.`, {
         duration: 10000,
@@ -54,10 +51,8 @@ export const useSessionSecurity = () => {
 
   const invalidateSession = useCallback(async () => {
     try {
-      // Clean up local storage
       localStorage.removeItem('last_activity');
       
-      // Log session invalidation
       await supabase.rpc('log_security_event', {
         p_action: 'session_invalidated',
         p_resource: 'session',
@@ -65,7 +60,6 @@ export const useSessionSecurity = () => {
         p_success: true
       });
       
-      // Sign out from all devices
       await supabase.auth.signOut({ scope: 'global' });
     } catch (error) {
       console.error('Failed to invalidate session:', error);
@@ -73,7 +67,6 @@ export const useSessionSecurity = () => {
   }, []);
 
   useEffect(() => {
-    // Track user activity
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
     
     const handleActivity = () => {
@@ -84,10 +77,8 @@ export const useSessionSecurity = () => {
       document.addEventListener(event, handleActivity, true);
     });
 
-    // Check session timeout every minute
     const intervalId = setInterval(checkSessionTimeout, 60000);
 
-    // Initial activity tracking
     trackSessionActivity();
 
     return () => {
