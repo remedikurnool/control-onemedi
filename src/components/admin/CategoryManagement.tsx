@@ -90,13 +90,23 @@ export const CategoryManagement: React.FC = () => {
     queryKey: ['categories', activeTab],
     queryFn: async () => {
       const tableName = CATEGORY_TABLES[activeTab];
-      const { data, error } = await supabase
-        .from(tableName as any)
-        .select('*')
-        .order('display_order', { ascending: true });
+      
+      try {
+        const { data, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .order('display_order', { ascending: true });
 
-      if (error) throw error;
-      return data as Category[];
+        if (error) {
+          console.error('Error fetching categories:', error);
+          return [];
+        }
+        
+        return (data || []) as Category[];
+      } catch (err) {
+        console.error('Query error:', err);
+        return [];
+      }
     }
   });
 
@@ -107,13 +117,13 @@ export const CategoryManagement: React.FC = () => {
       
       if (data.id) {
         const { error } = await supabase
-          .from(table as any)
+          .from(table)
           .update(data)
           .eq('id', data.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from(table as any)
+          .from(table)
           .insert([data]);
         if (error) throw error;
       }
@@ -134,7 +144,7 @@ export const CategoryManagement: React.FC = () => {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from(CATEGORY_TABLES[activeTab] as any)
+        .from(CATEGORY_TABLES[activeTab])
         .delete()
         .eq('id', id);
       if (error) throw error;
@@ -334,12 +344,12 @@ export const CategoryManagement: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {isLoading ? (
                 <div className="col-span-full text-center py-8">Loading categories...</div>
-              ) : categories?.length === 0 ? (
+              ) : !categories || categories.length === 0 ? (
                 <div className="col-span-full text-center py-8 text-gray-500">
                   No categories found. Create your first category!
                 </div>
               ) : (
-                categories?.map((category) => (
+                categories.map((category) => (
                   <Card key={category.id} className="hover:shadow-md transition-shadow">
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">

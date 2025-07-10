@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -63,31 +64,51 @@ const BillingInvoicing: React.FC = () => {
 
   const queryClient = useQueryClient();
 
-  // Fetch invoices
+  // Fetch customer orders as invoice data (since no invoices table exists)
   const { data: invoices, isLoading } = useQuery({
-    queryKey: ['invoices'],
+    queryKey: ['billing-invoices'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('invoices')
+        .from('customer_orders')
         .select('*')
-        .order('invoice_date', { ascending: false });
+        .order('order_date', { ascending: false });
 
       if (error) throw error;
-      return data as Invoice[];
+      
+      // Transform orders to invoice format
+      return data?.map(order => ({
+        id: order.id,
+        invoice_number: order.order_number,
+        customer_id: order.customer_id || '',
+        invoice_date: order.order_date || order.created_at,
+        due_date: order.delivery_date || order.created_at,
+        total_amount: order.total_amount,
+        status: order.payment_status === 'paid' ? 'paid' : 'pending',
+        notes: order.notes,
+        created_at: order.created_at,
+        updated_at: order.updated_at
+      })) || [];
     }
   });
 
-  // Fetch customers
+  // Fetch customer profiles as customers
   const { data: customers } = useQuery({
-    queryKey: ['customers'],
+    queryKey: ['billing-customers'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('customers')
+        .from('customer_profiles')
         .select('*')
         .order('name');
 
       if (error) throw error;
-      return data as Customer[];
+      
+      return data?.map(profile => ({
+        id: profile.id,
+        name: profile.name,
+        email: profile.email || '',
+        phone: profile.phone,
+        address: profile.address ? JSON.stringify(profile.address) : ''
+      })) || [];
     }
   });
 
@@ -111,17 +132,95 @@ const BillingInvoicing: React.FC = () => {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Invoices</CardTitle>
-          <CardDescription>Latest billing and invoice records</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center py-8">
-            Billing and invoicing module coming soon...
-          </p>
-        </CardContent>
-      </Card>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="invoices">Invoices</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="invoices" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Invoices</CardTitle>
+              <CardDescription>Latest billing and invoice records</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <p className="text-center py-8">Loading invoices...</p>
+              ) : invoices?.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">
+                  No invoices found
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invoice #</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {invoices?.slice(0, 10).map((invoice) => (
+                      <TableRow key={invoice.id}>
+                        <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
+                        <TableCell>{format(new Date(invoice.invoice_date), 'MMM dd, yyyy')}</TableCell>
+                        <TableCell>₹{invoice.total_amount.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'}>
+                            {invoice.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="ghost">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payments" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment Records</CardTitle>
+              <CardDescription>Track payment transactions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center py-8 text-muted-foreground">
+                Payment tracking coming soon...
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="reports" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Financial Reports</CardTitle>
+              <CardDescription>Generate billing and financial reports</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center py-8 text-muted-foreground">
+                Billing reports coming soon...
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
