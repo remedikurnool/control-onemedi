@@ -12,7 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit2, Trash2, Move, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, EyeOff } from 'lucide-react';
 import { EnhancedImageUpload } from '@/components/common/EnhancedImageUpload';
 import { toast } from 'sonner';
 import * as Icons from 'lucide-react';
@@ -52,7 +52,7 @@ const CATEGORY_TABLES = {
   scan: 'scan_categories',
   home_care: 'home_care_categories',
   physiotherapy: 'physiotherapy_categories'
-};
+} as const;
 
 const CATEGORY_LABELS = {
   medicine: 'Medicine Categories',
@@ -85,12 +85,13 @@ export const CategoryManagement: React.FC = () => {
 
   const queryClient = useQueryClient();
 
-  // Fetch categories
+  // Fetch categories using table names as strings
   const { data: categories, isLoading } = useQuery({
     queryKey: ['categories', activeTab],
     queryFn: async () => {
+      const tableName = CATEGORY_TABLES[activeTab];
       const { data, error } = await supabase
-        .from(CATEGORY_TABLES[activeTab])
+        .from(tableName as any)
         .select('*')
         .order('display_order', { ascending: true });
 
@@ -106,13 +107,13 @@ export const CategoryManagement: React.FC = () => {
       
       if (data.id) {
         const { error } = await supabase
-          .from(table)
+          .from(table as any)
           .update(data)
           .eq('id', data.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from(table)
+          .from(table as any)
           .insert([data]);
         if (error) throw error;
       }
@@ -133,7 +134,7 @@ export const CategoryManagement: React.FC = () => {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from(CATEGORY_TABLES[activeTab])
+        .from(CATEGORY_TABLES[activeTab] as any)
         .delete()
         .eq('id', id);
       if (error) throw error;
