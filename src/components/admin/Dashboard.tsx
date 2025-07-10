@@ -77,14 +77,34 @@ const Dashboard = () => {
           supabase.from('customer_orders').select('id, total_amount, order_status, created_at').gte('created_at', last30Days.toISOString()),
           supabase.from('customer_orders').select('total_amount').eq('order_status', 'delivered').gte('created_at', last30Days.toISOString()),
           supabase.from('product_inventory').select('available_quantity, product_id').lt('available_quantity', 10),
-          // Mock emergency calls for today (replace with actual table when available)
-          Promise.resolve({ data: Array.from({length: Math.floor(Math.random() * 5)}, (_, i) => ({id: i})) }),
-          // Mock appointments for today
-          Promise.resolve({ data: Array.from({length: Math.floor(Math.random() * 20) + 10}, (_, i) => ({id: i})) }),
-          // Mock blood bank data
-          Promise.resolve({ data: Array.from({length: 8}, (_, i) => ({blood_group: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'][i], units: Math.floor(Math.random() * 50) + 10})) }),
-          // Mock ambulance data
-          Promise.resolve({ data: Array.from({length: 5}, (_, i) => ({id: i, status: ['available', 'busy', 'maintenance'][Math.floor(Math.random() * 3)]})) })
+          // Emergency calls for today (using realistic static data until table is created)
+          Promise.resolve({ data: [
+            {id: 1, type: 'cardiac', time: '09:30', status: 'resolved'},
+            {id: 2, type: 'accident', time: '14:15', status: 'in_progress'}
+          ] }),
+          // Today's appointments (using realistic static data)
+          Promise.resolve({ data: Array.from({length: 15}, (_, i) => ({
+            id: i + 1,
+            patient_name: `Patient ${i + 1}`,
+            time: `${9 + Math.floor(i/2)}:${i % 2 === 0 ? '00' : '30'}`,
+            doctor: `Dr. ${['Sharma', 'Patel', 'Kumar', 'Singh'][i % 4]}`,
+            status: ['scheduled', 'completed', 'in_progress'][i % 3]
+          })) }),
+          // Blood bank inventory (realistic static data)
+          Promise.resolve({ data: [
+            {blood_group: 'A+', units: 45}, {blood_group: 'A-', units: 12},
+            {blood_group: 'B+', units: 38}, {blood_group: 'B-', units: 8},
+            {blood_group: 'AB+', units: 15}, {blood_group: 'AB-', units: 5},
+            {blood_group: 'O+', units: 52}, {blood_group: 'O-', units: 18}
+          ] }),
+          // Ambulance fleet status (realistic static data)
+          Promise.resolve({ data: [
+            {id: 1, vehicle_number: 'KNL-AMB-001', status: 'available', location: 'Base Station'},
+            {id: 2, vehicle_number: 'KNL-AMB-002', status: 'busy', location: 'En Route'},
+            {id: 3, vehicle_number: 'KNL-AMB-003', status: 'available', location: 'Base Station'},
+            {id: 4, vehicle_number: 'KNL-AMB-004', status: 'maintenance', location: 'Workshop'},
+            {id: 5, vehicle_number: 'KNL-AMB-005', status: 'available', location: 'Outpost'}
+          ] })
         ]);
 
         const totalPatients = usersResult.data?.length || 0;
@@ -813,7 +833,7 @@ const Dashboard = () => {
                   <span className="text-sm">Lab Tests</span>
                 </div>
                 <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-                  {Math.floor(Math.random() * 15) + 5}
+                  12
                 </Badge>
               </div>
             </div>
@@ -831,27 +851,67 @@ const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <Button variant="outline" className="flex flex-col items-center gap-2 h-20">
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-2 h-20 hover:bg-blue-50 transition-colors"
+              onClick={() => {
+                window.location.href = '/admin/ambulance';
+                toast.info('🚑 Redirecting to ambulance services...');
+              }}
+            >
               <Ambulance className="h-6 w-6 text-blue-600" />
               <span className="text-xs">Call Ambulance</span>
             </Button>
-            <Button variant="outline" className="flex flex-col items-center gap-2 h-20">
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-2 h-20 hover:bg-purple-50 transition-colors"
+              onClick={() => {
+                window.location.href = '/admin/lab-tests';
+                toast.info('🧪 Redirecting to lab tests...');
+              }}
+            >
               <TestTube className="h-6 w-6 text-purple-600" />
               <span className="text-xs">Lab Tests</span>
             </Button>
-            <Button variant="outline" className="flex flex-col items-center gap-2 h-20">
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-2 h-20 hover:bg-green-50 transition-colors"
+              onClick={() => {
+                window.location.href = '/admin/medicines';
+                toast.info('💊 Redirecting to medicine management...');
+              }}
+            >
               <Pill className="h-6 w-6 text-green-600" />
               <span className="text-xs">Add Medicine</span>
             </Button>
-            <Button variant="outline" className="flex flex-col items-center gap-2 h-20">
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-2 h-20 hover:bg-red-50 transition-colors"
+              onClick={() => {
+                toast.info('📅 Appointment booking system coming soon!');
+              }}
+            >
               <Stethoscope className="h-6 w-6 text-red-600" />
               <span className="text-xs">Book Appointment</span>
             </Button>
-            <Button variant="outline" className="flex flex-col items-center gap-2 h-20">
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-2 h-20 hover:bg-orange-50 transition-colors"
+              onClick={() => {
+                window.location.href = '/admin/hospital';
+                toast.info('🏥 Redirecting to hospital management...');
+              }}
+            >
               <Building2 className="h-6 w-6 text-orange-600" />
               <span className="text-xs">Hospital Info</span>
             </Button>
-            <Button variant="outline" className="flex flex-col items-center gap-2 h-20">
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-2 h-20 hover:bg-red-50 transition-colors"
+              onClick={() => {
+                toast.error('🚨 Emergency alert activated! This is a demo.');
+              }}
+            >
               <Shield className="h-6 w-6 text-indigo-600" />
               <span className="text-xs">Emergency</span>
             </Button>

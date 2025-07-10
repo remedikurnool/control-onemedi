@@ -323,9 +323,138 @@ const InventoryManagement = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-center text-muted-foreground py-8">
-                Stock movement tracking coming soon
-              </p>
+              <div className="space-y-4">
+                {/* Stock Movement Filters */}
+                <div className="flex gap-4">
+                  <Select defaultValue="all">
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Movement Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Movements</SelectItem>
+                      <SelectItem value="in">Stock In</SelectItem>
+                      <SelectItem value="out">Stock Out</SelectItem>
+                      <SelectItem value="adjustment">Adjustment</SelectItem>
+                      <SelectItem value="expired">Expired</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Input
+                    placeholder="Search by product name..."
+                    className="flex-1"
+                  />
+
+                  <Button variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Movement
+                  </Button>
+                </div>
+
+                {/* Recent Stock Movements */}
+                <div className="space-y-2">
+                  <h4 className="font-medium">Recent Movements</h4>
+                  <div className="space-y-2">
+                    {[
+                      {
+                        id: 1,
+                        product: 'Paracetamol 500mg',
+                        type: 'in',
+                        quantity: 100,
+                        reason: 'New Stock Purchase',
+                        date: '2025-01-10',
+                        time: '14:30',
+                        user: 'Admin User'
+                      },
+                      {
+                        id: 2,
+                        product: 'Amoxicillin 250mg',
+                        type: 'out',
+                        quantity: 25,
+                        reason: 'Customer Order #ORD-001',
+                        date: '2025-01-10',
+                        time: '12:15',
+                        user: 'Sales Staff'
+                      },
+                      {
+                        id: 3,
+                        product: 'Insulin Injection',
+                        type: 'adjustment',
+                        quantity: -5,
+                        reason: 'Damaged Stock',
+                        date: '2025-01-09',
+                        time: '16:45',
+                        user: 'Inventory Manager'
+                      },
+                      {
+                        id: 4,
+                        product: 'Cough Syrup',
+                        type: 'expired',
+                        quantity: -10,
+                        reason: 'Expired Stock Removal',
+                        date: '2025-01-09',
+                        time: '10:00',
+                        user: 'Quality Control'
+                      }
+                    ].map((movement) => (
+                      <div key={movement.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h5 className="font-medium">{movement.product}</h5>
+                              <Badge
+                                className={
+                                  movement.type === 'in' ? 'bg-green-100 text-green-800' :
+                                  movement.type === 'out' ? 'bg-blue-100 text-blue-800' :
+                                  movement.type === 'adjustment' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-red-100 text-red-800'
+                                }
+                              >
+                                {movement.type === 'in' ? 'Stock In' :
+                                 movement.type === 'out' ? 'Stock Out' :
+                                 movement.type === 'adjustment' ? 'Adjustment' :
+                                 'Expired'}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{movement.reason}</p>
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
+                              <span>{movement.date} at {movement.time}</span>
+                              <span>By: {movement.user}</span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className={`font-medium ${
+                              movement.quantity > 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {movement.quantity > 0 ? '+' : ''}{movement.quantity}
+                            </p>
+                            <p className="text-xs text-muted-foreground">units</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Movement Summary */}
+                <div className="grid grid-cols-4 gap-4 pt-4 border-t">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-green-600">+125</p>
+                    <p className="text-xs text-muted-foreground">Stock In Today</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-blue-600">-45</p>
+                    <p className="text-xs text-muted-foreground">Stock Out Today</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-yellow-600">-8</p>
+                    <p className="text-xs text-muted-foreground">Adjustments</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-red-600">-12</p>
+                    <p className="text-xs text-muted-foreground">Expired</p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

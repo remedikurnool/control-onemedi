@@ -12,11 +12,15 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Building2, MapPin, Phone, Mail, Star, Bed, Clock } from 'lucide-react';
+import { Plus, Edit, Trash2, Building2, MapPin, Phone, Mail, Star, Bed, Clock, Search, Filter, Eye, Users, Heart, Activity, CheckCircle, AlertCircle, TrendingUp } from 'lucide-react';
 
 const HospitalManagement = () => {
   const [selectedHospital, setSelectedHospital] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Real-time subscription
@@ -33,17 +37,49 @@ const HospitalManagement = () => {
     };
   }, [queryClient]);
 
-  // Fetch hospitals
+  // Fetch hospitals with filters
   const { data: hospitals, isLoading } = useQuery({
-    queryKey: ['hospitals'],
+    queryKey: ['hospitals', searchTerm, statusFilter, typeFilter],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('hospitals')
         .select('*')
         .order('created_at', { ascending: false });
+
+      // Apply filters
+      if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      }
+
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
+
+      if (typeFilter !== 'all') {
+        query = query.eq('hospital_type', typeFilter);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     }
+  });
+
+  // Fetch hospital statistics
+  const { data: hospitalStats } = useQuery({
+    queryKey: ['hospital-stats'],
+    queryFn: async () => {
+      // In a real app, this would be a database query
+      return {
+        totalHospitals: hospitals?.length || 0,
+        activeHospitals: hospitals?.filter(h => h.status === 'active').length || 0,
+        totalBeds: hospitals?.reduce((sum, h) => sum + (h.bed_capacity || 0), 0) || 0,
+        availableBeds: hospitals?.reduce((sum, h) => sum + (h.available_beds || 0), 0) || 0,
+        emergencyServices: hospitals?.filter(h => h.emergency_services).length || 0,
+        partnerHospitals: hospitals?.filter(h => h.is_partner).length || 0
+      };
+    },
+    enabled: !!hospitals
   });
 
   // Create/Update hospital mutation
@@ -135,9 +171,21 @@ const HospitalManagement = () => {
     const colors: Record<string, string> = {
       government: 'bg-blue-100 text-blue-800',
       private: 'bg-green-100 text-green-800',
-      specialty: 'bg-purple-100 text-purple-800'
+      specialty: 'bg-purple-100 text-purple-800',
+      trust: 'bg-orange-100 text-orange-800',
+      corporate: 'bg-indigo-100 text-indigo-800'
     };
     return colors[type] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'inactive': return 'bg-gray-100 text-gray-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'suspended': return 'bg-red-100 text-red-800';
+      default: return 'bg-blue-100 text-blue-800';
+    }
   };
 
   return (

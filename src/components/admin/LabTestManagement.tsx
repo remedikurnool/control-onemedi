@@ -476,9 +476,186 @@ const LabTestManagement = () => {
         </TabsContent>
 
         <TabsContent value="bookings">
-          <div className="text-center py-8 text-muted-foreground">
-            Lab test bookings management coming soon...
-          </div>
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Lab Test Bookings</CardTitle>
+                  <CardDescription>Manage patient lab test appointments and results</CardDescription>
+                </div>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Book Test
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Booking Filters */}
+                <div className="flex gap-4">
+                  <Select defaultValue="all">
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Bookings</SelectItem>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Input
+                    placeholder="Search by patient name or booking ID..."
+                    className="flex-1"
+                  />
+
+                  <Button variant="outline">
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filter
+                  </Button>
+                </div>
+
+                {/* Recent Bookings */}
+                <div className="space-y-2">
+                  {[
+                    {
+                      id: 'LTB-001',
+                      patient_name: 'Rajesh Kumar',
+                      patient_phone: '+91-9876543210',
+                      tests: ['Complete Blood Count', 'Lipid Profile'],
+                      booking_date: '2025-01-11',
+                      booking_time: '09:00',
+                      status: 'scheduled',
+                      center: 'OneMedi Lab - Main Branch',
+                      total_amount: 1200,
+                      doctor_referred: 'Dr. Priya Sharma'
+                    },
+                    {
+                      id: 'LTB-002',
+                      patient_name: 'Lakshmi Devi',
+                      patient_phone: '+91-9876543211',
+                      tests: ['HbA1c', 'Fasting Glucose'],
+                      booking_date: '2025-01-11',
+                      booking_time: '10:30',
+                      status: 'in_progress',
+                      center: 'OneMedi Lab - Main Branch',
+                      total_amount: 800,
+                      doctor_referred: 'Dr. Arun Reddy'
+                    },
+                    {
+                      id: 'LTB-003',
+                      patient_name: 'Venkat Reddy',
+                      patient_phone: '+91-9876543212',
+                      tests: ['Thyroid Function Test'],
+                      booking_date: '2025-01-10',
+                      booking_time: '14:00',
+                      status: 'completed',
+                      center: 'OneMedi Lab - Branch 2',
+                      total_amount: 600,
+                      doctor_referred: 'Dr. Meera Patel'
+                    },
+                    {
+                      id: 'LTB-004',
+                      patient_name: 'Priya Sharma',
+                      patient_phone: '+91-9876543213',
+                      tests: ['Vitamin D', 'Vitamin B12'],
+                      booking_date: '2025-01-12',
+                      booking_time: '11:00',
+                      status: 'scheduled',
+                      center: 'OneMedi Lab - Main Branch',
+                      total_amount: 900,
+                      doctor_referred: 'Dr. Suresh Kumar'
+                    }
+                  ].map((booking) => (
+                    <div key={booking.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h5 className="font-medium">{booking.patient_name}</h5>
+                              <Badge
+                                className={
+                                  booking.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
+                                  booking.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                                  booking.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                  'bg-red-100 text-red-800'
+                                }
+                              >
+                                {booking.status}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">ID: {booking.id}</p>
+                            <p className="text-sm text-muted-foreground">{booking.patient_phone}</p>
+                            <p className="text-sm text-muted-foreground">Referred by: {booking.doctor_referred}</p>
+                          </div>
+
+                          <div>
+                            <p className="text-sm font-medium">Tests:</p>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {booking.tests.map((test, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">{test}</Badge>
+                              ))}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-2">{booking.center}</p>
+                          </div>
+
+                          <div>
+                            <div className="text-sm">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                {booking.booking_date}
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Clock className="h-4 w-4" />
+                                {booking.booking_time}
+                              </div>
+                              <p className="font-medium mt-2">₹{booking.total_amount}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          {booking.status === 'completed' && (
+                            <Button size="sm" variant="outline">
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Booking Summary */}
+                <div className="grid grid-cols-4 gap-4 pt-4 border-t">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-blue-600">4</p>
+                    <p className="text-xs text-muted-foreground">Total Bookings</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-yellow-600">1</p>
+                    <p className="text-xs text-muted-foreground">In Progress</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-green-600">1</p>
+                    <p className="text-xs text-muted-foreground">Completed Today</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-purple-600">₹3,500</p>
+                    <p className="text-xs text-muted-foreground">Today's Revenue</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
