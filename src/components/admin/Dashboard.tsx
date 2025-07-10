@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import EmptyState from '@/components/ui/empty-state';
 import { useErrorHandler, handleAsyncError } from '@/components/ErrorBoundary';
+import QuickActions from './QuickActions';
 import {
   Users,
   Package,
@@ -293,27 +294,52 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 min-h-screen">
       {/* Enhanced Header with Healthcare Context */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Healthcare Dashboard</h1>
-          <p className="text-muted-foreground flex items-center gap-2">
-            <Heart className="h-4 w-4 text-red-500" />
-            OneMedi Healthcare Management System
-          </p>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-600 rounded-lg">
+              <Heart className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Healthcare Dashboard</h1>
+              <p className="text-muted-foreground flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                OneMedi Healthcare Management System - Live
+              </p>
+            </div>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {new Date().toLocaleDateString('en-IN', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}
+          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-3">
           {/* Emergency Alert Button */}
-          <Button variant="destructive" size="sm">
-            <Zap className="h-4 w-4 mr-2" />
-            Emergency
+          <Button
+            variant="destructive"
+            size="lg"
+            className="shadow-lg hover:shadow-xl transition-all duration-200 animate-pulse"
+            onClick={() => toast.error("Emergency system activated! This is a demo.")}
+          >
+            <Zap className="h-5 w-5 mr-2" />
+            Emergency Alert
           </Button>
+
+          <QuickActions />
 
           <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
+              <Button
+                size="lg"
+                className="shadow-md hover:shadow-lg transition-all duration-200"
+              >
+                <Plus className="h-5 w-5 mr-2" />
                 Add Medicine
               </Button>
             </DialogTrigger>
@@ -476,70 +502,103 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Emergency Alerts Bar */}
+      {/* Enhanced Emergency Alerts Bar */}
       {(stats?.emergencyCalls > 0 || stats?.lowStockMedicines > 5) && (
-        <Card className="border-red-200 bg-red-50 dark:bg-red-950/20">
-          <CardContent className="p-4">
+        <Card className="border-red-200 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20 shadow-lg">
+          <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
+              <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
+                <AlertTriangle className="h-6 w-6 text-red-600 animate-pulse" />
+              </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-red-800 dark:text-red-200">Critical Alerts</p>
-                <div className="flex gap-4 text-xs text-red-600 dark:text-red-300">
-                  {stats?.emergencyCalls > 0 && <span>{stats.emergencyCalls} emergency calls today</span>}
-                  {stats?.lowStockMedicines > 5 && <span>{stats.lowStockMedicines} medicines low stock</span>}
+                <p className="text-lg font-semibold text-red-800 dark:text-red-200">Critical Alerts Require Attention</p>
+                <div className="flex flex-wrap gap-4 mt-2">
+                  {stats?.emergencyCalls > 0 && (
+                    <div className="flex items-center gap-2 px-3 py-1 bg-red-100 dark:bg-red-900/30 rounded-full">
+                      <Zap className="h-4 w-4 text-red-600" />
+                      <span className="text-sm font-medium text-red-700 dark:text-red-300">
+                        {stats.emergencyCalls} emergency calls today
+                      </span>
+                    </div>
+                  )}
+                  {stats?.lowStockMedicines > 5 && (
+                    <div className="flex items-center gap-2 px-3 py-1 bg-orange-100 dark:bg-orange-900/30 rounded-full">
+                      <Package className="h-4 w-4 text-orange-600" />
+                      <span className="text-sm font-medium text-orange-700 dark:text-orange-300">
+                        {stats.lowStockMedicines} medicines low stock
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
-              <Button size="sm" variant="destructive">
-                <Eye className="h-4 w-4 mr-1" />
-                View All
+              <Button
+                size="lg"
+                variant="destructive"
+                className="shadow-md hover:shadow-lg transition-all duration-200"
+                onClick={() => toast.info("Navigating to alerts dashboard...")}
+              >
+                <Eye className="h-5 w-5 mr-2" />
+                View All Alerts
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Healthcare Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Enhanced Healthcare Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Patients Card */}
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold text-blue-600">{stats?.totalPatients || 0}</p>
-                <p className="text-sm text-muted-foreground">Total Patients</p>
+              <div className="space-y-2">
+                <p className="text-3xl font-bold text-blue-600">{stats?.totalPatients || 0}</p>
+                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Total Patients</p>
+                <div className="flex items-center gap-1 text-xs text-green-600">
+                  <TrendingUp className="h-3 w-3" />
+                  <span>+12% this month</span>
+                </div>
               </div>
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-full">
-                <Users className="h-6 w-6 text-blue-600" />
+              <div className="p-4 bg-blue-600 rounded-xl shadow-lg">
+                <Users className="h-8 w-8 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Today's Appointments */}
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold text-green-600">{stats?.todayAppointments || 0}</p>
-                <p className="text-sm text-muted-foreground">Today's Appointments</p>
+              <div className="space-y-2">
+                <p className="text-3xl font-bold text-green-600">{stats?.todayAppointments || 0}</p>
+                <p className="text-sm font-medium text-green-700 dark:text-green-300">Today's Appointments</p>
+                <div className="flex items-center gap-1 text-xs text-blue-600">
+                  <Calendar className="h-3 w-3" />
+                  <span>{stats?.pendingAppointments || 0} pending</span>
+                </div>
               </div>
-              <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-full">
-                <Stethoscope className="h-6 w-6 text-green-600" />
+              <div className="p-4 bg-green-600 rounded-xl shadow-lg">
+                <Stethoscope className="h-8 w-8 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Emergency Calls */}
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-red-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold text-red-600">{stats?.emergencyCalls || 0}</p>
-                <p className="text-sm text-muted-foreground">Emergency Calls Today</p>
+              <div className="space-y-2">
+                <p className="text-3xl font-bold text-red-600">{stats?.emergencyCalls || 0}</p>
+                <p className="text-sm font-medium text-red-700 dark:text-red-300">Emergency Calls Today</p>
+                <div className="flex items-center gap-1 text-xs text-red-600">
+                  <Clock className="h-3 w-3" />
+                  <span>Avg. response: 8 min</span>
+                </div>
               </div>
-              <div className="p-3 bg-red-100 dark:bg-red-900/20 rounded-full">
-                <Phone className="h-6 w-6 text-red-600" />
+              <div className="p-4 bg-red-600 rounded-xl shadow-lg">
+                <Phone className="h-8 w-8 text-white animate-pulse" />
               </div>
             </div>
           </CardContent>

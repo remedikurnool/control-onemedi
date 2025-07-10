@@ -1,8 +1,14 @@
 
-import SystemSettings from '@/components/admin/SystemSettings';
+import React from 'react';
+import AdminLayout from '@/components/admin/AdminLayout';
+import SettingsPageComponent from '@/components/admin/SettingsPage';
 
 const SettingsPage = () => {
-  return <SystemSettings />;
+  return (
+    <AdminLayout>
+      <SettingsPageComponent />
+    </AdminLayout>
+  );
 };
 
 export default SettingsPage;

@@ -29,6 +29,7 @@ import EnhancedPOSPage from "./pages/admin/EnhancedPOSPage";
 import AnalyticsPage from "./pages/admin/AnalyticsPage";
 import MarketingPage from "./pages/admin/MarketingPage";
 import SettingsPage from "./pages/admin/SettingsPage";
+import PatientPage from "./pages/admin/PatientPage";
 import "./App.css";
 
 const queryClient = new QueryClient({
@@ -60,6 +61,7 @@ function App() {
                     <Route index element={<Dashboard />} />
                     <Route path="dashboard" element={<Dashboard />} />
                     <Route path="users" element={<UsersManagement />} />
+                    <Route path="patients" element={<PatientPage />} />
                     <Route path="inventory" element={<InventoryManagement />} />
                     <Route path="orders" element={<OrdersManagement />} />
                     <Route path="medicines" element={<MedicineManagement />} />

@@ -203,6 +203,7 @@ const AdminLayout = () => {
   const navigation = [
     { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
     { name: 'Users', href: '/admin/users', icon: Users },
+    { name: 'Patients', href: '/admin/patients', icon: Heart },
     { name: 'Inventory', href: '/admin/inventory', icon: Package },
     { name: 'Medicines', href: '/admin/medicines', icon: Pill },
     { name: 'Lab Tests', href: '/admin/lab-tests', icon: TestTube },
