@@ -288,8 +288,7 @@ const DoctorsManagement = () => {
                 Add Doctor
               </Button>
             </DialogTrigger>
-        </div>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{selectedDoctor ? 'Edit Doctor' : 'Add New Doctor'}</DialogTitle>
               <DialogDescription>
@@ -456,6 +455,7 @@ const DoctorsManagement = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Tabs defaultValue="doctors" className="space-y-4">

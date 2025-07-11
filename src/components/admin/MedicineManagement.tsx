@@ -128,14 +128,7 @@ const MedicineManagement = () => {
     },
   });
 
-  // For now, we'll use a simple categories list since medicine_categories table doesn't exist
-  const categories = [
-    { id: '1', name_en: 'Pain Relief', name_te: 'నొప్పి నివారణ' },
-    { id: '2', name_en: 'Antibiotics', name_te: 'యాంటీబయాటిక్స్' },
-    { id: '3', name_en: 'Vitamins', name_te: 'విటమిన్లు' },
-    { id: '4', name_en: 'Diabetes Care', name_te: 'డయాబెటిస్ కేర్' },
-    { id: '5', name_en: 'Heart Care', name_te: 'గుండె సంరక్షణ' },
-  ];
+
 
   // Create/Update medicine mutation
   const saveMedicineMutation = useMutation({

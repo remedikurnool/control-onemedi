@@ -230,8 +230,7 @@ const DiabetesCareManagement = () => {
                 Add Service
               </Button>
             </DialogTrigger>
-        </div>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{selectedService ? 'Edit Service' : 'Add New Diabetes Service'}</DialogTitle>
               <DialogDescription>
@@ -351,6 +350,7 @@ const DiabetesCareManagement = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Tabs defaultValue="services" className="space-y-4">

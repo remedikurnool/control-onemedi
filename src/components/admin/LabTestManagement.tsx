@@ -6,45 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { 
-  TestTube, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Search, 
-  SlidersHorizontal as Filter,
-  Calendar,
-  Clock,
-  MapPin,
-  FileText,
-  Eye,
-  Download,
-  RefreshCw,
-  Building,
-  Users,
-  TrendingUp
-} from 'lucide-react';
-
-const LabTestManagement: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('tests');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterCategory, setFilterCategory] = useState('all');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedTest, setSelectedTest] = useState(null);
-
-<<<<<<< HEAD
-const RISK_FACTORS = [
-  'diabetes', 'hypertension', 'heart_disease', 'obesity',
-  'smoking', 'family_history', 'age_related', 'pregnancy'
-];
+import { Plus, Edit, Trash2, Search, Filter, TestTube, Clock, User, Phone, MapPin, CheckCircle, XCircle } from 'lucide-react';
+import CategoryManagement from './CategoryManagement';
 
 interface LabTest {
   id: string;
@@ -86,47 +54,50 @@ interface CenterVariant {
   estimated_time?: string;
 }
 
-interface DiagnosticCenter {
-  id: string;
-  name_en: string;
-  name_te: string;
-  address: any;
-  phone: string;
-  email?: string;
-  license_number: string;
-  home_collection_available: boolean;
-  home_collection_radius_km: number;
-  is_active: boolean;
-}
+const TEST_CATEGORIES = [
+  'blood_tests', 'urine_tests', 'imaging', 'cardiac', 'diabetes',
+  'liver_function', 'kidney_function', 'thyroid', 'infectious_diseases'
+];
 
-interface TestPricing {
-  id: string;
-  test_id: string;
-  center_id: string;
-  base_price: number;
-  discounted_price?: number;
-  discount_percentage?: number;
-  home_collection_fee: number;
-  urgent_fee: number;
-  is_available: boolean;
-  diagnostic_centers?: DiagnosticCenter;
-}
-
-const LabTestManagement = () => {
+const LabTestManagement: React.FC = () => {
   const [selectedTest, setSelectedTest] = useState<LabTest | null>(null);
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
-  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
-  const [isPricingDialogOpen, setIsPricingDialogOpen] = useState(false);
-  const [isCenterVariantsDialogOpen, setIsCenterVariantsDialogOpen] = useState(false);
-  const [selectedTestForPricing, setSelectedTestForPricing] = useState<LabTest | null>(null);
-  const [editingCategory, setEditingCategory] = useState<any>(null);
-  const [centerVariants, setCenterVariants] = useState<CenterVariant[]>([]);
-  const [newVariant, setNewVariant] = useState<Partial<CenterVariant>>({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
   const queryClient = useQueryClient();
+
+  // Fetch lab tests
+  const { data: tests, isLoading: testsLoading } = useQuery({
+    queryKey: ['lab-tests', searchTerm, selectedCategory],
+    queryFn: async () => {
+      let query = supabase
+        .from('lab_tests')
+        .select('*')
+        .eq('is_active', true)
+        .order('name_en');
+
+      if (searchTerm) {
+        query = query.ilike('name_en', `%${searchTerm}%`);
+      }
+
+      if (selectedCategory !== 'all') {
+        query = query.eq('category', selectedCategory);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        console.log('Lab tests table not ready yet:', error.message);
+        return [];
+      }
+      return data as LabTest[];
+    },
+    retry: false,
+  });
 
   // Fetch categories
   const { data: categories } = useQuery({
-    queryKey: ['lab-test-categories'],
+    queryKey: ['categories', 'lab_test'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('categories')
@@ -134,182 +105,69 @@ const LabTestManagement = () => {
         .eq('type', 'lab_test')
         .eq('is_active', true)
         .order('name_en');
-
+      
       if (error) throw error;
       return data || [];
     }
   });
 
-  // Fetch diagnostic centers
-  const { data: centers } = useQuery({
-    queryKey: ['diagnostic-centers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('locations')
-        .select('*')
-        .eq('type', 'diagnostic_center')
-        .eq('is_active', true)
-        .order('name_en');
-
-      if (error) {
-        console.log('Diagnostic centers not ready yet:', error.message);
-        return [];
-      }
-      return data || [];
-    },
-    retry: false,
-  });
-
-  // Fetch lab tests - handle gracefully if tables don't exist
-  const { data: labTests, isLoading: testsLoading } = useQuery({
-    queryKey: ['lab-tests'],
-    queryFn: async (): Promise<LabTest[]> => {
-      try {
-        const { data, error } = await supabase
-          .from('lab_tests' as any)
-          .select('*')
-          .eq('is_active', true)
-          .order('name_en');
-        
-        if (error) {
-          console.log('Lab tests table not ready yet:', error.message);
-          return [];
-        }
-        return Array.isArray(data) ? (data as unknown as LabTest[]) : [];
-      } catch (err) {
-        console.log('Lab tests query failed:', err);
-        return [];
-      }
-    },
-  });
-=======
-  const queryClient = useQueryClient();
-
-  // Fetch lab tests
-  const { data: tests, isLoading } = useQuery({
-    queryKey: ['lab-tests', searchQuery, filterCategory],
-    queryFn: async () => {
-      let query = supabase.from('lab_tests').select('*').order('name_en', { ascending: true });
->>>>>>> 7a8a8d3843e7b0e5f53516958de89a1deefd4190
-
-      if (filterCategory !== 'all') {
-        query = query.eq('category', filterCategory);
-      }
-
-      if (searchQuery.trim() !== '') {
-        query = query.ilike('name_en', `%${searchQuery}%`);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      return data || [];
-    }
-  });
-
-  // Create/Update lab test mutation
-  const testMutation = useMutation({
-    mutationFn: async (data: any) => {
-      if (data.id) {
+  // Save test mutation
+  const saveTestMutation = useMutation({
+    mutationFn: async (testData: Partial<LabTest>) => {
+      if (selectedTest) {
         const { error } = await supabase
           .from('lab_tests')
-          .update(data)
-          .eq('id', data.id);
+          .update({
+            ...testData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', selectedTest.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('lab_tests')
-          .insert([data]);
+          .insert([{
+            ...testData,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }]);
         if (error) throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lab-tests'] });
-      setIsDialogOpen(false);
-      toast.success('Lab test saved successfully');
+      toast.success(selectedTest ? 'Test updated successfully' : 'Test created successfully');
+      setIsTestDialogOpen(false);
+      setSelectedTest(null);
     },
     onError: (error) => {
-      toast.error('Failed to save lab test');
-      console.error('Lab test save error:', error);
-    }
+      toast.error('Failed to save test: ' + error.message);
+    },
   });
 
-  // Delete lab test mutation
-  const deleteMutation = useMutation({
+  // Delete test mutation
+  const deleteTestMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('lab_tests')
-        .delete()
+        .update({ is_active: false })
         .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lab-tests'] });
-      toast.success('Lab test deleted successfully');
+      toast.success('Test deleted successfully');
     },
     onError: (error) => {
-      toast.error('Failed to delete lab test');
-      console.error('Lab test delete error:', error);
-    }
-  });
-
-<<<<<<< HEAD
-  // Category mutations
-  const saveCategoryMutation = useMutation({
-    mutationFn: async (categoryData: any) => {
-      if (editingCategory) {
-        const { error } = await supabase
-          .from('categories')
-          .update(categoryData)
-          .eq('id', editingCategory.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('categories')
-          .insert([{ ...categoryData, type: 'lab_test' }]);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lab-test-categories'] });
-      toast.success(editingCategory ? 'Category updated successfully' : 'Category created successfully');
-      setIsCategoryDialogOpen(false);
-      setEditingCategory(null);
-    },
-    onError: (error) => {
-      toast.error('Failed to save category: ' + error.message);
-    },
-  });
-
-  const deleteCategoryMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lab-test-categories'] });
-      toast.success('Category deleted successfully');
-    },
-    onError: (error) => {
-      toast.error('Failed to delete category: ' + error.message);
+      toast.error('Failed to delete test: ' + error.message);
     },
   });
 
   const handleSubmitTest = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-
-    // Calculate discount price if discount percent is provided
-    const price = parseFloat(formData.get('price')?.toString() || '0');
-    const discountPercent = parseFloat(formData.get('discount_percent')?.toString() || '0');
-    const calculatedDiscountPrice = discountPercent > 0
-      ? price * (1 - discountPercent / 100)
-      : parseFloat(formData.get('discount_price')?.toString() || '0') || null;
-
-    const testData: Partial<LabTest> = {
+    
+    const testData = {
       name_en: formData.get('name_en')?.toString() || '',
       name_te: formData.get('name_te')?.toString() || '',
       description_en: formData.get('description_en')?.toString() || '',
@@ -322,86 +180,51 @@ const LabTestManagement = () => {
       preparation_instructions: formData.get('preparation_instructions')?.toString() || '',
       report_delivery_hours: parseInt(formData.get('report_delivery_hours')?.toString() || '24'),
       is_package: formData.get('is_package') === 'on',
-      price: price,
-      discount_price: calculatedDiscountPrice,
-      discount_percent: discountPercent || null,
+      price: parseFloat(formData.get('price')?.toString() || '0'),
+      discount_price: parseFloat(formData.get('discount_price')?.toString() || '0') || null,
+      discount_percent: parseFloat(formData.get('discount_percent')?.toString() || '0') || null,
       is_featured: formData.get('is_featured') === 'on',
       add_to_carousel: formData.get('add_to_carousel') === 'on',
       image_url: formData.get('image_url')?.toString() || '',
-      images: formData.get('images')?.toString().split(',').map(s => s.trim()).filter(Boolean) || [],
       normal_range: formData.get('normal_range')?.toString() || '',
       methodology: formData.get('methodology')?.toString() || '',
-      center_variants: centerVariants,
     };
 
-    labTestMutation.mutate(testData);
+    saveTestMutation.mutate(testData);
   };
 
-=======
->>>>>>> 7a8a8d3843e7b0e5f53516958de89a1deefd4190
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Lab Test Management</h1>
           <p className="text-muted-foreground">Manage diagnostic tests and lab services</p>
         </div>
-        
         <div className="flex gap-2">
-          <Button variant="outline">
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
-          </Button>
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Test
-          </Button>
-        </div>
-<<<<<<< HEAD
-        <div className="flex gap-2">
-          <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Categories
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Lab Test Categories</DialogTitle>
-              </DialogHeader>
-              <CategoryManagement
-                categories={categories || []}
-                onSave={(data) => saveCategoryMutation.mutate(data)}
-                onDelete={(id) => deleteCategoryMutation.mutate(id)}
-                onEdit={(category) => setEditingCategory(category)}
-                editingCategory={editingCategory}
-                setEditingCategory={setEditingCategory}
-              />
-            </DialogContent>
-          </Dialog>
+          <CategoryManagement 
+            categoryType="lab_test"
+            title="Lab Test"
+            description="Manage categories for lab tests"
+          />
           <Dialog open={isTestDialogOpen} onOpenChange={setIsTestDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={() => setSelectedTest(null)}>
                 <Plus className="w-4 h-4 mr-2" />
-                Add Lab Test
+                Add Test
               </Button>
             </DialogTrigger>
-        </div>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{selectedTest ? 'Edit Lab Test' : 'Add New Lab Test'}</DialogTitle>
-              <DialogDescription>
-                Create or modify lab test with categories, risk factors, and disease conditions
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmitTest} className="space-y-6">
-              {/* Basic Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Basic Information</h3>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{selectedTest ? 'Edit Test' : 'Add New Lab Test'}</DialogTitle>
+                <DialogDescription>
+                  Create or modify lab test offerings
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmitTest} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="name_en">Test Name (English) *</Label>
+                    <Label htmlFor="name_en">Test Name (English)</Label>
                     <Input
                       id="name_en"
                       name="name_en"
@@ -423,7 +246,7 @@ const LabTestManagement = () => {
 
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="test_code">Test Code *</Label>
+                    <Label htmlFor="test_code">Test Code</Label>
                     <Input
                       id="test_code"
                       name="test_code"
@@ -433,67 +256,7 @@ const LabTestManagement = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="category">Category</Label>
-                    <Select name="category" defaultValue={selectedTest?.category}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TEST_CATEGORIES.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category.replace('_', ' ').toUpperCase()}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="category_id">Category (New)</Label>
-                    <Select name="category_id" defaultValue={selectedTest?.category_id}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories?.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name_en}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="description_en">Description (English)</Label>
-                    <Textarea
-                      id="description_en"
-                      name="description_en"
-                      defaultValue={selectedTest?.description_en}
-                      placeholder="Test description"
-                      rows={3}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="description_te">Description (Telugu)</Label>
-                    <Textarea
-                      id="description_te"
-                      name="description_te"
-                      defaultValue={selectedTest?.description_te}
-                      placeholder="పరీక్ష వివరణ"
-                      rows={3}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Pricing Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Pricing Information</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="price">Price (₹) *</Label>
+                    <Label htmlFor="price">Price (₹)</Label>
                     <Input
                       id="price"
                       name="price"
@@ -503,39 +266,6 @@ const LabTestManagement = () => {
                       defaultValue={selectedTest?.price}
                       placeholder="0.00"
                       required
-                      onChange={(e) => {
-                        const price = parseFloat(e.target.value) || 0;
-                        const discountPercentInput = document.getElementById('discount_percent') as HTMLInputElement;
-                        const discountPercent = parseFloat(discountPercentInput?.value) || 0;
-                        if (discountPercent > 0) {
-                          const discountPrice = price * (1 - discountPercent / 100);
-                          const discountPriceInput = document.getElementById('discount_price') as HTMLInputElement;
-                          if (discountPriceInput) discountPriceInput.value = discountPrice.toFixed(2);
-                        }
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="discount_percent">Discount % (Auto-calculates price)</Label>
-                    <Input
-                      id="discount_percent"
-                      name="discount_percent"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="100"
-                      defaultValue={selectedTest?.discount_percent}
-                      placeholder="0"
-                      onChange={(e) => {
-                        const discountPercent = parseFloat(e.target.value) || 0;
-                        const priceInput = document.getElementById('price') as HTMLInputElement;
-                        const price = parseFloat(priceInput?.value) || 0;
-                        if (price > 0) {
-                          const discountPrice = price * (1 - discountPercent / 100);
-                          const discountPriceInput = document.getElementById('discount_price') as HTMLInputElement;
-                          if (discountPriceInput) discountPriceInput.value = discountPrice.toFixed(2);
-                        }
-                      }}
                     />
                   </div>
                   <div>
@@ -551,14 +281,10 @@ const LabTestManagement = () => {
                     />
                   </div>
                 </div>
-              </div>
 
-              {/* Test Details */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Test Details</h3>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="sample_type">Sample Type *</Label>
+                    <Label htmlFor="sample_type">Sample Type</Label>
                     <Select name="sample_type" defaultValue={selectedTest?.sample_type}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select sample type" />
@@ -569,8 +295,6 @@ const LabTestManagement = () => {
                         <SelectItem value="stool">Stool</SelectItem>
                         <SelectItem value="saliva">Saliva</SelectItem>
                         <SelectItem value="sputum">Sputum</SelectItem>
-                        <SelectItem value="tissue">Tissue</SelectItem>
-                        <SelectItem value="swab">Swab</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -585,706 +309,171 @@ const LabTestManagement = () => {
                       required
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="methodology">Methodology</Label>
-                    <Input
-                      id="methodology"
-                      name="methodology"
-                      defaultValue={selectedTest?.methodology}
-                      placeholder="e.g., ELISA, PCR"
-                    />
-                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="normal_range">Normal Range</Label>
-                    <Input
-                      id="normal_range"
-                      name="normal_range"
-                      defaultValue={selectedTest?.normal_range}
-                      placeholder="e.g., 4.5-11.0 x10³/μL"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="preparation_instructions">Preparation Instructions</Label>
-                    <Textarea
-                      id="preparation_instructions"
-                      name="preparation_instructions"
-                      defaultValue={selectedTest?.preparation_instructions}
-                      placeholder="Instructions for patient preparation"
-                      rows={2}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Images */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Images</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="image_url">Primary Image URL</Label>
-                    <Input
-                      id="image_url"
-                      name="image_url"
-                      defaultValue={selectedTest?.image_url}
-                      placeholder="https://example.com/test-image.jpg"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="images">Additional Images (comma separated URLs)</Label>
-                    <Input
-                      id="images"
-                      name="images"
-                      defaultValue={selectedTest?.images?.join(', ')}
-                      placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Center Variants */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">Center Variants</h3>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsCenterVariantsDialogOpen(true)}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Manage Center Pricing
-                  </Button>
-                </div>
-                {centerVariants.length > 0 && (
-                  <div className="grid grid-cols-1 gap-2">
-                    {centerVariants.map((variant, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 border rounded">
-                        <span>{variant.center_name}: ₹{variant.price}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            const newVariants = centerVariants.filter((_, i) => i !== index);
-                            setCenterVariants(newVariants);
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Settings */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Settings</h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="fasting_required"
-                        name="fasting_required"
-                        defaultChecked={selectedTest?.fasting_required}
-                      />
-                      <Label htmlFor="fasting_required">Fasting Required</Label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="is_package"
-                        name="is_package"
-                        defaultChecked={selectedTest?.is_package}
-                      />
-                      <Label htmlFor="is_package">Is Package</Label>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="is_featured"
-                        name="is_featured"
-                        defaultChecked={selectedTest?.is_featured}
-                      />
-                      <Label htmlFor="is_featured">Featured Test</Label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="add_to_carousel"
-                        name="add_to_carousel"
-                        defaultChecked={selectedTest?.add_to_carousel}
-                      />
-                      <Label htmlFor="add_to_carousel">Add to Carousel</Label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setIsTestDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={labTestMutation.isPending}>
-                  {labTestMutation.isPending ? 'Saving...' : (selectedTest ? 'Update' : 'Create')}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        {/* Center Variants Management Dialog */}
-        <Dialog open={isCenterVariantsDialogOpen} onOpenChange={setIsCenterVariantsDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Manage Center Variants</DialogTitle>
-              <DialogDescription>
-                Set different pricing for different diagnostic centers
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              {/* Add New Variant */}
-              <div className="border rounded p-4">
-                <h4 className="font-semibold mb-3">Add New Center Variant</h4>
-                <div className="grid grid-cols-4 gap-4">
-                  <div>
-                    <Label>Diagnostic Center</Label>
-                    <Select
-                      value={newVariant.center_id}
-                      onValueChange={(value) => {
-                        const center = centers?.find(c => c.id === value);
-                        setNewVariant(prev => ({
-                          ...prev,
-                          center_id: value,
-                          center_name: center?.name_en || ''
-                        }));
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select center" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {centers?.map((center) => (
-                          <SelectItem key={center.id} value={center.id}>
-                            {center.name_en}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Price (₹)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={newVariant.price || ''}
-                      onChange={(e) => setNewVariant(prev => ({
-                        ...prev,
-                        price: parseFloat(e.target.value) || 0
-                      }))}
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div>
-                    <Label>Discount Price (₹)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={newVariant.discount_price || ''}
-                      onChange={(e) => setNewVariant(prev => ({
-                        ...prev,
-                        discount_price: parseFloat(e.target.value) || undefined
-                      }))}
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div>
-                    <Label>Estimated Time</Label>
-                    <Input
-                      value={newVariant.estimated_time || ''}
-                      onChange={(e) => setNewVariant(prev => ({
-                        ...prev,
-                        estimated_time: e.target.value
-                      }))}
-                      placeholder="e.g., 2-4 hours"
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between mt-4">
+                <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      id="variant_available"
-                      checked={newVariant.is_available ?? true}
-                      onChange={(e) => setNewVariant(prev => ({
-                        ...prev,
-                        is_available: e.target.checked
-                      }))}
+                      id="fasting_required"
+                      name="fasting_required"
+                      defaultChecked={selectedTest?.fasting_required}
                     />
-                    <Label htmlFor="variant_available">Available</Label>
+                    <Label htmlFor="fasting_required">Fasting Required</Label>
                   </div>
-                  <Button
-                    onClick={() => {
-                      if (newVariant.center_id && newVariant.price) {
-                        setCenterVariants(prev => [...prev, {
-                          id: Date.now().toString(),
-                          center_id: newVariant.center_id!,
-                          center_name: newVariant.center_name!,
-                          price: newVariant.price!,
-                          discount_price: newVariant.discount_price,
-                          is_available: newVariant.is_available ?? true,
-                          estimated_time: newVariant.estimated_time
-                        }]);
-                        setNewVariant({});
-                      }
-                    }}
-                    disabled={!newVariant.center_id || !newVariant.price}
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="is_featured"
+                      name="is_featured"
+                      defaultChecked={selectedTest?.is_featured}
+                    />
+                    <Label htmlFor="is_featured">Featured Test</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="add_to_carousel"
+                      name="add_to_carousel"
+                      defaultChecked={selectedTest?.add_to_carousel}
+                    />
+                    <Label htmlFor="add_to_carousel">Add to Carousel</Label>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button type="submit" disabled={saveTestMutation.isPending}>
+                    {selectedTest ? 'Update' : 'Create'} Test
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsTestDialogOpen(false)}
                   >
-                    Add Variant
+                    Cancel
                   </Button>
                 </div>
-              </div>
-
-              {/* Existing Variants */}
-              <div className="space-y-2">
-                <h4 className="font-semibold">Current Center Variants</h4>
-                {centerVariants.length === 0 ? (
-                  <p className="text-muted-foreground">No center variants added yet</p>
-                ) : (
-                  <div className="space-y-2">
-                    {centerVariants.map((variant, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border rounded">
-                        <div className="flex-1">
-                          <div className="font-medium">{variant.center_name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Price: ₹{variant.price}
-                            {variant.discount_price && ` | Discount: ₹${variant.discount_price}`}
-                            {variant.estimated_time && ` | Time: ${variant.estimated_time}`}
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={variant.is_available ? "default" : "secondary"}>
-                            {variant.is_available ? 'Available' : 'Unavailable'}
-                          </Badge>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              const newVariants = centerVariants.filter((_, i) => i !== index);
-                              setCenterVariants(newVariants);
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsCenterVariantsDialogOpen(false)}
-                >
-                  Done
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-=======
->>>>>>> 7a8a8d3843e7b0e5f53516958de89a1deefd4190
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="tests">Lab Tests</TabsTrigger>
-          <TabsTrigger value="bookings">Bookings</TabsTrigger>
-          <TabsTrigger value="centers">Test Centers</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="tests" className="space-y-4">
-          {/* Test Categories Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Tests</CardTitle>
-                <TestTube className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{tests?.length || 0}</div>
-                <p className="text-xs text-muted-foreground">across all categories</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Today's Bookings</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">42</div>
-                <p className="text-xs text-muted-foreground">+12% from yesterday</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg Report Time</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">24h</div>
-                <p className="text-xs text-muted-foreground">for most tests</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Centers</CardTitle>
-                <Building className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">18</div>
-                <p className="text-xs text-muted-foreground">collection centers</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Search and Filter */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Lab Tests Directory</CardTitle>
-              <CardDescription>Manage available diagnostic tests and pricing</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <Input
-                    placeholder="Search tests..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-                <Select value={filterCategory} onValueChange={setFilterCategory}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="blood">Blood Tests</SelectItem>
-                    <SelectItem value="urine">Urine Tests</SelectItem>
-                    <SelectItem value="cardiac">Cardiac Tests</SelectItem>
-                    <SelectItem value="hormone">Hormone Tests</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Tests Table */}
-              {isLoading ? (
-                <p className="text-center py-8">Loading lab tests...</p>
-              ) : tests?.length === 0 ? (
-                <p className="text-center py-8 text-muted-foreground">
-                  No lab tests found. Add your first test!
-                </p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Sample Type</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tests.map((test) => (
-                      <TableRow key={test.id}>
-                        <TableCell>{test.name_en}</TableCell>
-                        <TableCell>{test.category}</TableCell>
-                        <TableCell>₹{test.price?.toFixed(2) || '0.00'}</TableCell>
-                        <TableCell>{test.sample_type}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="ghost" onClick={() => setSelectedTest(test)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => deleteMutation.mutate(test.id)} disabled={deleteMutation.isPending}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="bookings" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Test Bookings</CardTitle>
-              <CardDescription>Manage patient test appointments and sample collection</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-center py-8 text-muted-foreground">
-                Test booking management coming soon...
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="centers" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Collection Centers</CardTitle>
-              <CardDescription>Manage lab and collection center network</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-center py-8 text-muted-foreground">
-                Collection center management coming soon...
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="reports" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Lab Reports & Analytics</CardTitle>
-              <CardDescription>View test results and performance metrics</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-center py-8 text-muted-foreground">
-                Lab analytics and reports coming soon...
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Add/Edit Test Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedTest ? 'Edit Lab Test' : 'Add New Lab Test'}
-            </DialogTitle>
-            <DialogDescription>
-              Configure test details, pricing, and sample requirements
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-center py-8 text-muted-foreground">
-              Lab test configuration form coming soon...
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-// Category Management Component (reusable)
-const CategoryManagement = ({
-  categories,
-  onSave,
-  onDelete,
-  onEdit,
-  editingCategory,
-  setEditingCategory
-}: {
-  categories: any[];
-  onSave: (data: any) => void;
-  onDelete: (id: string) => void;
-  onEdit: (category: any) => void;
-  editingCategory: any;
-  setEditingCategory: (category: any) => void;
-}) => {
-  const [isAddingCategory, setIsAddingCategory] = useState(false);
-  const [categoryForm, setCategoryForm] = useState({
-    name_en: '',
-    name_te: '',
-    description_en: '',
-    description_te: '',
-    is_active: true
-  });
-
-  const handleSaveCategory = () => {
-    if (!categoryForm.name_en.trim()) {
-      toast.error('Category name is required');
-      return;
-    }
-
-    onSave(categoryForm);
-    setCategoryForm({
-      name_en: '',
-      name_te: '',
-      description_en: '',
-      description_te: '',
-      is_active: true
-    });
-    setIsAddingCategory(false);
-    setEditingCategory(null);
-  };
-
-  const handleEditCategory = (category: any) => {
-    setCategoryForm({
-      name_en: category.name_en || '',
-      name_te: category.name_te || '',
-      description_en: category.description_en || '',
-      description_te: category.description_te || '',
-      is_active: category.is_active ?? true
-    });
-    setEditingCategory(category);
-    setIsAddingCategory(true);
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Lab Test Categories</h3>
-        <Button
-          onClick={() => {
-            setIsAddingCategory(true);
-            setEditingCategory(null);
-            setCategoryForm({
-              name_en: '',
-              name_te: '',
-              description_en: '',
-              description_te: '',
-              is_active: true
-            });
-          }}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Category
-        </Button>
-      </div>
-
-      {isAddingCategory && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Category Name (English)</Label>
-                  <Input
-                    value={categoryForm.name_en}
-                    onChange={(e) => setCategoryForm(prev => ({ ...prev, name_en: e.target.value }))}
-                    placeholder="Enter category name"
-                  />
-                </div>
-                <div>
-                  <Label>Category Name (Telugu)</Label>
-                  <Input
-                    value={categoryForm.name_te}
-                    onChange={(e) => setCategoryForm(prev => ({ ...prev, name_te: e.target.value }))}
-                    placeholder="వర్గం పేరు"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Description (English)</Label>
-                  <Textarea
-                    value={categoryForm.description_en}
-                    onChange={(e) => setCategoryForm(prev => ({ ...prev, description_en: e.target.value }))}
-                    placeholder="Category description"
-                  />
-                </div>
-                <div>
-                  <Label>Description (Telugu)</Label>
-                  <Textarea
-                    value={categoryForm.description_te}
-                    onChange={(e) => setCategoryForm(prev => ({ ...prev, description_te: e.target.value }))}
-                    placeholder="వర్గం వివరణ"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  checked={categoryForm.is_active}
-                  onCheckedChange={(checked) => setCategoryForm(prev => ({ ...prev, is_active: checked }))}
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <Label>Search Tests</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search lab tests..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
                 />
-                <Label>Active</Label>
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleSaveCategory}>
-                  {editingCategory ? 'Update' : 'Save'} Category
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsAddingCategory(false);
-                    setEditingCategory(null);
-                  }}
-                >
-                  Cancel
-                </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <div>
+              <Label>Category</Label>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="All categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {TEST_CATEGORIES.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category.replace('_', ' ').toUpperCase()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {categories.map((category) => (
-          <Card key={category.id}>
-            <CardContent className="p-4">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h4 className="font-semibold">{category.name_en}</h4>
-                  {category.name_te && (
-                    <p className="text-sm text-muted-foreground">{category.name_te}</p>
-                  )}
-                </div>
-                <Badge variant={category.is_active ? "default" : "secondary"}>
-                  {category.is_active ? 'Active' : 'Inactive'}
-                </Badge>
-              </div>
-              {category.description_en && (
-                <p className="text-sm text-muted-foreground mb-3">{category.description_en}</p>
-              )}
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleEditCategory(category)}
-                >
-                  <Edit className="w-3 h-3 mr-1" />
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onDelete(category.id)}
-                >
-                  <Trash2 className="w-3 h-3 mr-1" />
-                  Delete
-                </Button>
-              </div>
+      {/* Tests List */}
+      <div className="space-y-4">
+        {testsLoading ? (
+          <div className="text-center py-8">Loading lab tests...</div>
+        ) : tests && tests.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {tests.map((test) => (
+              <Card key={test.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="font-semibold text-lg">{test.name_en}</h3>
+                      {test.name_te && (
+                        <p className="text-sm text-muted-foreground">{test.name_te}</p>
+                      )}
+                    </div>
+                    <Badge>{test.test_code}</Badge>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <TestTube className="h-4 w-4" />
+                      <span>{test.sample_type}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4" />
+                      <span>{test.report_delivery_hours}h delivery</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="font-medium">₹{test.price}</span>
+                      {test.discount_price && (
+                        <span className="text-green-600">₹{test.discount_price}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedTest(test);
+                        setIsTestDialogOpen(true);
+                      }}
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Edit
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => deleteTestMutation.mutate(test.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <TestTube className="h-16 w-16 mx-auto text-muted-foreground opacity-50 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Lab Tests Found</h3>
+              <p className="text-muted-foreground mb-4">
+                {searchTerm || selectedCategory !== 'all' 
+                  ? 'No tests match your search criteria' 
+                  : 'No lab tests have been created yet'}
+              </p>
+              <Button onClick={() => setIsTestDialogOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add First Test
+              </Button>
             </CardContent>
           </Card>
-        ))}
+        )}
       </div>
     </div>
   );
