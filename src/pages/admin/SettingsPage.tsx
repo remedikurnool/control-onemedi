@@ -5,9 +5,9 @@ import SettingsPageComponent from '@/components/admin/SettingsPage';
 
 const SettingsPage = () => {
   return (
-    <AdminLayout>
+    <div className="min-h-screen bg-gray-50">
       <SettingsPageComponent />
-    </AdminLayout>
+    </div>
   );
 };
 
