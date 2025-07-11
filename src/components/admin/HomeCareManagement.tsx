@@ -1,677 +1,291 @@
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Home, Heart, Calendar, Clock, User, Phone, MapPin, CheckCircle, XCircle } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Plus, Edit, Trash2, Home, Clock, DollarSign } from 'lucide-react';
+import { useHomeCareServices, HomeCareService } from '@/hooks/useHomeCareServices';
 import { toast } from 'sonner';
-import CategoryManagement from './CategoryManagement';
 
-interface HomeCareService {
-  id: string;
-  category_id: string;
-  name_en: string;
-  name_te: string;
-  description_en?: string;
-  description_te?: string;
-  price: number;
-  duration?: string;
-  frequency?: string;
-  features: string[];
-  is_emergency_available: boolean;
-  is_active: boolean;
-  created_at: string;
-}
-
-interface HomeCareCategory {
-  id: string;
-  name_en: string;
-  name_te: string;
-  description_en?: string;
-  category_type: string;
-  is_active: boolean;
-}
-
-interface Caregiver {
-  id: string;
-  name: string;
-  specialization: string;
-  experience_years: number;
-  hourly_rate: number;
-  rating?: number;
-  is_verified: boolean;
-  status: string;
-}
-
-const HomeCareManagement = () => {
-  const [selectedService, setSelectedService] = useState<HomeCareService | null>(null);
-  const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
-  const [selectedCaregiver, setSelectedCaregiver] = useState<Caregiver | null>(null);
-  const [isCaregiverDialogOpen, setIsCaregiverDialogOpen] = useState(false);
-  const queryClient = useQueryClient();
-
-  // Fetch home care services
-  const { data: services, isLoading: servicesLoading } = useQuery({
-    queryKey: ['home-care-services'],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('home_care_services' as any)
-          .select('*')
-          .eq('is_active', true)
-          .order('name_en');
-        
-        if (error) {
-          console.log('Home care services table not ready yet:', error.message);
-          return [];
-        }
-        return Array.isArray(data) ? (data as unknown as HomeCareService[]) : [];
-      } catch (err) {
-        console.log('Home care services query failed:', err);
-        return [];
-      }
-    },
+export default function HomeCareManagement() {
+  const { data: services, isLoading, create, update, remove } = useHomeCareServices();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingService, setEditingService] = useState<HomeCareService | null>(null);
+  const [formData, setFormData] = useState({
+    service_name: '',
+    description: '',
+    price: 0,
+    duration: '',
+    image_url: '',
+    is_active: true
   });
 
-  // Fetch categories
-  const { data: categories } = useQuery({
-    queryKey: ['home-care-categories'],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('home_care_categories' as any)
-          .select('*')
-          .eq('is_active', true)
-          .order('name_en');
-        
-        if (error) {
-          console.log('Home care categories table not ready yet:', error.message);
-          return [];
-        }
-        return Array.isArray(data) ? (data as unknown as HomeCareCategory[]) : [];
-      } catch (err) {
-        console.log('Home care categories query failed:', err);
-        return [];
-      }
-    },
-  });
-
-  // Fetch caregivers
-  const { data: caregivers } = useQuery({
-    queryKey: ['caregivers'],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('caregivers' as any)
-          .select('*')
-          .order('name');
-        
-        if (error) {
-          console.log('Caregivers table not ready yet:', error.message);
-          return [];
-        }
-        return Array.isArray(data) ? (data as unknown as Caregiver[]) : [];
-      } catch (err) {
-        console.log('Caregivers query failed:', err);
-        return [];
-      }
-    },
-  });
-
-  // Create/Update service mutation
-  const serviceMutation = useMutation({
-    mutationFn: async (serviceData: any) => {
-      try {
-        if (selectedService) {
-          const { data, error } = await supabase
-            .from('home_care_services' as any)
-            .update({
-              name_en: serviceData.name_en,
-              name_te: serviceData.name_te,
-              description_en: serviceData.description_en,
-              description_te: serviceData.description_te,
-              category_id: serviceData.category_id,
-              price: serviceData.price,
-              duration: serviceData.duration,
-              frequency: serviceData.frequency,
-              is_emergency_available: serviceData.is_emergency_available,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', selectedService.id)
-            .select();
-          
-          if (error) throw error;
-          return data;
-        } else {
-          const { data, error } = await supabase
-            .from('home_care_services' as any)
-            .insert({
-              name_en: serviceData.name_en,
-              name_te: serviceData.name_te,
-              description_en: serviceData.description_en,
-              description_te: serviceData.description_te,
-              category_id: serviceData.category_id,
-              price: serviceData.price,
-              duration: serviceData.duration,
-              frequency: serviceData.frequency,
-              is_emergency_available: serviceData.is_emergency_available,
-              is_active: true
-            })
-            .select();
-          
-          if (error) throw error;
-          return data;
-        }
-      } catch (err) {
-        console.error('Service mutation error:', err);
-        throw new Error('Database tables are still being set up. Please try again in a few moments.');
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['home-care-services'] });
-      setIsServiceDialogOpen(false);
-      setSelectedService(null);
-      toast.success(selectedService ? 'Service updated successfully' : 'Service created successfully');
-    },
-    onError: (error: any) => {
-      toast.error('Error saving service: ' + error.message);
-    },
-  });
-
-  const handleSubmitService = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-    
-    const serviceData = {
-      name_en: formData.get('name_en')?.toString() || '',
-      name_te: formData.get('name_te')?.toString() || '',
-      description_en: formData.get('description_en')?.toString() || '',
-      description_te: formData.get('description_te')?.toString() || '',
-      category_id: formData.get('category_id')?.toString() || '',
-      price: parseFloat(formData.get('price')?.toString() || '0'),
-      duration: formData.get('duration')?.toString() || '',
-      frequency: formData.get('frequency')?.toString() || '',
-      is_emergency_available: formData.get('is_emergency_available') === 'on',
-    };
-
-    serviceMutation.mutate(serviceData);
+    try {
+      if (editingService) {
+        await update(editingService.id, formData);
+        toast.success('Home care service updated successfully');
+      } else {
+        await create(formData);
+        toast.success('Home care service created successfully');
+      }
+      setIsDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      toast.error('Failed to save home care service');
+    }
   };
+
+  const handleEdit = (service: HomeCareService) => {
+    setEditingService(service);
+    setFormData({
+      service_name: service.service_name,
+      description: service.description || '',
+      price: service.price,
+      duration: service.duration || '',
+      image_url: service.image_url || '',
+      is_active: service.is_active
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Are you sure you want to delete this service?')) {
+      try {
+        await remove(id);
+        toast.success('Home care service deleted successfully');
+      } catch (error) {
+        toast.error('Failed to delete home care service');
+      }
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      service_name: '',
+      description: '',
+      price: 0,
+      duration: '',
+      image_url: '',
+      is_active: true
+    });
+    setEditingService(null);
+  };
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64">Loading...</div>;
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Home Care Management</h1>
-          <p className="text-muted-foreground">Manage home care services, caregivers, and bookings</p>
+          <p className="text-muted-foreground">Manage home care services and their details</p>
         </div>
-        <div className="flex gap-2">
-          <CategoryManagement
-            categoryType="home_care"
-            title="Home Care"
-            description="Manage categories for home care services"
-          />
-          <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setSelectedService(null)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Service
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={resetForm}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Home Care Service
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>{selectedService ? 'Edit Service' : 'Add New Home Care Service'}</DialogTitle>
+              <DialogTitle>
+                {editingService ? 'Edit Home Care Service' : 'Add New Home Care Service'}
+              </DialogTitle>
               <DialogDescription>
-                Create or modify home care service with pricing and availability
+                Fill in the details for the home care service
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmitService} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="name_en">Service Name (English)</Label>
+                  <Label htmlFor="service_name">Service Name</Label>
                   <Input
-                    id="name_en"
-                    name="name_en"
-                    defaultValue={selectedService?.name_en}
+                    id="service_name"
+                    value={formData.service_name}
+                    onChange={(e) => setFormData({...formData, service_name: e.target.value})}
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="name_te">Service Name (Telugu)</Label>
-                  <Input
-                    id="name_te"
-                    name="name_te"
-                    defaultValue={selectedService?.name_te}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="category_id">Category</Label>
-                  <Select name="category_id" defaultValue={selectedService?.category_id}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.isArray(categories) && categories.map((category: any) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name_en}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="price">Price</Label>
+                  <Label htmlFor="price">Price (₹)</Label>
                   <Input
                     id="price"
-                    name="price"
                     type="number"
-                    step="0.01"
-                    defaultValue={selectedService?.price || ''}
+                    value={formData.price}
+                    onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value)})}
                     required
                   />
                 </div>
               </div>
-
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  rows={3}
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="duration">Duration</Label>
                   <Input
                     id="duration"
-                    name="duration"
-                    defaultValue={selectedService?.duration}
+                    value={formData.duration}
+                    onChange={(e) => setFormData({...formData, duration: e.target.value})}
                     placeholder="e.g., 2 hours, 1 day"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="frequency">Frequency</Label>
+                  <Label htmlFor="image_url">Image URL</Label>
                   <Input
-                    id="frequency"
-                    name="frequency"
-                    defaultValue={selectedService?.frequency}
-                    placeholder="e.g., Daily, Weekly"
+                    id="image_url"
+                    value={formData.image_url}
+                    onChange={(e) => setFormData({...formData, image_url: e.target.value})}
+                    placeholder="https://example.com/image.jpg"
                   />
                 </div>
               </div>
-
-              <div>
-                <Label htmlFor="description_en">Description (English)</Label>
-                <Textarea
-                  id="description_en"
-                  name="description_en"
-                  defaultValue={selectedService?.description_en}
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="description_te">Description (Telugu)</Label>
-                <Textarea
-                  id="description_te"
-                  name="description_te"
-                  defaultValue={selectedService?.description_te}
-                  rows={3}
-                />
-              </div>
-
               <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="is_emergency_available"
-                  name="is_emergency_available"
-                  defaultChecked={selectedService?.is_emergency_available}
+                <Switch
+                  id="is_active"
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) => setFormData({...formData, is_active: checked})}
                 />
-                <Label htmlFor="is_emergency_available">Emergency Available</Label>
+                <Label htmlFor="is_active">Active</Label>
               </div>
-
               <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setIsServiceDialogOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={serviceMutation.isPending}>
-                  {serviceMutation.isPending ? 'Saving...' : (selectedService ? 'Update' : 'Create')}
+                <Button type="submit">
+                  {editingService ? 'Update' : 'Create'} Service
                 </Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
-        </div>
       </div>
 
-      <Tabs defaultValue="services" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="services">Services</TabsTrigger>
-          <TabsTrigger value="caregivers">Caregivers</TabsTrigger>
-          <TabsTrigger value="bookings">Bookings</TabsTrigger>
+      <Tabs defaultValue="grid" className="w-full">
+        <TabsList>
+          <TabsTrigger value="grid">Grid View</TabsTrigger>
+          <TabsTrigger value="list">List View</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="services" className="space-y-4">
-          {servicesLoading ? (
-            <div className="text-center py-4">Loading services...</div>
-          ) : (
-            <div className="grid gap-4">
-              {Array.isArray(services) && services.length > 0 ? (
-                services.map((service: any) => (
-                  <Card key={service.id}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle className="flex items-center gap-2">
-                            <Home className="w-5 h-5" />
-                            {service.name_en}
-                            {service.is_emergency_available && <Badge variant="destructive">Emergency</Badge>}
-                          </CardTitle>
-                          <CardDescription>{service.description_en}</CardDescription>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedService(service);
-                              setIsServiceDialogOpen(true);
-                            }}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <strong>Price:</strong> ₹{service.price}
-                        </div>
-                        <div>
-                          <strong>Duration:</strong> {service.duration}
-                        </div>
-                        <div>
-                          <strong>Frequency:</strong> {service.frequency}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                <Card>
-                  <CardContent className="text-center py-8">
-                    <p className="text-muted-foreground">
-                      No home care services found. The database tables may still be setting up.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="caregivers" className="space-y-4">
-          <div className="grid gap-4">
-            {Array.isArray(caregivers) && caregivers.length > 0 ? (
-              caregivers.map((caregiver: any) => (
-                <Card key={caregiver.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          <Heart className="w-5 h-5" />
-                          {caregiver.name}
-                          {caregiver.is_verified && <Badge variant="secondary">Verified</Badge>}
-                        </CardTitle>
-                        <CardDescription>{caregiver.specialization}</CardDescription>
-                      </div>
+        
+        <TabsContent value="grid">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {services.map((service) => (
+              <Card key={service.id}>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Home className="w-5 h-5" />
+                        {service.service_name}
+                      </CardTitle>
+                      <CardDescription>{service.description}</CardDescription>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <strong>Experience:</strong> {caregiver.experience_years} years
-                      </div>
-                      <div>
-                        <strong>Rate:</strong> ₹{caregiver.hourly_rate}/hour
-                      </div>
-                      <div>
-                        <strong>Rating:</strong> {caregiver.rating || 0}/5
-                      </div>
-                      <div>
-                        <strong>Status:</strong> {caregiver.status}
-                      </div>
+                    <Badge variant={service.is_active ? "default" : "secondary"}>
+                      {service.is_active ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4" />
+                      <span className="font-medium">₹{service.price}</span>
                     </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <p className="text-muted-foreground">
-                    No caregivers found. The database tables may still be setting up.
-                  </p>
+                    {service.duration && (
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        <span>{service.duration}</span>
+                      </div>
+                    )}
+                    {service.image_url && (
+                      <img 
+                        src={service.image_url} 
+                        alt={service.service_name}
+                        className="w-full h-32 object-cover rounded-md"
+                      />
+                    )}
+                  </div>
+                  <div className="flex justify-end space-x-2 mt-4">
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(service)}>
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(service.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
-            )}
+            ))}
           </div>
         </TabsContent>
-
-        <TabsContent value="bookings">
-          <HomeCareBookings />
+        
+        <TabsContent value="list">
+          <Card>
+            <CardHeader>
+              <CardTitle>Home Care Services</CardTitle>
+              <CardDescription>
+                Complete list of all home care services
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-200">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="border border-gray-200 px-4 py-2 text-left">Service Name</th>
+                      <th className="border border-gray-200 px-4 py-2 text-left">Price</th>
+                      <th className="border border-gray-200 px-4 py-2 text-left">Duration</th>
+                      <th className="border border-gray-200 px-4 py-2 text-left">Status</th>
+                      <th className="border border-gray-200 px-4 py-2 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {services.map((service) => (
+                      <tr key={service.id}>
+                        <td className="border border-gray-200 px-4 py-2">{service.service_name}</td>
+                        <td className="border border-gray-200 px-4 py-2">₹{service.price}</td>
+                        <td className="border border-gray-200 px-4 py-2">{service.duration || 'N/A'}</td>
+                        <td className="border border-gray-200 px-4 py-2">
+                          <Badge variant={service.is_active ? "default" : "secondary"}>
+                            {service.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        </td>
+                        <td className="border border-gray-200 px-4 py-2">
+                          <div className="flex space-x-2">
+                            <Button variant="outline" size="sm" onClick={() => handleEdit(service)}>
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button variant="destructive" size="sm" onClick={() => handleDelete(service.id)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
   );
-};
-
-// Home Care Bookings Component
-const HomeCareBookings = () => {
-  const [bookings, setBookings] = useState([
-    {
-      id: '1',
-      patient_name: 'John Doe',
-      service: 'Nursing Care',
-      caregiver: 'Sarah Johnson',
-      date: '2024-01-15',
-      time: '10:00 AM',
-      duration: '4 hours',
-      status: 'confirmed',
-      address: '123 Main St, City',
-      phone: '+1234567890',
-      notes: 'Patient requires assistance with medication'
-    },
-    {
-      id: '2',
-      patient_name: 'Mary Smith',
-      service: 'Physiotherapy',
-      caregiver: 'Dr. Mike Wilson',
-      date: '2024-01-16',
-      time: '2:00 PM',
-      duration: '1 hour',
-      status: 'pending',
-      address: '456 Oak Ave, City',
-      phone: '+1234567891',
-      notes: 'Post-surgery rehabilitation'
-    },
-    {
-      id: '3',
-      patient_name: 'Robert Brown',
-      service: 'Elder Care',
-      caregiver: 'Lisa Davis',
-      date: '2024-01-14',
-      time: '9:00 AM',
-      duration: '8 hours',
-      status: 'completed',
-      address: '789 Pine St, City',
-      phone: '+1234567892',
-      notes: 'Daily living assistance'
-    }
-  ]);
-
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'confirmed': return <CheckCircle className="h-4 w-4" />;
-      case 'pending': return <Clock className="h-4 w-4" />;
-      case 'completed': return <CheckCircle className="h-4 w-4" />;
-      case 'cancelled': return <XCircle className="h-4 w-4" />;
-      default: return <Clock className="h-4 w-4" />;
-    }
-  };
-
-  const filteredBookings = statusFilter === 'all'
-    ? bookings
-    : bookings.filter(booking => booking.status === statusFilter);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="flex gap-2">
-          <Button
-            variant={statusFilter === 'all' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setStatusFilter('all')}
-          >
-            All ({bookings.length})
-          </Button>
-          <Button
-            variant={statusFilter === 'pending' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setStatusFilter('pending')}
-          >
-            Pending ({bookings.filter(b => b.status === 'pending').length})
-          </Button>
-          <Button
-            variant={statusFilter === 'confirmed' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setStatusFilter('confirmed')}
-          >
-            Confirmed ({bookings.filter(b => b.status === 'confirmed').length})
-          </Button>
-          <Button
-            variant={statusFilter === 'completed' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setStatusFilter('completed')}
-          >
-            Completed ({bookings.filter(b => b.status === 'completed').length})
-          </Button>
-        </div>
-
-        <Button onClick={() => setIsBookingDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Booking
-        </Button>
-      </div>
-
-      <div className="grid gap-4">
-        {filteredBookings.map((booking) => (
-          <Card key={booking.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5 text-blue-600" />
-                    {booking.patient_name}
-                  </CardTitle>
-                  <CardDescription className="flex items-center gap-4 mt-1">
-                    <span className="flex items-center gap-1">
-                      <Heart className="h-4 w-4" />
-                      {booking.service}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {booking.date} at {booking.time}
-                    </span>
-                  </CardDescription>
-                </div>
-                <Badge className={getStatusColor(booking.status)}>
-                  <div className="flex items-center gap-1">
-                    {getStatusIcon(booking.status)}
-                    {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                  </div>
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span><strong>Caregiver:</strong> {booking.caregiver}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span><strong>Duration:</strong> {booking.duration}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span><strong>Phone:</strong> {booking.phone}</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                    <span><strong>Address:</strong> {booking.address}</span>
-                  </div>
-                  <div>
-                    <strong>Notes:</strong> {booking.notes}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 mt-4">
-                <Button size="sm" variant="outline">
-                  <Edit className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
-                {booking.status === 'pending' && (
-                  <Button size="sm" variant="default">
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Confirm
-                  </Button>
-                )}
-                {booking.status === 'confirmed' && (
-                  <Button size="sm" variant="secondary">
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Complete
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredBookings.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-8">
-            <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <p className="text-muted-foreground">
-              No {statusFilter === 'all' ? '' : statusFilter} bookings found
-            </p>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-};
-
-export default HomeCareManagement;
+}

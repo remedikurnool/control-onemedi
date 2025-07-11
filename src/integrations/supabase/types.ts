@@ -207,6 +207,7 @@ export type Database = {
       }
       ambulance_services: {
         Row: {
+          available_24x7: boolean | null
           base_fare: number
           created_at: string | null
           driver_name: string
@@ -215,17 +216,21 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_available: boolean | null
+          latitude: number | null
           location: Json | null
+          longitude: number | null
           name_en: string
           name_te: string
           paramedic_name: string | null
           paramedic_phone: string | null
           price_per_km: number
+          service_area_radius_km: number | null
           service_type: string
           updated_at: string | null
           vehicle_number: string
         }
         Insert: {
+          available_24x7?: boolean | null
           base_fare?: number
           created_at?: string | null
           driver_name: string
@@ -234,17 +239,21 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_available?: boolean | null
+          latitude?: number | null
           location?: Json | null
+          longitude?: number | null
           name_en: string
           name_te: string
           paramedic_name?: string | null
           paramedic_phone?: string | null
           price_per_km?: number
+          service_area_radius_km?: number | null
           service_type: string
           updated_at?: string | null
           vehicle_number: string
         }
         Update: {
+          available_24x7?: boolean | null
           base_fare?: number
           created_at?: string | null
           driver_name?: string
@@ -253,12 +262,15 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_available?: boolean | null
+          latitude?: number | null
           location?: Json | null
+          longitude?: number | null
           name_en?: string
           name_te?: string
           paramedic_name?: string | null
           paramedic_phone?: string | null
           price_per_km?: number
+          service_area_radius_km?: number | null
           service_type?: string
           updated_at?: string | null
           vehicle_number?: string
@@ -321,6 +333,7 @@ export type Database = {
       blood_banks: {
         Row: {
           address: string
+          blood_inventory: Json | null
           created_at: string | null
           email: string | null
           emergency_contact: string | null
@@ -328,7 +341,9 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_government: boolean | null
+          latitude: number | null
           license_number: string
+          longitude: number | null
           name_en: string
           name_te: string
           operating_hours: string | null
@@ -338,6 +353,7 @@ export type Database = {
         }
         Insert: {
           address: string
+          blood_inventory?: Json | null
           created_at?: string | null
           email?: string | null
           emergency_contact?: string | null
@@ -345,7 +361,9 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_government?: boolean | null
+          latitude?: number | null
           license_number: string
+          longitude?: number | null
           name_en: string
           name_te: string
           operating_hours?: string | null
@@ -355,6 +373,7 @@ export type Database = {
         }
         Update: {
           address?: string
+          blood_inventory?: Json | null
           created_at?: string | null
           email?: string | null
           emergency_contact?: string | null
@@ -362,7 +381,9 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_government?: boolean | null
+          latitude?: number | null
           license_number?: string
+          longitude?: number | null
           name_en?: string
           name_te?: string
           operating_hours?: string | null
@@ -1407,6 +1428,42 @@ export type Database = {
           },
         ]
       }
+      diabetes_care_plans: {
+        Row: {
+          created_at: string | null
+          duration_days: number
+          features: string[] | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          plan_name: string
+          price: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          duration_days: number
+          features?: string[] | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          plan_name: string
+          price?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          duration_days?: number
+          features?: string[] | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          plan_name?: string
+          price?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       diabetes_categories: {
         Row: {
           bg_color: string | null
@@ -2159,6 +2216,42 @@ export type Database = {
         }
         Relationships: []
       }
+      global_settings: {
+        Row: {
+          app_name: string | null
+          contact_email: string | null
+          created_at: string | null
+          id: string
+          maintenance_mode: boolean | null
+          site_open_close_toggle: boolean | null
+          support_phone: string | null
+          updated_at: string | null
+          whatsapp_link: string | null
+        }
+        Insert: {
+          app_name?: string | null
+          contact_email?: string | null
+          created_at?: string | null
+          id?: string
+          maintenance_mode?: boolean | null
+          site_open_close_toggle?: boolean | null
+          support_phone?: string | null
+          updated_at?: string | null
+          whatsapp_link?: string | null
+        }
+        Update: {
+          app_name?: string | null
+          contact_email?: string | null
+          created_at?: string | null
+          id?: string
+          maintenance_mode?: boolean | null
+          site_open_close_toggle?: boolean | null
+          support_phone?: string | null
+          updated_at?: string | null
+          whatsapp_link?: string | null
+        }
+        Relationships: []
+      }
       hero_banners: {
         Row: {
           created_at: string | null
@@ -2430,6 +2523,8 @@ export type Database = {
           insurance_accepted: string[] | null
           is_active: boolean | null
           laboratory: boolean | null
+          latitude: number | null
+          longitude: number | null
           name_en: string
           name_te: string
           operating_hours: string | null
@@ -2459,6 +2554,8 @@ export type Database = {
           insurance_accepted?: string[] | null
           is_active?: boolean | null
           laboratory?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
           name_en: string
           name_te: string
           operating_hours?: string | null
@@ -2488,6 +2585,8 @@ export type Database = {
           insurance_accepted?: string[] | null
           is_active?: boolean | null
           laboratory?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
           name_en?: string
           name_te?: string
           operating_hours?: string | null
@@ -2718,7 +2817,9 @@ export type Database = {
           preparation_instructions: string | null
           price: number
           report_time: string | null
+          sample_type: string | null
           test_code: string
+          test_group: string | null
           updated_at: string | null
         }
         Insert: {
@@ -2734,7 +2835,9 @@ export type Database = {
           preparation_instructions?: string | null
           price?: number
           report_time?: string | null
+          sample_type?: string | null
           test_code: string
+          test_group?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -2750,7 +2853,42 @@ export type Database = {
           preparation_instructions?: string | null
           price?: number
           report_time?: string | null
+          sample_type?: string | null
           test_code?: string
+          test_group?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      layout_config: {
+        Row: {
+          banner_urls: Json | null
+          created_at: string | null
+          featured_categories: Json | null
+          homepage_sections_order: Json | null
+          id: string
+          is_active: boolean | null
+          section_visibility: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          banner_urls?: Json | null
+          created_at?: string | null
+          featured_categories?: Json | null
+          homepage_sections_order?: Json | null
+          id?: string
+          is_active?: boolean | null
+          section_visibility?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          banner_urls?: Json | null
+          created_at?: string | null
+          featured_categories?: Json | null
+          homepage_sections_order?: Json | null
+          id?: string
+          is_active?: boolean | null
+          section_visibility?: Json | null
           updated_at?: string | null
         }
         Relationships: []
@@ -4127,16 +4265,19 @@ export type Database = {
           description_en: string | null
           description_te: string | null
           discount_price: number | null
+          dosage_form: string | null
           expiry_date: string | null
           id: string
           image_url: string | null
           is_available: boolean | null
+          is_featured: boolean | null
           is_prescription_required: boolean | null
           manufacturer: string | null
           name_en: string
           name_te: string
           price: number | null
           sku: string | null
+          stock: number | null
           tags: string[] | null
           updated_at: string | null
           updated_by: string | null
@@ -4148,16 +4289,19 @@ export type Database = {
           description_en?: string | null
           description_te?: string | null
           discount_price?: number | null
+          dosage_form?: string | null
           expiry_date?: string | null
           id?: string
           image_url?: string | null
           is_available?: boolean | null
+          is_featured?: boolean | null
           is_prescription_required?: boolean | null
           manufacturer?: string | null
           name_en: string
           name_te: string
           price?: number | null
           sku?: string | null
+          stock?: number | null
           tags?: string[] | null
           updated_at?: string | null
           updated_by?: string | null
@@ -4169,16 +4313,19 @@ export type Database = {
           description_en?: string | null
           description_te?: string | null
           discount_price?: number | null
+          dosage_form?: string | null
           expiry_date?: string | null
           id?: string
           image_url?: string | null
           is_available?: boolean | null
+          is_featured?: boolean | null
           is_prescription_required?: boolean | null
           manufacturer?: string | null
           name_en?: string
           name_te?: string
           price?: number | null
           sku?: string | null
+          stock?: number | null
           tags?: string[] | null
           updated_at?: string | null
           updated_by?: string | null
@@ -4523,6 +4670,7 @@ export type Database = {
           description_te: string | null
           duration: string | null
           id: string
+          image_prep_required: boolean | null
           is_active: boolean | null
           is_contrast_required: boolean | null
           name_en: string
@@ -4530,6 +4678,7 @@ export type Database = {
           preparation_instructions: string | null
           price: number
           scan_code: string
+          scan_type: string | null
           updated_at: string | null
         }
         Insert: {
@@ -4538,6 +4687,7 @@ export type Database = {
           description_te?: string | null
           duration?: string | null
           id?: string
+          image_prep_required?: boolean | null
           is_active?: boolean | null
           is_contrast_required?: boolean | null
           name_en: string
@@ -4545,6 +4695,7 @@ export type Database = {
           preparation_instructions?: string | null
           price?: number
           scan_code: string
+          scan_type?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -4553,6 +4704,7 @@ export type Database = {
           description_te?: string | null
           duration?: string | null
           id?: string
+          image_prep_required?: boolean | null
           is_active?: boolean | null
           is_contrast_required?: boolean | null
           name_en?: string
@@ -4560,6 +4712,7 @@ export type Database = {
           preparation_instructions?: string | null
           price?: number
           scan_code?: string
+          scan_type?: string | null
           updated_at?: string | null
         }
         Relationships: []
