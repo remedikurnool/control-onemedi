@@ -46,6 +46,8 @@ const DoctorsManagement = () => {
   const [isDoctorDialogOpen, setIsDoctorDialogOpen] = useState(false);
   const [selectedSpecialization, setSelectedSpecialization] = useState<Specialization | null>(null);
   const [isSpecializationDialogOpen, setIsSpecializationDialogOpen] = useState(false);
+  const [isSpecializationsManagementOpen, setIsSpecializationsManagementOpen] = useState(false);
+  const [editingSpecialization, setEditingSpecialization] = useState<any>(null);
   const queryClient = useQueryClient();
 
   // Fetch doctors
@@ -101,8 +103,13 @@ const DoctorsManagement = () => {
           const { data, error } = await supabase
             .from('doctors' as any)
             .update({
-              license_number: doctorData.license_number,
+              name: doctorData.name,
+              image_url: doctorData.image_url,
+              degree: doctorData.degree,
               qualification: doctorData.qualification,
+              specialization: doctorData.specialization,
+              expertise: doctorData.expertise,
+              license_number: doctorData.license_number,
               specialization_id: doctorData.specialization_id,
               experience_years: doctorData.experience_years,
               consultation_fee: doctorData.consultation_fee,
@@ -119,8 +126,13 @@ const DoctorsManagement = () => {
           const { data, error } = await supabase
             .from('doctors' as any)
             .insert({
-              license_number: doctorData.license_number,
+              name: doctorData.name,
+              image_url: doctorData.image_url,
+              degree: doctorData.degree,
               qualification: doctorData.qualification,
+              specialization: doctorData.specialization,
+              expertise: doctorData.expertise,
+              license_number: doctorData.license_number,
               specialization_id: doctorData.specialization_id,
               experience_years: doctorData.experience_years,
               consultation_fee: doctorData.consultation_fee,
@@ -174,13 +186,62 @@ const DoctorsManagement = () => {
     },
   });
 
+  // Specialization mutations
+  const saveSpecializationMutation = useMutation({
+    mutationFn: async (specializationData: any) => {
+      if (editingSpecialization) {
+        const { error } = await supabase
+          .from('specializations')
+          .update(specializationData)
+          .eq('id', editingSpecialization.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('specializations')
+          .insert([specializationData]);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['specializations'] });
+      toast.success(editingSpecialization ? 'Specialization updated successfully' : 'Specialization created successfully');
+      setIsSpecializationsManagementOpen(false);
+      setEditingSpecialization(null);
+    },
+    onError: (error) => {
+      toast.error('Failed to save specialization: ' + error.message);
+    },
+  });
+
+  const deleteSpecializationMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('specializations')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['specializations'] });
+      toast.success('Specialization deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete specialization: ' + error.message);
+    },
+  });
+
   const handleSubmitDoctor = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    
+
     const doctorData = {
-      license_number: formData.get('license_number')?.toString() || '',
+      name: formData.get('name')?.toString() || '',
+      image_url: formData.get('image_url')?.toString() || '',
+      degree: formData.get('degree')?.toString() || '',
       qualification: formData.get('qualification')?.toString() || '',
+      specialization: formData.get('specialization')?.toString() || '',
+      expertise: formData.get('expertise')?.toString() || '',
+      license_number: formData.get('license_number')?.toString() || '',
       specialization_id: formData.get('specialization_id')?.toString() || '',
       experience_years: parseInt(formData.get('experience_years')?.toString() || '0'),
       consultation_fee: parseFloat(formData.get('consultation_fee')?.toString() || '0'),
@@ -198,13 +259,36 @@ const DoctorsManagement = () => {
           <h1 className="text-3xl font-bold">Doctors Management</h1>
           <p className="text-muted-foreground">Manage doctors, specializations, and consultations</p>
         </div>
-        <Dialog open={isDoctorDialogOpen} onOpenChange={setIsDoctorDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setSelectedDoctor(null)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Doctor
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Dialog open={isSpecializationsManagementOpen} onOpenChange={setIsSpecializationsManagementOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Plus className="w-4 h-4 mr-2" />
+                Specializations
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Specializations Management</DialogTitle>
+              </DialogHeader>
+              <SpecializationsManagement
+                specializations={specializations || []}
+                onSave={(data) => saveSpecializationMutation.mutate(data)}
+                onDelete={(id) => deleteSpecializationMutation.mutate(id)}
+                onEdit={(specialization) => setEditingSpecialization(specialization)}
+                editingSpecialization={editingSpecialization}
+                setEditingSpecialization={setEditingSpecialization}
+              />
+            </DialogContent>
+          </Dialog>
+          <Dialog open={isDoctorDialogOpen} onOpenChange={setIsDoctorDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setSelectedDoctor(null)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Doctor
+              </Button>
+            </DialogTrigger>
+        </div>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{selectedDoctor ? 'Edit Doctor' : 'Add New Doctor'}</DialogTitle>
@@ -213,6 +297,72 @@ const DoctorsManagement = () => {
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmitDoctor} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Doctor Name</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    defaultValue={selectedDoctor?.name}
+                    placeholder="Enter doctor's full name"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="image_url">Doctor Image URL</Label>
+                  <Input
+                    id="image_url"
+                    name="image_url"
+                    defaultValue={selectedDoctor?.image_url}
+                    placeholder="Enter image URL"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="degree">Degree</Label>
+                  <Input
+                    id="degree"
+                    name="degree"
+                    defaultValue={selectedDoctor?.degree}
+                    placeholder="e.g., MBBS, MD, MS"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="qualification">Qualification</Label>
+                  <Input
+                    id="qualification"
+                    name="qualification"
+                    defaultValue={selectedDoctor?.qualification}
+                    placeholder="Additional qualifications"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="specialization">Specialization</Label>
+                  <Input
+                    id="specialization"
+                    name="specialization"
+                    defaultValue={selectedDoctor?.specialization}
+                    placeholder="e.g., Cardiology, Neurology"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="expertise">Expertise</Label>
+                  <Input
+                    id="expertise"
+                    name="expertise"
+                    defaultValue={selectedDoctor?.expertise}
+                    placeholder="Areas of expertise"
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="license_number">License Number</Label>
@@ -399,6 +549,193 @@ const DoctorsManagement = () => {
           </div>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+};
+
+// Specializations Management Component
+const SpecializationsManagement = ({
+  specializations,
+  onSave,
+  onDelete,
+  onEdit,
+  editingSpecialization,
+  setEditingSpecialization
+}: {
+  specializations: any[];
+  onSave: (data: any) => void;
+  onDelete: (id: string) => void;
+  onEdit: (specialization: any) => void;
+  editingSpecialization: any;
+  setEditingSpecialization: (specialization: any) => void;
+}) => {
+  const [isAddingSpecialization, setIsAddingSpecialization] = useState(false);
+  const [specializationForm, setSpecializationForm] = useState({
+    name_en: '',
+    name_te: '',
+    description_en: '',
+    description_te: '',
+    is_active: true
+  });
+
+  const handleSaveSpecialization = () => {
+    if (!specializationForm.name_en.trim()) {
+      toast.error('Specialization name is required');
+      return;
+    }
+
+    onSave(specializationForm);
+    setSpecializationForm({
+      name_en: '',
+      name_te: '',
+      description_en: '',
+      description_te: '',
+      is_active: true
+    });
+    setIsAddingSpecialization(false);
+    setEditingSpecialization(null);
+  };
+
+  const handleEditSpecialization = (specialization: any) => {
+    setSpecializationForm({
+      name_en: specialization.name_en || '',
+      name_te: specialization.name_te || '',
+      description_en: specialization.description_en || '',
+      description_te: specialization.description_te || '',
+      is_active: specialization.is_active ?? true
+    });
+    setEditingSpecialization(specialization);
+    setIsAddingSpecialization(true);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Doctor Specializations</h3>
+        <Button
+          onClick={() => {
+            setIsAddingSpecialization(true);
+            setEditingSpecialization(null);
+            setSpecializationForm({
+              name_en: '',
+              name_te: '',
+              description_en: '',
+              description_te: '',
+              is_active: true
+            });
+          }}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add Specialization
+        </Button>
+      </div>
+
+      {isAddingSpecialization && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Specialization Name (English)</Label>
+                  <Input
+                    value={specializationForm.name_en}
+                    onChange={(e) => setSpecializationForm(prev => ({ ...prev, name_en: e.target.value }))}
+                    placeholder="Enter specialization name"
+                  />
+                </div>
+                <div>
+                  <Label>Specialization Name (Telugu)</Label>
+                  <Input
+                    value={specializationForm.name_te}
+                    onChange={(e) => setSpecializationForm(prev => ({ ...prev, name_te: e.target.value }))}
+                    placeholder="వర్గం పేరు"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Description (English)</Label>
+                  <Textarea
+                    value={specializationForm.description_en}
+                    onChange={(e) => setSpecializationForm(prev => ({ ...prev, description_en: e.target.value }))}
+                    placeholder="Specialization description"
+                  />
+                </div>
+                <div>
+                  <Label>Description (Telugu)</Label>
+                  <Textarea
+                    value={specializationForm.description_te}
+                    onChange={(e) => setSpecializationForm(prev => ({ ...prev, description_te: e.target.value }))}
+                    placeholder="వర్గం వివరణ"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={specializationForm.is_active}
+                  onCheckedChange={(checked) => setSpecializationForm(prev => ({ ...prev, is_active: checked }))}
+                />
+                <Label>Active</Label>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleSaveSpecialization}>
+                  {editingSpecialization ? 'Update' : 'Save'} Specialization
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsAddingSpecialization(false);
+                    setEditingSpecialization(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {specializations.map((specialization) => (
+          <Card key={specialization.id}>
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h4 className="font-semibold">{specialization.name_en}</h4>
+                  {specialization.name_te && (
+                    <p className="text-sm text-muted-foreground">{specialization.name_te}</p>
+                  )}
+                </div>
+                <Badge variant={specialization.is_active ? "default" : "secondary"}>
+                  {specialization.is_active ? 'Active' : 'Inactive'}
+                </Badge>
+              </div>
+              {specialization.description_en && (
+                <p className="text-sm text-muted-foreground mb-3">{specialization.description_en}</p>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleEditSpecialization(specialization)}
+                >
+                  <Edit className="w-3 h-3 mr-1" />
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onDelete(specialization.id)}
+                >
+                  <Trash2 className="w-3 h-3 mr-1" />
+                  Delete
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };

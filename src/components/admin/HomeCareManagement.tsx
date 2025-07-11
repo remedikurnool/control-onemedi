@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Edit, Trash2, Home, Heart, Calendar, Clock, User, Phone, MapPin, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import CategoryManagement from './CategoryManagement';
 
 interface HomeCareService {
   id: string;
@@ -211,13 +212,20 @@ const HomeCareManagement = () => {
           <h1 className="text-3xl font-bold">Home Care Management</h1>
           <p className="text-muted-foreground">Manage home care services, caregivers, and bookings</p>
         </div>
-        <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setSelectedService(null)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Service
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <CategoryManagement
+            categoryType="home_care"
+            title="Home Care"
+            description="Manage categories for home care services"
+          />
+          <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setSelectedService(null)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Service
+              </Button>
+            </DialogTrigger>
+        </div>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{selectedService ? 'Edit Service' : 'Add New Home Care Service'}</DialogTitle>

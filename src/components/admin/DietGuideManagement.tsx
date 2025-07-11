@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Apple, Users, Calendar, Star } from 'lucide-react';
+import CategoryManagement from './CategoryManagement';
 
 const DietGuideManagement = () => {
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -223,10 +224,17 @@ const DietGuideManagement = () => {
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Diet Guide Management</h1>
-        <Button onClick={() => openPlanDialog()}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Diet Plan
-        </Button>
+        <div className="flex gap-2">
+          <CategoryManagement
+            categoryType="diet_guide"
+            title="Diet Guide"
+            description="Manage categories for diet guide services"
+          />
+          <Button onClick={() => openPlanDialog()}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Diet Plan
+          </Button>
+        </div>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

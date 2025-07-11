@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Edit, Trash2, Activity, Package, Calendar, UserCheck, Clock, User, Phone, MapPin, CheckCircle, XCircle, Stethoscope } from 'lucide-react';
 import { toast } from 'sonner';
+import CategoryManagement from './CategoryManagement';
 
 interface DiabetesService {
   id: string;
@@ -216,13 +217,20 @@ const DiabetesCareManagement = () => {
           <h1 className="text-3xl font-bold">Diabetes Care Management</h1>
           <p className="text-muted-foreground">Manage diabetes services, packages, and specialists</p>
         </div>
-        <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setSelectedService(null)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Service
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <CategoryManagement
+            categoryType="diabetes_care"
+            title="Diabetes Care"
+            description="Manage categories for diabetes care services"
+          />
+          <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setSelectedService(null)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Service
+              </Button>
+            </DialogTrigger>
+        </div>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{selectedService ? 'Edit Service' : 'Add New Diabetes Service'}</DialogTitle>

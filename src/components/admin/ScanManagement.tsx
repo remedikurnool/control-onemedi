@@ -33,22 +33,62 @@ interface ScanData {
   description_te?: string;
   scan_code: string;
   scan_type: string;
+  category_id?: string;
   organ_system: string[];
   disease_conditions?: string[];
   contrast_required: boolean;
   preparation_instructions?: string;
   duration_minutes?: number;
   radiation_dose?: string;
+  price: number;
+  discount_price?: number;
+  discount_percent?: number;
+  is_featured: boolean;
+  add_to_carousel: boolean;
+  image_url?: string;
+  images?: string[];
+  center_variants?: CenterVariant[];
   is_active: boolean;
   created_at: string;
+}
+
+interface CenterVariant {
+  id: string;
+  center_id: string;
+  center_name: string;
+  price: number;
+  discount_price?: number;
+  is_available: boolean;
+  estimated_time?: string;
 }
 
 const ScanManagement = () => {
   const [selectedScan, setSelectedScan] = useState<ScanData | null>(null);
   const [isScanDialogOpen, setIsScanDialogOpen] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [isPricingDialogOpen, setIsPricingDialogOpen] = useState(false);
+  const [isCenterVariantsDialogOpen, setIsCenterVariantsDialogOpen] = useState(false);
   const [selectedScanForPricing, setSelectedScanForPricing] = useState<ScanData | null>(null);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [centerVariants, setCenterVariants] = useState<CenterVariant[]>([]);
+  const [newVariant, setNewVariant] = useState<Partial<CenterVariant>>({});
   const queryClient = useQueryClient();
+
+  // Fetch categories
+  const { data: categories } = useQuery({
+    queryKey: ['scan-categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('type', 'scan')
+        .eq('is_active', true)
+        .order('name_en');
+
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
   // Fetch scans - handle gracefully if tables don't exist
   const { data: scans, isLoading: scansLoading } = useQuery({
@@ -182,10 +222,61 @@ const ScanManagement = () => {
     },
   });
 
+  // Category mutations
+  const saveCategoryMutation = useMutation({
+    mutationFn: async (categoryData: any) => {
+      if (editingCategory) {
+        const { error } = await supabase
+          .from('categories')
+          .update(categoryData)
+          .eq('id', editingCategory.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('categories')
+          .insert([{ ...categoryData, type: 'scan' }]);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scan-categories'] });
+      toast.success(editingCategory ? 'Category updated successfully' : 'Category created successfully');
+      setIsCategoryDialogOpen(false);
+      setEditingCategory(null);
+    },
+    onError: (error) => {
+      toast.error('Failed to save category: ' + error.message);
+    },
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scan-categories'] });
+      toast.success('Category deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete category: ' + error.message);
+    },
+  });
+
   const handleSubmitScan = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    
+
+    // Calculate discount price if discount percent is provided
+    const price = parseFloat(formData.get('price')?.toString() || '0');
+    const discountPercent = parseFloat(formData.get('discount_percent')?.toString() || '0');
+    const calculatedDiscountPrice = discountPercent > 0
+      ? price * (1 - discountPercent / 100)
+      : parseFloat(formData.get('discount_price')?.toString() || '0') || null;
+
     const scanData = {
       name_en: formData.get('name_en')?.toString() || '',
       name_te: formData.get('name_te')?.toString() || '',
@@ -193,10 +284,21 @@ const ScanManagement = () => {
       description_te: formData.get('description_te')?.toString() || '',
       scan_code: formData.get('scan_code')?.toString() || '',
       scan_type: formData.get('scan_type')?.toString() || '',
+      category_id: formData.get('category_id')?.toString() || null,
+      organ_system: formData.get('organ_system')?.toString().split(',').map(s => s.trim()).filter(Boolean) || [],
+      disease_conditions: formData.get('disease_conditions')?.toString().split(',').map(s => s.trim()).filter(Boolean) || [],
       contrast_required: formData.get('contrast_required') === 'on',
       preparation_instructions: formData.get('preparation_instructions')?.toString() || '',
       duration_minutes: parseInt(formData.get('duration_minutes')?.toString() || '0') || null,
       radiation_dose: formData.get('radiation_dose')?.toString() || '',
+      price: price,
+      discount_price: calculatedDiscountPrice,
+      discount_percent: discountPercent || null,
+      is_featured: formData.get('is_featured') === 'on',
+      add_to_carousel: formData.get('add_to_carousel') === 'on',
+      image_url: formData.get('image_url')?.toString() || '',
+      images: formData.get('images')?.toString().split(',').map(s => s.trim()).filter(Boolean) || [],
+      center_variants: centerVariants,
     };
 
     scanMutation.mutate(scanData);
@@ -209,14 +311,36 @@ const ScanManagement = () => {
           <h1 className="text-3xl font-bold">Scan Management</h1>
           <p className="text-muted-foreground">Manage scan types, center-specific pricing, and booking logic</p>
         </div>
-        <Dialog open={isScanDialogOpen} onOpenChange={setIsScanDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setSelectedScan(null)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Scan
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <div className="flex gap-2">
+          <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Plus className="w-4 h-4 mr-2" />
+                Categories
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Scan Categories</DialogTitle>
+              </DialogHeader>
+              <CategoryManagement
+                categories={categories || []}
+                onSave={(data) => saveCategoryMutation.mutate(data)}
+                onDelete={(id) => deleteCategoryMutation.mutate(id)}
+                onEdit={(category) => setEditingCategory(category)}
+                editingCategory={editingCategory}
+                setEditingCategory={setEditingCategory}
+              />
+            </DialogContent>
+          </Dialog>
+          <Dialog open={isScanDialogOpen} onOpenChange={setIsScanDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setSelectedScan(null)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Scan
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{selectedScan ? 'Edit Scan' : 'Add New Scan'}</DialogTitle>
               <DialogDescription>
@@ -345,7 +469,8 @@ const ScanManagement = () => {
               </div>
             </form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       <Tabs defaultValue="scans" className="space-y-4">
@@ -656,6 +781,194 @@ const ScanBookings = () => {
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+};
+
+// Category Management Component (reusable)
+const CategoryManagement = ({
+  categories,
+  onSave,
+  onDelete,
+  onEdit,
+  editingCategory,
+  setEditingCategory
+}: {
+  categories: any[];
+  onSave: (data: any) => void;
+  onDelete: (id: string) => void;
+  onEdit: (category: any) => void;
+  editingCategory: any;
+  setEditingCategory: (category: any) => void;
+}) => {
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [categoryForm, setCategoryForm] = useState({
+    name_en: '',
+    name_te: '',
+    description_en: '',
+    description_te: '',
+    is_active: true
+  });
+
+  const handleSaveCategory = () => {
+    if (!categoryForm.name_en.trim()) {
+      toast.error('Category name is required');
+      return;
+    }
+
+    onSave(categoryForm);
+    setCategoryForm({
+      name_en: '',
+      name_te: '',
+      description_en: '',
+      description_te: '',
+      is_active: true
+    });
+    setIsAddingCategory(false);
+    setEditingCategory(null);
+  };
+
+  const handleEditCategory = (category: any) => {
+    setCategoryForm({
+      name_en: category.name_en || '',
+      name_te: category.name_te || '',
+      description_en: category.description_en || '',
+      description_te: category.description_te || '',
+      is_active: category.is_active ?? true
+    });
+    setEditingCategory(category);
+    setIsAddingCategory(true);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Scan Categories</h3>
+        <Button
+          onClick={() => {
+            setIsAddingCategory(true);
+            setEditingCategory(null);
+            setCategoryForm({
+              name_en: '',
+              name_te: '',
+              description_en: '',
+              description_te: '',
+              is_active: true
+            });
+          }}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add Category
+        </Button>
+      </div>
+
+      {isAddingCategory && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Category Name (English)</Label>
+                  <Input
+                    value={categoryForm.name_en}
+                    onChange={(e) => setCategoryForm(prev => ({ ...prev, name_en: e.target.value }))}
+                    placeholder="Enter category name"
+                  />
+                </div>
+                <div>
+                  <Label>Category Name (Telugu)</Label>
+                  <Input
+                    value={categoryForm.name_te}
+                    onChange={(e) => setCategoryForm(prev => ({ ...prev, name_te: e.target.value }))}
+                    placeholder="వర్గం పేరు"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Description (English)</Label>
+                  <Textarea
+                    value={categoryForm.description_en}
+                    onChange={(e) => setCategoryForm(prev => ({ ...prev, description_en: e.target.value }))}
+                    placeholder="Category description"
+                  />
+                </div>
+                <div>
+                  <Label>Description (Telugu)</Label>
+                  <Textarea
+                    value={categoryForm.description_te}
+                    onChange={(e) => setCategoryForm(prev => ({ ...prev, description_te: e.target.value }))}
+                    placeholder="వర్గం వివరణ"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={categoryForm.is_active}
+                  onChange={(e) => setCategoryForm(prev => ({ ...prev, is_active: e.target.checked }))}
+                />
+                <Label>Active</Label>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleSaveCategory}>
+                  {editingCategory ? 'Update' : 'Save'} Category
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsAddingCategory(false);
+                    setEditingCategory(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {categories.map((category) => (
+          <Card key={category.id}>
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h4 className="font-semibold">{category.name_en}</h4>
+                  {category.name_te && (
+                    <p className="text-sm text-muted-foreground">{category.name_te}</p>
+                  )}
+                </div>
+                <Badge variant={category.is_active ? "default" : "secondary"}>
+                  {category.is_active ? 'Active' : 'Inactive'}
+                </Badge>
+              </div>
+              {category.description_en && (
+                <p className="text-sm text-muted-foreground mb-3">{category.description_en}</p>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleEditCategory(category)}
+                >
+                  <Edit className="w-3 h-3 mr-1" />
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onDelete(category.id)}
+                >
+                  <Trash2 className="w-3 h-3 mr-1" />
+                  Delete
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };

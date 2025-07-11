@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Stethoscope, Star, Clock, MapPin, Phone } from 'lucide-react';
+import CategoryManagement from './CategoryManagement';
 
 const SurgeryOpinionManagement = () => {
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -207,6 +208,11 @@ const SurgeryOpinionManagement = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Surgery Second Opinion Management</h1>
         <div className="flex gap-2">
+          <CategoryManagement
+            categoryType="surgery_opinion"
+            title="Surgery Opinion"
+            description="Manage categories for surgery opinion services"
+          />
           <Button onClick={() => openDoctorDialog()}>
             <Plus className="mr-2 h-4 w-4" />
             Add Doctor

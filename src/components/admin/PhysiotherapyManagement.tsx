@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Activity, MapPin, Phone, Star, Clock } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
+import CategoryManagement from './CategoryManagement';
 
 type PhysiotherapyService = Database['public']['Tables']['physiotherapy_services']['Row'];
 type Physiotherapist = Database['public']['Tables']['physiotherapists']['Row'];
@@ -228,6 +229,11 @@ const PhysiotherapyManagement = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Physiotherapy Management</h1>
         <div className="flex gap-2">
+          <CategoryManagement
+            categoryType="physiotherapy"
+            title="Physiotherapy"
+            description="Manage categories for physiotherapy services"
+          />
           <Button onClick={() => openServiceDialog()}>
             <Plus className="mr-2 h-4 w-4" />
             Add Service
