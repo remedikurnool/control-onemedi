@@ -1,80 +1,100 @@
 
-import { Home, Pill, TestTube, Scan, Stethoscope, Heart, Building2, Truck, Droplet, ShoppingCart, Users, Gift, Layout, Settings } from "lucide-react";
+import { type LucideIcon, Home, Users, Package, ShoppingCart, TestTube, Stethoscope, 
+         Truck, Building, Droplets, Calendar, BarChart, Settings, Bell, MessageCircle, 
+         Search, Layout, TrendingUp, Palette, Globe } from "lucide-react";
 
-export const navItems = [
+export interface NavItem {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  isActive?: boolean;
+  items?: NavItem[];
+}
+
+export const navItems: NavItem[] = [
   {
     title: "Dashboard",
-    to: "/admin",
+    url: "/",
     icon: Home,
   },
   {
-    title: "Medicines",
-    to: "/admin/medicines",
-    icon: Pill,
-  },
-  {
-    title: "Lab Tests",
-    to: "/admin/lab-tests",
-    icon: TestTube,
-  },
-  {
-    title: "Scans",
-    to: "/admin/scans",
-    icon: Scan,
-  },
-  {
-    title: "Doctors",
-    to: "/admin/doctors",
-    icon: Stethoscope,
-  },
-  {
-    title: "Home Care",
-    to: "/admin/home-care",
-    icon: Heart,
-  },
-  {
-    title: "Diabetes Care",
-    to: "/admin/diabetes-care",
-    icon: Heart,
-  },
-  {
-    title: "Hospitals",
-    to: "/admin/hospitals",
-    icon: Building2,
-  },
-  {
-    title: "Ambulance",
-    to: "/admin/ambulance",
-    icon: Truck,
-  },
-  {
-    title: "Blood Banks",
-    to: "/admin/blood-banks",
-    icon: Droplet,
-  },
-  {
-    title: "Orders",
-    to: "/admin/orders",
-    icon: ShoppingCart,
-  },
-  {
-    title: "Users",
-    to: "/admin/users",
+    title: "Users Management",
+    url: "/admin/users",
     icon: Users,
   },
   {
-    title: "Coupons",
-    to: "/admin/coupons",
-    icon: Gift,
+    title: "Inventory",
+    url: "/admin/inventory",
+    icon: Package,
   },
   {
-    title: "Layout",
-    to: "/admin/layout",
+    title: "Orders",
+    url: "/admin/orders",
+    icon: ShoppingCart,
+  },
+  {
+    title: "Lab Tests",
+    url: "/admin/enhanced-lab-tests",
+    icon: TestTube,
+  },
+  {
+    title: "Patients",
+    url: "/admin/patients",
+    icon: Stethoscope,
+  },
+  {
+    title: "Ambulance",
+    url: "/admin/ambulance",
+    icon: Truck,
+  },
+  {
+    title: "Hospitals",
+    url: "/admin/hospitals",
+    icon: Building,
+  },
+  {
+    title: "Blood Banks",
+    url: "/admin/blood-banks",
+    icon: Droplets,
+  },
+  {
+    title: "Locations",
+    url: "/admin/locations",
+    icon: Globe,
+  },
+  {
+    title: "Analytics",
+    url: "/admin/advanced-analytics",
+    icon: TrendingUp,
+  },
+  {
+    title: "Notifications",
+    url: "/admin/notifications",
+    icon: Bell,
+  },
+  {
+    title: "Chat Support",
+    url: "/admin/chat",
+    icon: MessageCircle,
+  },
+  {
+    title: "SEO Settings",
+    url: "/admin/seo",
+    icon: Search,
+  },
+  {
+    title: "Layout Builder",
+    url: "/admin/layout-builder",
     icon: Layout,
   },
   {
+    title: "Marketing",
+    url: "/admin/marketing",
+    icon: BarChart,
+  },
+  {
     title: "Settings",
-    to: "/admin/settings",
+    url: "/admin/settings",
     icon: Settings,
   },
 ];

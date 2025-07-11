@@ -9,6 +9,8 @@ export interface GlobalSettings {
   whatsapp_link?: string;
   site_open_close_toggle: boolean;
   maintenance_mode: boolean;
+  chat_config?: any;
+  seo_config?: any;
   created_at: string;
   updated_at: string;
 }
