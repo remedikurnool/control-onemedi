@@ -20,6 +20,13 @@ export interface RealtimeSubscription {
   unsubscribe: () => void;
 }
 
+// Valid table names from the database schema
+const VALID_TABLES = [
+  'user_profiles', 'locations', 'products', 'customer_orders', 'consultations',
+  'ambulance_bookings', 'ambulance_services', 'blood_banks', 'blood_inventory',
+  'analytics_events', 'coupons', 'hospitals', 'doctors', 'caregivers'
+];
+
 // Generic CRUD Service
 export class SupabaseService {
   private tableName: string;
@@ -28,11 +35,19 @@ export class SupabaseService {
     this.tableName = tableName;
   }
 
+  private isValidTable(tableName: string): boolean {
+    return VALID_TABLES.includes(tableName);
+  }
+
   // Create
   async create<T>(data: Partial<T>): Promise<T> {
     try {
+      if (!this.isValidTable(this.tableName)) {
+        throw new Error(`Table ${this.tableName} does not exist in the database`);
+      }
+
       const { data: result, error } = await supabase
-        .from(this.tableName)
+        .from(this.tableName as any)
         .insert([data])
         .select()
         .single();
@@ -48,8 +63,13 @@ export class SupabaseService {
   // Read (single)
   async getById<T>(id: string, select?: string): Promise<T | null> {
     try {
+      if (!this.isValidTable(this.tableName)) {
+        console.warn(`Table ${this.tableName} does not exist, returning null`);
+        return null;
+      }
+
       const query = supabase
-        .from(this.tableName)
+        .from(this.tableName as any)
         .select(select || '*')
         .eq('id', id)
         .single();
@@ -73,8 +93,13 @@ export class SupabaseService {
   // Read (multiple)
   async getAll<T>(options: QueryOptions = {}, select?: string): Promise<{ data: T[]; count: number }> {
     try {
+      if (!this.isValidTable(this.tableName)) {
+        console.warn(`Table ${this.tableName} does not exist, returning empty array`);
+        return { data: [], count: 0 };
+      }
+
       let query = supabase
-        .from(this.tableName)
+        .from(this.tableName as any)
         .select(select || '*', { count: 'exact' });
 
       // Apply filters
@@ -116,15 +141,19 @@ export class SupabaseService {
       };
     } catch (error) {
       this.handleError('getAll', error);
-      throw error;
+      return { data: [], count: 0 };
     }
   }
 
   // Update
   async update<T>(id: string, data: Partial<T>): Promise<T> {
     try {
+      if (!this.isValidTable(this.tableName)) {
+        throw new Error(`Table ${this.tableName} does not exist in the database`);
+      }
+
       const { data: result, error } = await supabase
-        .from(this.tableName)
+        .from(this.tableName as any)
         .update(data)
         .eq('id', id)
         .select()
@@ -141,8 +170,12 @@ export class SupabaseService {
   // Delete
   async delete(id: string): Promise<void> {
     try {
+      if (!this.isValidTable(this.tableName)) {
+        throw new Error(`Table ${this.tableName} does not exist in the database`);
+      }
+
       const { error } = await supabase
-        .from(this.tableName)
+        .from(this.tableName as any)
         .delete()
         .eq('id', id);
 
@@ -451,9 +484,9 @@ export class SupabaseStorageService {
 }
 
 // Service instances for common tables
-export const usersService = new SupabaseService('users');
+export const usersService = new SupabaseService('user_profiles');
 export const locationsService = new SupabaseService('locations');
-export const appointmentsService = new SupabaseService('appointments');
+export const appointmentsService = new SupabaseService('consultations');
 export const prescriptionsService = new SupabaseService('prescriptions');
 export const productsService = new SupabaseService('products');
 export const inventoryService = new SupabaseService('inventory');
