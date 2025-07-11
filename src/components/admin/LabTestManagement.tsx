@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,11 +10,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Search, Filter, TestTube, Clock, User, Phone, MapPin, CheckCircle, XCircle } from 'lucide-react';
-import CategoryManagement from './CategoryManagement';
+import { Plus, Edit, Trash2, Search, TestTube, Clock } from 'lucide-react';
 
+// Using the actual database schema from lab_tests table
 interface LabTest {
   id: string;
   name_en: string;
@@ -21,37 +21,15 @@ interface LabTest {
   description_en?: string;
   description_te?: string;
   test_code: string;
-  category: string;
-  category_id?: string;
-  disease_conditions?: string[];
-  risk_factors?: string[];
-  sample_type: string;
-  fasting_required: boolean;
-  preparation_instructions?: string;
-  report_delivery_hours: number;
-  is_package: boolean;
   price: number;
-  discount_price?: number;
-  discount_percent?: number;
-  is_featured: boolean;
-  add_to_carousel: boolean;
-  image_url?: string;
-  images?: string[];
-  normal_range?: string;
-  methodology?: string;
-  center_variants?: CenterVariant[];
+  test_type?: string;
+  is_home_collection: boolean;
+  is_fasting_required: boolean;
+  report_time?: string;
+  providers?: string[];
   is_active: boolean;
   created_at: string;
-}
-
-interface CenterVariant {
-  id: string;
-  center_id: string;
-  center_name: string;
-  price: number;
-  discount_price?: number;
-  is_available: boolean;
-  estimated_time?: string;
+  updated_at: string;
 }
 
 const TEST_CATEGORIES = [
@@ -81,10 +59,6 @@ const LabTestManagement: React.FC = () => {
         query = query.ilike('name_en', `%${searchTerm}%`);
       }
 
-      if (selectedCategory !== 'all') {
-        query = query.eq('category', selectedCategory);
-      }
-
       const { data, error } = await query;
       if (error) {
         console.log('Lab tests table not ready yet:', error.message);
@@ -93,22 +67,6 @@ const LabTestManagement: React.FC = () => {
       return data as LabTest[];
     },
     retry: false,
-  });
-
-  // Fetch categories
-  const { data: categories } = useQuery({
-    queryKey: ['categories', 'lab_test'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('type', 'lab_test')
-        .eq('is_active', true)
-        .order('name_en');
-      
-      if (error) throw error;
-      return data || [];
-    }
   });
 
   // Save test mutation
@@ -173,21 +131,12 @@ const LabTestManagement: React.FC = () => {
       description_en: formData.get('description_en')?.toString() || '',
       description_te: formData.get('description_te')?.toString() || '',
       test_code: formData.get('test_code')?.toString() || '',
-      category: formData.get('category')?.toString() || '',
-      category_id: formData.get('category_id')?.toString() || null,
-      sample_type: formData.get('sample_type')?.toString() || '',
-      fasting_required: formData.get('fasting_required') === 'on',
-      preparation_instructions: formData.get('preparation_instructions')?.toString() || '',
-      report_delivery_hours: parseInt(formData.get('report_delivery_hours')?.toString() || '24'),
-      is_package: formData.get('is_package') === 'on',
+      test_type: formData.get('test_type')?.toString() || '',
+      is_fasting_required: formData.get('is_fasting_required') === 'on',
+      is_home_collection: formData.get('is_home_collection') === 'on',
       price: parseFloat(formData.get('price')?.toString() || '0'),
-      discount_price: parseFloat(formData.get('discount_price')?.toString() || '0') || null,
-      discount_percent: parseFloat(formData.get('discount_percent')?.toString() || '0') || null,
-      is_featured: formData.get('is_featured') === 'on',
-      add_to_carousel: formData.get('add_to_carousel') === 'on',
-      image_url: formData.get('image_url')?.toString() || '',
-      normal_range: formData.get('normal_range')?.toString() || '',
-      methodology: formData.get('methodology')?.toString() || '',
+      report_time: formData.get('report_time')?.toString() || '',
+      providers: [formData.get('providers')?.toString() || ''],
     };
 
     saveTestMutation.mutate(testData);
@@ -202,11 +151,6 @@ const LabTestManagement: React.FC = () => {
           <p className="text-muted-foreground">Manage diagnostic tests and lab services</p>
         </div>
         <div className="flex gap-2">
-          <CategoryManagement 
-            categoryType="lab_test"
-            title="Lab Test"
-            description="Manage categories for lab tests"
-          />
           <Dialog open={isTestDialogOpen} onOpenChange={setIsTestDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={() => setSelectedTest(null)}>
@@ -269,44 +213,38 @@ const LabTestManagement: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="discount_price">Discount Price (₹)</Label>
+                    <Label htmlFor="report_time">Report Time</Label>
                     <Input
-                      id="discount_price"
-                      name="discount_price"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      defaultValue={selectedTest?.discount_price}
-                      placeholder="0.00"
+                      id="report_time"
+                      name="report_time"
+                      defaultValue={selectedTest?.report_time}
+                      placeholder="24 hours"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="sample_type">Sample Type</Label>
-                    <Select name="sample_type" defaultValue={selectedTest?.sample_type}>
+                    <Label htmlFor="test_type">Test Type</Label>
+                    <Select name="test_type" defaultValue={selectedTest?.test_type}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select sample type" />
+                        <SelectValue placeholder="Select test type" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="blood">Blood</SelectItem>
                         <SelectItem value="urine">Urine</SelectItem>
                         <SelectItem value="stool">Stool</SelectItem>
-                        <SelectItem value="saliva">Saliva</SelectItem>
-                        <SelectItem value="sputum">Sputum</SelectItem>
+                        <SelectItem value="imaging">Imaging</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="report_delivery_hours">Report Delivery (Hours)</Label>
+                    <Label htmlFor="providers">Providers</Label>
                     <Input
-                      id="report_delivery_hours"
-                      name="report_delivery_hours"
-                      type="number"
-                      min="1"
-                      defaultValue={selectedTest?.report_delivery_hours || 24}
-                      required
+                      id="providers"
+                      name="providers"
+                      defaultValue={selectedTest?.providers?.[0]}
+                      placeholder="Lab provider name"
                     />
                   </div>
                 </div>
@@ -315,30 +253,31 @@ const LabTestManagement: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      id="fasting_required"
-                      name="fasting_required"
-                      defaultChecked={selectedTest?.fasting_required}
+                      id="is_fasting_required"
+                      name="is_fasting_required"
+                      defaultChecked={selectedTest?.is_fasting_required}
                     />
-                    <Label htmlFor="fasting_required">Fasting Required</Label>
+                    <Label htmlFor="is_fasting_required">Fasting Required</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      id="is_featured"
-                      name="is_featured"
-                      defaultChecked={selectedTest?.is_featured}
+                      id="is_home_collection"
+                      name="is_home_collection"
+                      defaultChecked={selectedTest?.is_home_collection}
                     />
-                    <Label htmlFor="is_featured">Featured Test</Label>
+                    <Label htmlFor="is_home_collection">Home Collection</Label>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="add_to_carousel"
-                      name="add_to_carousel"
-                      defaultChecked={selectedTest?.add_to_carousel}
-                    />
-                    <Label htmlFor="add_to_carousel">Add to Carousel</Label>
-                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="description_en">Description (English)</Label>
+                  <Textarea
+                    id="description_en"
+                    name="description_en"
+                    defaultValue={selectedTest?.description_en}
+                    rows={3}
+                  />
                 </div>
 
                 <div className="flex gap-2 pt-4">
@@ -375,22 +314,6 @@ const LabTestManagement: React.FC = () => {
                 />
               </div>
             </div>
-            <div>
-              <Label>Category</Label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="All categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {TEST_CATEGORIES.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category.replace('_', ' ').toUpperCase()}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -417,17 +340,14 @@ const LabTestManagement: React.FC = () => {
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center gap-2 text-sm">
                       <TestTube className="h-4 w-4" />
-                      <span>{test.sample_type}</span>
+                      <span>{test.test_type || 'General'}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Clock className="h-4 w-4" />
-                      <span>{test.report_delivery_hours}h delivery</span>
+                      <span>{test.report_time || '24h delivery'}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <span className="font-medium">₹{test.price}</span>
-                      {test.discount_price && (
-                        <span className="text-green-600">₹{test.discount_price}</span>
-                      )}
                     </div>
                   </div>
 

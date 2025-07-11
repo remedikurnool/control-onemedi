@@ -1,292 +1,355 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { GripVertical, Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
-import { useLayoutConfig, LayoutConfig } from '@/hooks/useLayoutConfig';
+import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { Plus, Edit, Trash2, Layout, Image, Eye, EyeOff, GripVertical } from 'lucide-react';
 
-const availableSections = [
-  { id: 'medicines', label: 'Medicines', icon: '💊' },
-  { id: 'lab_tests', label: 'Lab Tests', icon: '🧪' },
-  { id: 'scans', label: 'Scans', icon: '📊' },
-  { id: 'doctors', label: 'Doctors', icon: '👨‍⚕️' },
-  { id: 'home_care', label: 'Home Care', icon: '🏠' },
-  { id: 'diabetes_care', label: 'Diabetes Care', icon: '❤️' },
-  { id: 'hospitals', label: 'Hospitals', icon: '🏥' },
-  { id: 'ambulance', label: 'Ambulance', icon: '🚑' },
-  { id: 'blood_banks', label: 'Blood Banks', icon: '🩸' },
+interface LayoutConfig {
+  id: string;
+  homepage_sections_order: string[];
+  section_visibility: Record<string, boolean>;
+  featured_categories: string[];
+  banner_urls: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface SectionConfig {
+  id: string;
+  name: string;
+  title: string;
+  visible: boolean;
+  order: number;
+}
+
+const DEFAULT_SECTIONS = [
+  { id: 'medicines', name: 'medicines', title: 'Medicines', visible: true, order: 1 },
+  { id: 'lab_tests', name: 'lab_tests', title: 'Lab Tests', visible: true, order: 2 },
+  { id: 'scans', name: 'scans', title: 'Scans', visible: true, order: 3 },
+  { id: 'doctors', name: 'doctors', title: 'Doctors', visible: true, order: 4 },
+  { id: 'home_care', name: 'home_care', title: 'Home Care', visible: true, order: 5 },
+  { id: 'diabetes_care', name: 'diabetes_care', title: 'Diabetes Care', visible: true, order: 6 },
+  { id: 'hospitals', name: 'hospitals', title: 'Hospitals', visible: true, order: 7 },
+  { id: 'ambulance', name: 'ambulance', title: 'Ambulance', visible: true, order: 8 },
+  { id: 'blood_banks', name: 'blood_banks', title: 'Blood Banks', visible: true, order: 9 }
 ];
 
-export default function LayoutManagement() {
-  const { data: configs, isLoading, create, update } = useLayoutConfig();
-  const [currentConfig, setCurrentConfig] = useState<LayoutConfig | null>(null);
-  const [sectionsOrder, setSectionsOrder] = useState<string[]>([]);
-  const [sectionVisibility, setSectionVisibility] = useState<Record<string, boolean>>({});
+const LayoutManagement: React.FC = () => {
+  const [sections, setSections] = useState<SectionConfig[]>(DEFAULT_SECTIONS);
   const [bannerUrls, setBannerUrls] = useState<string[]>([]);
   const [newBannerUrl, setNewBannerUrl] = useState('');
+  const [isBannerDialogOpen, setIsBannerDialogOpen] = useState(false);
 
-  useEffect(() => {
-    if (configs.length > 0) {
-      const config = configs[0];
-      setCurrentConfig(config);
-      setSectionsOrder(config.homepage_sections_order || []);
-      setSectionVisibility(config.section_visibility || {});
-      setBannerUrls(config.banner_urls || []);
+  const queryClient = useQueryClient();
+
+  // Fetch layout config
+  const { data: layoutConfig, isLoading } = useQuery({
+    queryKey: ['layout-config'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('layout_config')
+        .select('*')
+        .eq('is_active', true)
+        .single();
+
+      if (error) {
+        console.log('Layout config not found, using defaults');
+        return null;
+      }
+
+      if (data) {
+        // Update sections with saved config
+        const savedSections = DEFAULT_SECTIONS.map(section => ({
+          ...section,
+          visible: data.section_visibility?.[section.id] ?? true,
+          order: data.homepage_sections_order?.indexOf(section.id) + 1 || section.order
+        }));
+        setSections(savedSections);
+        setBannerUrls(data.banner_urls || []);
+      }
+
+      return data as LayoutConfig;
     }
-  }, [configs]);
+  });
 
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
-    
-    const items = Array.from(sectionsOrder);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    
-    setSectionsOrder(items);
+  // Save layout config mutation
+  const saveLayoutMutation = useMutation({
+    mutationFn: async (configData: Partial<LayoutConfig>) => {
+      const { error } = await supabase
+        .from('layout_config')
+        .upsert({
+          id: layoutConfig?.id || undefined,
+          ...configData,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['layout-config'] });
+      toast.success('Layout configuration saved successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to save layout configuration: ' + error.message);
+    }
+  });
+
+  const handleSectionVisibilityChange = (sectionId: string, visible: boolean) => {
+    setSections(prev => 
+      prev.map(section => 
+        section.id === sectionId ? { ...section, visible } : section
+      )
+    );
   };
 
-  const toggleSectionVisibility = (sectionId: string) => {
-    setSectionVisibility(prev => ({
-      ...prev,
-      [sectionId]: !prev[sectionId]
-    }));
+  const handleSaveLayout = () => {
+    const sectionVisibility = sections.reduce((acc, section) => {
+      acc[section.id] = section.visible;
+      return acc;
+    }, {} as Record<string, boolean>);
+
+    const homepageSectionsOrder = sections
+      .sort((a, b) => a.order - b.order)
+      .map(section => section.id);
+
+    const configData = {
+      homepage_sections_order: homepageSectionsOrder,
+      section_visibility: sectionVisibility,
+      banner_urls: bannerUrls,
+      is_active: true
+    };
+
+    saveLayoutMutation.mutate(configData);
   };
 
-  const addBanner = () => {
+  const handleAddBanner = () => {
     if (newBannerUrl.trim()) {
       setBannerUrls(prev => [...prev, newBannerUrl.trim()]);
       setNewBannerUrl('');
+      setIsBannerDialogOpen(false);
     }
   };
 
-  const removeBanner = (index: number) => {
+  const handleRemoveBanner = (index: number) => {
     setBannerUrls(prev => prev.filter((_, i) => i !== index));
   };
 
-  const saveConfiguration = async () => {
-    try {
-      const configData = {
-        homepage_sections_order: sectionsOrder,
-        section_visibility: sectionVisibility,
-        banner_urls: bannerUrls,
-        featured_categories: [],
-        is_active: true
-      };
-
-      if (currentConfig) {
-        await update(currentConfig.id, configData);
-        toast.success('Layout configuration updated successfully');
-      } else {
-        await create(configData);
-        toast.success('Layout configuration created successfully');
-      }
-    } catch (error) {
-      toast.error('Failed to save layout configuration');
+  const moveSectionUp = (index: number) => {
+    if (index > 0) {
+      setSections(prev => {
+        const newSections = [...prev];
+        [newSections[index - 1], newSections[index]] = [newSections[index], newSections[index - 1]];
+        return newSections.map((section, i) => ({ ...section, order: i + 1 }));
+      });
     }
   };
 
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-64">Loading...</div>;
-  }
+  const moveSectionDown = (index: number) => {
+    if (index < sections.length - 1) {
+      setSections(prev => {
+        const newSections = [...prev];
+        [newSections[index], newSections[index + 1]] = [newSections[index + 1], newSections[index]];
+        return newSections.map((section, i) => ({ ...section, order: i + 1 }));
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Layout Management</h1>
           <p className="text-muted-foreground">Configure homepage layout and section visibility</p>
         </div>
-        <Button onClick={saveConfiguration}>
-          Save Configuration
+        <Button onClick={handleSaveLayout} disabled={saveLayoutMutation.isPending}>
+          {saveLayoutMutation.isPending ? 'Saving...' : 'Save Layout'}
         </Button>
       </div>
 
-      <Tabs defaultValue="sections" className="w-full">
-        <TabsList>
-          <TabsTrigger value="sections">Sections</TabsTrigger>
-          <TabsTrigger value="banners">Banners</TabsTrigger>
-          <TabsTrigger value="preview">Preview</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="sections">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Section Order</CardTitle>
-                <CardDescription>
-                  Drag and drop to reorder sections on the homepage
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DragDropContext onDragEnd={handleDragEnd}>
-                  <Droppable droppableId="sections">
-                    {(provided) => (
-                      <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
-                        {sectionsOrder.map((sectionId, index) => {
-                          const section = availableSections.find(s => s.id === sectionId);
-                          return (
-                            <Draggable key={sectionId} draggableId={sectionId} index={index}>
-                              {(provided) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  className="flex items-center gap-3 p-3 bg-white border rounded-lg shadow-sm"
-                                >
-                                  <div {...provided.dragHandleProps}>
-                                    <GripVertical className="w-5 h-5 text-gray-400" />
-                                  </div>
-                                  <span className="text-xl">{section?.icon}</span>
-                                  <span className="flex-1 font-medium">{section?.label}</span>
-                                  <span className="text-sm text-gray-500">#{index + 1}</span>
-                                </div>
-                              )}
-                            </Draggable>
-                          );
-                        })}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Section Visibility</CardTitle>
-                <CardDescription>
-                  Toggle sections on/off for the homepage
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {availableSections.map((section) => (
-                    <div key={section.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{section.icon}</span>
-                        <span className="font-medium">{section.label}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {sectionVisibility[section.id] ? (
-                          <Eye className="w-4 h-4 text-green-500" />
-                        ) : (
-                          <EyeOff className="w-4 h-4 text-gray-400" />
-                        )}
-                        <Switch
-                          checked={sectionVisibility[section.id] || false}
-                          onCheckedChange={() => toggleSectionVisibility(section.id)}
-                        />
-                      </div>
-                    </div>
-                  ))}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Section Configuration */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Layout className="h-5 w-5" />
+              Section Configuration
+            </CardTitle>
+            <CardDescription>
+              Manage homepage sections visibility and order
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {sections.map((section, index) => (
+              <div key={section.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => moveSectionUp(index)}
+                      disabled={index === 0}
+                    >
+                      ↑
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => moveSectionDown(index)}
+                      disabled={index === sections.length - 1}
+                    >
+                      ↓
+                    </Button>
+                  </div>
+                  <GripVertical className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <h4 className="font-medium">{section.title}</h4>
+                    <p className="text-sm text-muted-foreground">Order: {section.order}</p>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="banners">
-          <Card>
-            <CardHeader>
-              <CardTitle>Banner Management</CardTitle>
-              <CardDescription>
-                Add and manage banner images for the homepage
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  <Input
-                    value={newBannerUrl}
-                    onChange={(e) => setNewBannerUrl(e.target.value)}
-                    placeholder="Enter banner image URL"
-                    className="flex-1"
+                <div className="flex items-center gap-2">
+                  {section.visible ? (
+                    <Eye className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <EyeOff className="h-4 w-4 text-gray-400" />
+                  )}
+                  <Switch
+                    checked={section.visible}
+                    onCheckedChange={(checked) => handleSectionVisibilityChange(section.id, checked)}
                   />
-                  <Button onClick={addBanner}>
-                    <Plus className="w-4 h-4 mr-2" />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Banner Management */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Image className="h-5 w-5" />
+              Banner Management
+            </CardTitle>
+            <CardDescription>
+              Manage homepage banner images
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center">
+              <Label>Homepage Banners</Label>
+              <Dialog open={isBannerDialogOpen} onOpenChange={setIsBannerDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
                     Add Banner
                   </Button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {bannerUrls.map((url, index) => (
-                    <div key={index} className="relative border rounded-lg overflow-hidden">
-                      <img 
-                        src={url} 
-                        alt={`Banner ${index + 1}`}
-                        className="w-full h-32 object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://via.placeholder.com/400x200?text=Banner+Image';
-                        }}
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Banner Image</DialogTitle>
+                    <DialogDescription>
+                      Enter the URL of the banner image
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="banner-url">Banner URL</Label>
+                      <Input
+                        id="banner-url"
+                        value={newBannerUrl}
+                        onChange={(e) => setNewBannerUrl(e.target.value)}
+                        placeholder="https://example.com/banner.jpg"
                       />
-                      <div className="absolute top-2 right-2">
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => removeBanner(index)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <div className="p-2 bg-white">
-                        <p className="text-sm text-gray-600 truncate">{url}</p>
-                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setIsBannerDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleAddBanner}>
+                        Add Banner
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
 
-        <TabsContent value="preview">
-          <Card>
-            <CardHeader>
-              <CardTitle>Homepage Preview</CardTitle>
-              <CardDescription>
-                Preview how the homepage will look with current configuration
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-                {bannerUrls.length > 0 && (
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">Banners</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                      {bannerUrls.slice(0, 3).map((url, index) => (
-                        <div key={index} className="aspect-video bg-gray-200 rounded border overflow-hidden">
-                          <img src={url} alt={`Banner ${index + 1}`} className="w-full h-full object-cover" />
-                        </div>
-                      ))}
+            <div className="space-y-3">
+              {bannerUrls.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Image className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No banners added yet</p>
+                </div>
+              ) : (
+                bannerUrls.map((url, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-16 h-10 bg-gray-100 rounded overflow-hidden">
+                        <img 
+                          src={url} 
+                          alt={`Banner ${index + 1}`} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Banner {index + 1}</p>
+                        <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                          {url}
+                        </p>
+                      </div>
                     </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRemoveBanner(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                )}
-                
-                <div className="space-y-2">
-                  <h3 className="font-semibold">Sections (in order)</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {sectionsOrder.filter(id => sectionVisibility[id]).map((sectionId) => {
-                      const section = availableSections.find(s => s.id === sectionId);
-                      return (
-                        <div key={sectionId} className="flex items-center gap-2 p-2 bg-white rounded border">
-                          <span>{section?.icon}</span>
-                          <span className="text-sm">{section?.label}</span>
-                        </div>
-                      );
-                    })}
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Preview Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Layout Preview</CardTitle>
+          <CardDescription>
+            Preview of how the homepage sections will appear
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {sections
+              .filter(section => section.visible)
+              .sort((a, b) => a.order - b.order)
+              .map((section) => (
+                <div key={section.id} className="p-4 border rounded-lg bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">{section.title}</h4>
+                    <span className="text-sm text-muted-foreground">Order: {section.order}</span>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default LayoutManagement;
