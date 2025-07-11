@@ -50,6 +50,51 @@ const ROLES = [
   'customer_service', 'delivery_executive', 'admin'
 ];
 
+// Mock data since staff table doesn't exist in schema
+const MOCK_STAFF: StaffMember[] = [
+  {
+    id: '1',
+    name: 'Dr. Rajesh Kumar',
+    email: 'rajesh@onemedi.com',
+    phone: '+91 9876543210',
+    role: 'pharmacist',
+    department: 'pharmacy',
+    hire_date: '2023-01-15',
+    salary: 45000,
+    status: 'active',
+    created_at: '2023-01-15T00:00:00Z',
+    updated_at: '2023-01-15T00:00:00Z'
+  },
+  {
+    id: '2',
+    name: 'Priya Sharma',
+    email: 'priya@onemedi.com',
+    phone: '+91 9876543211',
+    role: 'lab_technician',
+    department: 'lab',
+    hire_date: '2023-02-01',
+    salary: 35000,
+    status: 'active',
+    created_at: '2023-02-01T00:00:00Z',
+    updated_at: '2023-02-01T00:00:00Z'
+  }
+];
+
+const MOCK_PERFORMANCE: StaffPerformance[] = [
+  {
+    id: '1',
+    staff_id: '1',
+    performance_date: '2023-12-01',
+    total_transactions: 150,
+    total_sales_amount: 75000,
+    total_items_sold: 300,
+    average_transaction_time: '5 minutes',
+    rating: 4.5,
+    created_at: '2023-12-01T00:00:00Z',
+    updated_at: '2023-12-01T00:00:00Z'
+  }
+];
+
 const StaffManagement: React.FC = () => {
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
   const [isStaffDialogOpen, setIsStaffDialogOpen] = useState(false);
@@ -59,73 +104,45 @@ const StaffManagement: React.FC = () => {
 
   const queryClient = useQueryClient();
 
-  // Fetch staff members
+  // Fetch staff members (using mock data)
   const { data: staff, isLoading: staffLoading } = useQuery({
     queryKey: ['staff-members', searchTerm, selectedDepartment],
     queryFn: async () => {
-      let query = supabase
-        .from('staff')
-        .select('*')
-        .order('name');
+      // Mock implementation - filter mock data
+      let filteredStaff = MOCK_STAFF;
 
       if (searchTerm) {
-        query = query.ilike('name', `%${searchTerm}%`);
+        filteredStaff = filteredStaff.filter(member =>
+          member.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
       }
 
       if (selectedDepartment !== 'all') {
-        query = query.eq('department', selectedDepartment);
+        filteredStaff = filteredStaff.filter(member =>
+          member.department === selectedDepartment
+        );
       }
 
-      const { data, error } = await query;
-      if (error) {
-        console.log('Staff table not ready yet:', error.message);
-        return [];
-      }
-      return data as StaffMember[];
+      return filteredStaff;
     },
     retry: false,
   });
 
-  // Fetch staff performance
+  // Fetch staff performance (using mock data)
   const { data: performance } = useQuery({
     queryKey: ['staff-performance'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('staff_performance')
-        .select('*')
-        .order('performance_date', { ascending: false });
-
-      if (error) {
-        console.log('Staff performance table not ready yet:', error.message);
-        return [];
-      }
-      return data as StaffPerformance[];
+      return MOCK_PERFORMANCE;
     },
     retry: false,
   });
 
-  // Save staff mutation
+  // Save staff mutation (mock implementation)
   const saveStaffMutation = useMutation({
     mutationFn: async (staffData: Partial<StaffMember>) => {
-      if (selectedStaff) {
-        const { error } = await supabase
-          .from('staff')
-          .update({
-            ...staffData,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', selectedStaff.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('staff')
-          .insert([{
-            ...staffData,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }]);
-        if (error) throw error;
-      }
+      // Mock implementation
+      console.log('Saving staff:', staffData);
+      await new Promise(resolve => setTimeout(resolve, 1000));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff-members'] });
@@ -138,14 +155,12 @@ const StaffManagement: React.FC = () => {
     },
   });
 
-  // Delete staff mutation
+  // Delete staff mutation (mock implementation)
   const deleteStaffMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('staff')
-        .update({ status: 'inactive' })
-        .eq('id', id);
-      if (error) throw error;
+      // Mock implementation
+      console.log('Deactivating staff:', id);
+      await new Promise(resolve => setTimeout(resolve, 1000));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff-members'] });
