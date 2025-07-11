@@ -1,26 +1,46 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, TestTube, Building } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { 
+  TestTube, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Search, 
+  SlidersHorizontal as Filter,
+  Calendar,
+  Clock,
+  MapPin,
+  FileText,
+  Eye,
+  Download,
+  RefreshCw,
+  Building,
+  Users,
+  TrendingUp
+} from 'lucide-react';
 
-const TEST_CATEGORIES = [
-  'blood_work', 'urine_analysis', 'hormone_tests', 'cardiac_markers',
-  'liver_function', 'kidney_function', 'diabetes', 'thyroid',
-  'vitamin_deficiency', 'infection_screening', 'cancer_markers', 'allergy_tests'
-];
+const LabTestManagement: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('tests');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedTest, setSelectedTest] = useState(null);
 
+<<<<<<< HEAD
 const RISK_FACTORS = [
   'diabetes', 'hypertension', 'heart_disease', 'obesity',
   'smoking', 'family_history', 'age_related', 'pregnancy'
@@ -162,118 +182,78 @@ const LabTestManagement = () => {
       }
     },
   });
+=======
+  const queryClient = useQueryClient();
 
-  // Fetch diagnostic centers
-  const { data: centers } = useQuery({
-    queryKey: ['diagnostic-centers'],
-    queryFn: async (): Promise<DiagnosticCenter[]> => {
-      try {
-        const { data, error } = await supabase
-          .from('diagnostic_centers' as any)
-          .select('*')
-          .eq('is_active', true)
-          .order('name_en');
-        
-        if (error) {
-          console.log('Diagnostic centers table not ready yet:', error.message);
-          return [];
-        }
-        return Array.isArray(data) ? (data as unknown as DiagnosticCenter[]) : [];
-      } catch (err) {
-        console.log('Diagnostic centers query failed:', err);
-        return [];
+  // Fetch lab tests
+  const { data: tests, isLoading } = useQuery({
+    queryKey: ['lab-tests', searchQuery, filterCategory],
+    queryFn: async () => {
+      let query = supabase.from('lab_tests').select('*').order('name_en', { ascending: true });
+>>>>>>> 7a8a8d3843e7b0e5f53516958de89a1deefd4190
+
+      if (filterCategory !== 'all') {
+        query = query.eq('category', filterCategory);
       }
-    },
+
+      if (searchQuery.trim() !== '') {
+        query = query.ilike('name_en', `%${searchQuery}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data || [];
+    }
   });
 
   // Create/Update lab test mutation
-  const labTestMutation = useMutation({
-    mutationFn: async (testData: Partial<LabTest>) => {
-      try {
-        if (selectedTest) {
-          const { data, error } = await supabase
-            .from('lab_tests' as any)
-            .update({
-              name_en: testData.name_en,
-              name_te: testData.name_te,
-              description_en: testData.description_en,
-              description_te: testData.description_te,
-              test_code: testData.test_code,
-              category: testData.category,
-              sample_type: testData.sample_type,
-              fasting_required: testData.fasting_required,
-              preparation_instructions: testData.preparation_instructions,
-              report_delivery_hours: testData.report_delivery_hours,
-              is_package: testData.is_package,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', selectedTest.id)
-            .select();
-          
-          if (error) throw error;
-          return data;
-        } else {
-          const { data, error } = await supabase
-            .from('lab_tests' as any)
-            .insert({
-              name_en: testData.name_en,
-              name_te: testData.name_te,
-              description_en: testData.description_en,
-              description_te: testData.description_te,
-              test_code: testData.test_code,
-              category: testData.category,
-              sample_type: testData.sample_type,
-              fasting_required: testData.fasting_required,
-              preparation_instructions: testData.preparation_instructions,
-              report_delivery_hours: testData.report_delivery_hours,
-              is_package: testData.is_package,
-              is_active: true
-            })
-            .select();
-          
-          if (error) throw error;
-          return data;
-        }
-      } catch (err) {
-        console.error('Lab test mutation error:', err);
-        throw new Error('Database tables are still being set up. Please try again in a few moments.');
+  const testMutation = useMutation({
+    mutationFn: async (data: any) => {
+      if (data.id) {
+        const { error } = await supabase
+          .from('lab_tests')
+          .update(data)
+          .eq('id', data.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('lab_tests')
+          .insert([data]);
+        if (error) throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lab-tests'] });
-      setIsTestDialogOpen(false);
-      setSelectedTest(null);
-      toast.success(selectedTest ? 'Test updated successfully' : 'Test created successfully');
+      setIsDialogOpen(false);
+      toast.success('Lab test saved successfully');
     },
-    onError: (error: any) => {
-      toast.error('Error saving test: ' + error.message);
-    },
+    onError: (error) => {
+      toast.error('Failed to save lab test');
+      console.error('Lab test save error:', error);
+    }
   });
 
   // Delete lab test mutation
-  const deleteTestMutation = useMutation({
-    mutationFn: async (testId: string) => {
-      try {
-        const { error } = await supabase
-          .from('lab_tests' as any)
-          .delete()
-          .eq('id', testId);
-        
-        if (error) throw error;
-      } catch (err) {
-        console.error('Delete test error:', err);
-        throw new Error('Database tables are still being set up. Please try again in a few moments.');
-      }
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('lab_tests')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lab-tests'] });
-      toast.success('Test deleted successfully');
+      toast.success('Lab test deleted successfully');
     },
-    onError: (error: any) => {
-      toast.error('Error deleting test: ' + error.message);
-    },
+    onError: (error) => {
+      toast.error('Failed to delete lab test');
+      console.error('Lab test delete error:', error);
+    }
   });
 
+<<<<<<< HEAD
   // Category mutations
   const saveCategoryMutation = useMutation({
     mutationFn: async (categoryData: any) => {
@@ -357,13 +337,27 @@ const LabTestManagement = () => {
     labTestMutation.mutate(testData);
   };
 
+=======
+>>>>>>> 7a8a8d3843e7b0e5f53516958de89a1deefd4190
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Lab Test Management</h1>
-          <p className="text-muted-foreground">Manage lab tests, packages, and center-specific pricing</p>
+          <p className="text-muted-foreground">Manage diagnostic tests and lab services</p>
         </div>
+        
+        <div className="flex gap-2">
+          <Button variant="outline">
+            <Filter className="h-4 w-4 mr-2" />
+            Filter
+          </Button>
+          <Button onClick={() => setIsDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Test
+          </Button>
+        </div>
+<<<<<<< HEAD
         <div className="flex gap-2">
           <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
             <DialogTrigger asChild>
@@ -910,338 +904,201 @@ const LabTestManagement = () => {
             </div>
           </DialogContent>
         </Dialog>
+=======
+>>>>>>> 7a8a8d3843e7b0e5f53516958de89a1deefd4190
       </div>
 
-      <Tabs defaultValue="tests" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
           <TabsTrigger value="tests">Lab Tests</TabsTrigger>
-          <TabsTrigger value="centers">Diagnostic Centers</TabsTrigger>
           <TabsTrigger value="bookings">Bookings</TabsTrigger>
+          <TabsTrigger value="centers">Test Centers</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tests" className="space-y-4">
-          {testsLoading ? (
-            <div className="text-center py-4">Loading tests...</div>
-          ) : (
-            <div className="grid gap-4">
-              {Array.isArray(labTests) && labTests.length > 0 ? (
-                labTests.map((test: LabTest) => (
-                  <Card key={test.id}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle className="flex items-center gap-2">
-                            <TestTube className="w-5 h-5" />
-                            {test.name_en}
-                            {test.is_package && <Badge variant="secondary">Package</Badge>}
-                          </CardTitle>
-                          <CardDescription>{test.description_en}</CardDescription>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedTest(test);
-                              setIsTestDialogOpen(true);
-                            }}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => deleteTestMutation.mutate(test.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <strong>Code:</strong> {test.test_code}
-                        </div>
-                        <div>
-                          <strong>Category:</strong> {test.category?.replace('_', ' ').toUpperCase()}
-                        </div>
-                        <div>
-                          <strong>Sample Type:</strong> {test.sample_type}
-                        </div>
-                        <div>
-                          <strong>Report Time:</strong> {test.report_delivery_hours}h
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                <Card>
-                  <CardContent className="text-center py-8">
-                    <p className="text-muted-foreground">
-                      No lab tests found. The database tables may still be setting up.
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Try refreshing the page in a few moments.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-        </TabsContent>
+          {/* Test Categories Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Tests</CardTitle>
+                <TestTube className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{tests?.length || 0}</div>
+                <p className="text-xs text-muted-foreground">across all categories</p>
+              </CardContent>
+            </Card>
 
-        <TabsContent value="centers">
-          <DiagnosticCentersTab centers={centers || []} />
-        </TabsContent>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Today's Bookings</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">42</div>
+                <p className="text-xs text-muted-foreground">+12% from yesterday</p>
+              </CardContent>
+            </Card>
 
-        <TabsContent value="bookings">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Avg Report Time</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">24h</div>
+                <p className="text-xs text-muted-foreground">for most tests</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Centers</CardTitle>
+                <Building className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">18</div>
+                <p className="text-xs text-muted-foreground">collection centers</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Search and Filter */}
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Lab Test Bookings</CardTitle>
-                  <CardDescription>Manage patient lab test appointments and results</CardDescription>
+              <CardTitle>Lab Tests Directory</CardTitle>
+              <CardDescription>Manage available diagnostic tests and pricing</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Search tests..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full"
+                  />
                 </div>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Book Test
-                </Button>
+                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="blood">Blood Tests</SelectItem>
+                    <SelectItem value="urine">Urine Tests</SelectItem>
+                    <SelectItem value="cardiac">Cardiac Tests</SelectItem>
+                    <SelectItem value="hormone">Hormone Tests</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+
+              {/* Tests Table */}
+              {isLoading ? (
+                <p className="text-center py-8">Loading lab tests...</p>
+              ) : tests?.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">
+                  No lab tests found. Add your first test!
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Sample Type</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tests.map((test) => (
+                      <TableRow key={test.id}>
+                        <TableCell>{test.name_en}</TableCell>
+                        <TableCell>{test.category}</TableCell>
+                        <TableCell>₹{test.price?.toFixed(2) || '0.00'}</TableCell>
+                        <TableCell>{test.sample_type}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="ghost" onClick={() => setSelectedTest(test)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => deleteMutation.mutate(test.id)} disabled={deleteMutation.isPending}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="bookings" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Test Bookings</CardTitle>
+              <CardDescription>Manage patient test appointments and sample collection</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {/* Booking Filters */}
-                <div className="flex gap-4">
-                  <Select defaultValue="all">
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Bookings</SelectItem>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <p className="text-center py-8 text-muted-foreground">
+                Test booking management coming soon...
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-                  <Input
-                    placeholder="Search by patient name or booking ID..."
-                    className="flex-1"
-                  />
+        <TabsContent value="centers" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Collection Centers</CardTitle>
+              <CardDescription>Manage lab and collection center network</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center py-8 text-muted-foreground">
+                Collection center management coming soon...
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-                  <Button variant="outline">
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filter
-                  </Button>
-                </div>
-
-                {/* Recent Bookings */}
-                <div className="space-y-2">
-                  {[
-                    {
-                      id: 'LTB-001',
-                      patient_name: 'Rajesh Kumar',
-                      patient_phone: '+91-9876543210',
-                      tests: ['Complete Blood Count', 'Lipid Profile'],
-                      booking_date: '2025-01-11',
-                      booking_time: '09:00',
-                      status: 'scheduled',
-                      center: 'OneMedi Lab - Main Branch',
-                      total_amount: 1200,
-                      doctor_referred: 'Dr. Priya Sharma'
-                    },
-                    {
-                      id: 'LTB-002',
-                      patient_name: 'Lakshmi Devi',
-                      patient_phone: '+91-9876543211',
-                      tests: ['HbA1c', 'Fasting Glucose'],
-                      booking_date: '2025-01-11',
-                      booking_time: '10:30',
-                      status: 'in_progress',
-                      center: 'OneMedi Lab - Main Branch',
-                      total_amount: 800,
-                      doctor_referred: 'Dr. Arun Reddy'
-                    },
-                    {
-                      id: 'LTB-003',
-                      patient_name: 'Venkat Reddy',
-                      patient_phone: '+91-9876543212',
-                      tests: ['Thyroid Function Test'],
-                      booking_date: '2025-01-10',
-                      booking_time: '14:00',
-                      status: 'completed',
-                      center: 'OneMedi Lab - Branch 2',
-                      total_amount: 600,
-                      doctor_referred: 'Dr. Meera Patel'
-                    },
-                    {
-                      id: 'LTB-004',
-                      patient_name: 'Priya Sharma',
-                      patient_phone: '+91-9876543213',
-                      tests: ['Vitamin D', 'Vitamin B12'],
-                      booking_date: '2025-01-12',
-                      booking_time: '11:00',
-                      status: 'scheduled',
-                      center: 'OneMedi Lab - Main Branch',
-                      total_amount: 900,
-                      doctor_referred: 'Dr. Suresh Kumar'
-                    }
-                  ].map((booking) => (
-                    <div key={booking.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h5 className="font-medium">{booking.patient_name}</h5>
-                              <Badge
-                                className={
-                                  booking.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-                                  booking.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
-                                  booking.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                  'bg-red-100 text-red-800'
-                                }
-                              >
-                                {booking.status}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">ID: {booking.id}</p>
-                            <p className="text-sm text-muted-foreground">{booking.patient_phone}</p>
-                            <p className="text-sm text-muted-foreground">Referred by: {booking.doctor_referred}</p>
-                          </div>
-
-                          <div>
-                            <p className="text-sm font-medium">Tests:</p>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {booking.tests.map((test, index) => (
-                                <Badge key={index} variant="outline" className="text-xs">{test}</Badge>
-                              ))}
-                            </div>
-                            <p className="text-sm text-muted-foreground mt-2">{booking.center}</p>
-                          </div>
-
-                          <div>
-                            <div className="text-sm">
-                              <div className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4" />
-                                {booking.booking_date}
-                              </div>
-                              <div className="flex items-center gap-2 mt-1">
-                                <Clock className="h-4 w-4" />
-                                {booking.booking_time}
-                              </div>
-                              <p className="font-medium mt-2">₹{booking.total_amount}</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          {booking.status === 'completed' && (
-                            <Button size="sm" variant="outline">
-                              <FileText className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Booking Summary */}
-                <div className="grid grid-cols-4 gap-4 pt-4 border-t">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-blue-600">4</p>
-                    <p className="text-xs text-muted-foreground">Total Bookings</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-yellow-600">1</p>
-                    <p className="text-xs text-muted-foreground">In Progress</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-green-600">1</p>
-                    <p className="text-xs text-muted-foreground">Completed Today</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-purple-600">₹3,500</p>
-                    <p className="text-xs text-muted-foreground">Today's Revenue</p>
-                  </div>
-                </div>
-              </div>
+        <TabsContent value="reports" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Lab Reports & Analytics</CardTitle>
+              <CardDescription>View test results and performance metrics</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center py-8 text-muted-foreground">
+                Lab analytics and reports coming soon...
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
-  );
-};
 
-// Diagnostic Centers Tab Component
-const DiagnosticCentersTab = ({ centers }: { centers: DiagnosticCenter[] }) => {
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Diagnostic Center
-        </Button>
-      </div>
-
-      <div className="grid gap-4">
-        {Array.isArray(centers) && centers.length > 0 ? (
-          centers.map((center: DiagnosticCenter) => (
-            <Card key={center.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Building className="w-5 h-5" />
-                      {center.name_en}
-                      {center.home_collection_available && (
-                        <Badge variant="secondary">Home Collection</Badge>
-                      )}
-                    </CardTitle>
-                    <CardDescription>License: {center.license_number}</CardDescription>
-                  </div>
-                  <Button size="sm" variant="outline">
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <strong>Phone:</strong> {center.phone}
-                  </div>
-                  <div>
-                    <strong>Email:</strong> {center.email}
-                  </div>
-                  {center.home_collection_available && (
-                    <div>
-                      <strong>Collection Radius:</strong> {center.home_collection_radius_km} km
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <Card>
-            <CardContent className="text-center py-8">
-              <p className="text-muted-foreground">
-                No diagnostic centers found. The database tables may still be setting up.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      {/* Add/Edit Test Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedTest ? 'Edit Lab Test' : 'Add New Lab Test'}
+            </DialogTitle>
+            <DialogDescription>
+              Configure test details, pricing, and sample requirements
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-center py-8 text-muted-foreground">
+              Lab test configuration form coming soon...
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
