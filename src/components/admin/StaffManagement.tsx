@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,877 +10,494 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { 
-  Users, 
-  UserPlus, 
-  Search, 
-  Filter,
-  Edit,
-  Eye,
-  Trash2,
-  Phone,
-  Mail,
-  MapPin,
-  Calendar,
-  Clock,
-  Award,
-  Briefcase,
-  GraduationCap,
-  Shield,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Star,
-  TrendingUp,
-  BarChart,
-  UserCog,
-  Building2,
-  Stethoscope,
-  Heart,
-  Activity
-} from 'lucide-react';
+import { Plus, Edit, Trash2, Users, Clock, Award, TrendingUp, Calendar, CheckCircle } from 'lucide-react';
 
-// Types
-interface Staff {
+interface StaffMember {
   id: string;
-  employee_id: string;
-  first_name: string;
-  last_name: string;
+  name: string;
   email: string;
   phone: string;
-  address: string;
-  date_of_birth: string;
-  gender: 'male' | 'female' | 'other';
+  role: string;
   department: string;
-  position: string;
-  role: 'doctor' | 'nurse' | 'technician' | 'admin' | 'support' | 'pharmacist' | 'receptionist';
-  specialization?: string[];
-  qualifications: string[];
-  experience_years: number;
   hire_date: string;
-  employment_status: 'active' | 'inactive' | 'terminated' | 'on_leave';
   salary: number;
-  shift: 'morning' | 'evening' | 'night' | 'rotating';
-  emergency_contact: {
-    name: string;
-    relationship: string;
-    phone: string;
-  };
-  permissions: string[];
-  supervisor_id?: string;
-  performance_rating: number;
-  last_performance_review: string;
-  next_performance_review: string;
+  status: 'active' | 'inactive' | 'on_leave';
+  location_id?: string;
   created_at: string;
   updated_at: string;
 }
 
-interface Department {
+interface StaffPerformance {
   id: string;
-  name: string;
-  head_id?: string;
-  staff_count: number;
-  budget: number;
+  staff_id: string;
+  performance_date: string;
+  total_transactions: number;
+  total_sales_amount: number;
+  total_items_sold: number;
+  average_transaction_time: string;
+  rating: number;
+  created_at: string;
+  updated_at: string;
 }
 
+const DEPARTMENTS = [
+  'pharmacy', 'lab', 'imaging', 'administration', 'customer_service', 'delivery'
+];
+
+const ROLES = [
+  'pharmacist', 'lab_technician', 'radiologist', 'cashier', 'manager', 
+  'customer_service', 'delivery_executive', 'admin'
+];
+
 const StaffManagement: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [departmentFilter, setDepartmentFilter] = useState<string>('all');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [isAddStaffOpen, setIsAddStaffOpen] = useState(false);
-  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
-  const [isViewStaffOpen, setIsViewStaffOpen] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
+  const [isStaffDialogOpen, setIsStaffDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('staff');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('all');
 
   const queryClient = useQueryClient();
 
-  // Fetch staff
-  const { data: staff, isLoading } = useQuery({
-    queryKey: ['staff', searchTerm, departmentFilter, roleFilter, statusFilter],
+  // Fetch staff members
+  const { data: staff, isLoading: staffLoading } = useQuery({
+    queryKey: ['staff-members', searchTerm, selectedDepartment],
     queryFn: async () => {
-      // Mock data for demonstration
-      const mockStaff: Staff[] = [
-        {
-          id: 'STF-001',
-          employee_id: 'EMP-001',
-          first_name: 'Dr. Priya',
-          last_name: 'Sharma',
-          email: 'priya.sharma@onemedi.com',
-          phone: '+91-9876543210',
-          address: '123 Medical Colony, Kurnool, AP',
-          date_of_birth: '1985-03-15',
-          gender: 'female',
-          department: 'Cardiology',
-          position: 'Senior Cardiologist',
-          role: 'doctor',
-          specialization: ['Interventional Cardiology', 'Heart Failure'],
-          qualifications: ['MBBS', 'MD Cardiology', 'DM Interventional Cardiology'],
-          experience_years: 12,
-          hire_date: '2020-01-15',
-          employment_status: 'active',
-          salary: 150000,
-          shift: 'morning',
-          emergency_contact: {
-            name: 'Rajesh Sharma',
-            relationship: 'Husband',
-            phone: '+91-9876543211'
-          },
-          permissions: ['view_patients', 'edit_patients', 'prescribe_medications', 'access_lab_results'],
-          performance_rating: 4.8,
-          last_performance_review: '2024-12-01',
-          next_performance_review: '2025-12-01',
-          created_at: '2020-01-15T00:00:00Z',
-          updated_at: '2025-01-10T00:00:00Z'
-        },
-        {
-          id: 'STF-002',
-          employee_id: 'EMP-002',
-          first_name: 'Nurse Kavita',
-          last_name: 'Reddy',
-          email: 'kavita.reddy@onemedi.com',
-          phone: '+91-9876543212',
-          address: '456 Nurses Quarters, Kurnool, AP',
-          date_of_birth: '1990-07-22',
-          gender: 'female',
-          department: 'Emergency',
-          position: 'Senior Staff Nurse',
-          role: 'nurse',
-          qualifications: ['BSc Nursing', 'Critical Care Certification'],
-          experience_years: 8,
-          hire_date: '2018-03-01',
-          employment_status: 'active',
-          salary: 45000,
-          shift: 'rotating',
-          emergency_contact: {
-            name: 'Suresh Reddy',
-            relationship: 'Father',
-            phone: '+91-9876543213'
-          },
-          permissions: ['view_patients', 'update_vitals', 'administer_medications'],
-          performance_rating: 4.6,
-          last_performance_review: '2024-11-15',
-          next_performance_review: '2025-11-15',
-          created_at: '2018-03-01T00:00:00Z',
-          updated_at: '2025-01-10T00:00:00Z'
-        },
-        {
-          id: 'STF-003',
-          employee_id: 'EMP-003',
-          first_name: 'Ravi',
-          last_name: 'Kumar',
-          email: 'ravi.kumar@onemedi.com',
-          phone: '+91-9876543214',
-          address: '789 Staff Colony, Kurnool, AP',
-          date_of_birth: '1988-11-10',
-          gender: 'male',
-          department: 'Pharmacy',
-          position: 'Chief Pharmacist',
-          role: 'pharmacist',
-          qualifications: ['B.Pharm', 'M.Pharm', 'PharmD'],
-          experience_years: 10,
-          hire_date: '2019-06-01',
-          employment_status: 'active',
-          salary: 65000,
-          shift: 'morning',
-          emergency_contact: {
-            name: 'Lakshmi Kumar',
-            relationship: 'Wife',
-            phone: '+91-9876543215'
-          },
-          permissions: ['view_prescriptions', 'dispense_medications', 'manage_inventory'],
-          performance_rating: 4.7,
-          last_performance_review: '2024-10-01',
-          next_performance_review: '2025-10-01',
-          created_at: '2019-06-01T00:00:00Z',
-          updated_at: '2025-01-10T00:00:00Z'
-        },
-        {
-          id: 'STF-004',
-          employee_id: 'EMP-004',
-          first_name: 'Sanjay',
-          last_name: 'Singh',
-          email: 'sanjay.singh@onemedi.com',
-          phone: '+91-9876543216',
-          address: '321 Tech Block, Kurnool, AP',
-          date_of_birth: '1992-05-18',
-          gender: 'male',
-          department: 'Laboratory',
-          position: 'Lab Technician',
-          role: 'technician',
-          qualifications: ['BSc Medical Laboratory Technology', 'DMLT'],
-          experience_years: 6,
-          hire_date: '2021-02-15',
-          employment_status: 'active',
-          salary: 35000,
-          shift: 'morning',
-          emergency_contact: {
-            name: 'Meera Singh',
-            relationship: 'Mother',
-            phone: '+91-9876543217'
-          },
-          permissions: ['process_lab_tests', 'view_test_results', 'update_test_status'],
-          performance_rating: 4.4,
-          last_performance_review: '2024-09-01',
-          next_performance_review: '2025-09-01',
-          created_at: '2021-02-15T00:00:00Z',
-          updated_at: '2025-01-10T00:00:00Z'
-        }
-      ];
+      let query = supabase
+        .from('staff')
+        .select('*')
+        .order('name');
 
-      // Apply filters
-      let filtered = mockStaff;
-      
       if (searchTerm) {
-        filtered = filtered.filter(member => 
-          `${member.first_name} ${member.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          member.employee_id.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-      
-      if (departmentFilter !== 'all') {
-        filtered = filtered.filter(member => member.department === departmentFilter);
-      }
-      
-      if (roleFilter !== 'all') {
-        filtered = filtered.filter(member => member.role === roleFilter);
-      }
-      
-      if (statusFilter !== 'all') {
-        filtered = filtered.filter(member => member.employment_status === statusFilter);
+        query = query.ilike('name', `%${searchTerm}%`);
       }
 
-      return filtered;
-    }
+      if (selectedDepartment !== 'all') {
+        query = query.eq('department', selectedDepartment);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        console.log('Staff table not ready yet:', error.message);
+        return [];
+      }
+      return data as StaffMember[];
+    },
+    retry: false,
   });
 
-  // Fetch departments
-  const { data: departments } = useQuery({
-    queryKey: ['departments'],
+  // Fetch staff performance
+  const { data: performance } = useQuery({
+    queryKey: ['staff-performance'],
     queryFn: async () => {
-      // Mock data for demonstration
-      const mockDepartments: Department[] = [
-        { id: 'DEPT-001', name: 'Cardiology', staff_count: 8, budget: 2500000 },
-        { id: 'DEPT-002', name: 'Emergency', staff_count: 15, budget: 3000000 },
-        { id: 'DEPT-003', name: 'Pharmacy', staff_count: 5, budget: 800000 },
-        { id: 'DEPT-004', name: 'Laboratory', staff_count: 10, budget: 1200000 },
-        { id: 'DEPT-005', name: 'Administration', staff_count: 12, budget: 1500000 },
-        { id: 'DEPT-006', name: 'Nursing', staff_count: 25, budget: 2000000 }
-      ];
-      return mockDepartments;
-    }
+      const { data, error } = await supabase
+        .from('staff_performance')
+        .select('*')
+        .order('performance_date', { ascending: false });
+
+      if (error) {
+        console.log('Staff performance table not ready yet:', error.message);
+        return [];
+      }
+      return data as StaffPerformance[];
+    },
+    retry: false,
   });
 
-  // Helper functions
+  // Save staff mutation
+  const saveStaffMutation = useMutation({
+    mutationFn: async (staffData: Partial<StaffMember>) => {
+      if (selectedStaff) {
+        const { error } = await supabase
+          .from('staff')
+          .update({
+            ...staffData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', selectedStaff.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('staff')
+          .insert([{
+            ...staffData,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }]);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff-members'] });
+      toast.success(selectedStaff ? 'Staff updated successfully' : 'Staff member added successfully');
+      setIsStaffDialogOpen(false);
+      setSelectedStaff(null);
+    },
+    onError: (error) => {
+      toast.error('Failed to save staff member: ' + error.message);
+    },
+  });
+
+  // Delete staff mutation
+  const deleteStaffMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('staff')
+        .update({ status: 'inactive' })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff-members'] });
+      toast.success('Staff member deactivated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to deactivate staff member: ' + error.message);
+    },
+  });
+
+  const handleSubmitStaff = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    
+    const staffData = {
+      name: formData.get('name')?.toString() || '',
+      email: formData.get('email')?.toString() || '',
+      phone: formData.get('phone')?.toString() || '',
+      role: formData.get('role')?.toString() || '',
+      department: formData.get('department')?.toString() || '',
+      hire_date: formData.get('hire_date')?.toString() || '',
+      salary: parseFloat(formData.get('salary')?.toString() || '0'),
+      status: (formData.get('status')?.toString() || 'active') as 'active' | 'inactive' | 'on_leave',
+    };
+
+    saveStaffMutation.mutate(staffData);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
-      case 'terminated': return 'bg-red-100 text-red-800';
-      case 'on_leave': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-blue-100 text-blue-800';
+      case 'active': return 'text-green-600';
+      case 'on_leave': return 'text-yellow-600';
+      case 'inactive': return 'text-red-600';
+      default: return 'text-gray-600';
     }
   };
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'doctor': return 'bg-blue-100 text-blue-800';
-      case 'nurse': return 'bg-green-100 text-green-800';
-      case 'technician': return 'bg-purple-100 text-purple-800';
-      case 'pharmacist': return 'bg-orange-100 text-orange-800';
-      case 'admin': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-blue-100 text-blue-800';
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'active': return 'default';
+      case 'on_leave': return 'secondary';
+      case 'inactive': return 'destructive';
+      default: return 'outline';
     }
-  };
-
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'doctor': return <Stethoscope className="h-4 w-4" />;
-      case 'nurse': return <Heart className="h-4 w-4" />;
-      case 'technician': return <Activity className="h-4 w-4" />;
-      case 'pharmacist': return <Pill className="h-4 w-4" />;
-      case 'admin': return <UserCog className="h-4 w-4" />;
-      default: return <Users className="h-4 w-4" />;
-    }
-  };
-
-  // Calculate staff statistics
-  const staffStats = {
-    total: staff?.length || 0,
-    active: staff?.filter(s => s.employment_status === 'active').length || 0,
-    doctors: staff?.filter(s => s.role === 'doctor').length || 0,
-    nurses: staff?.filter(s => s.role === 'nurse').length || 0,
-    avgRating: staff?.reduce((sum, s) => sum + s.performance_rating, 0) / (staff?.length || 1),
-    totalSalary: staff?.reduce((sum, s) => sum + s.salary, 0) || 0
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Staff Management</h1>
-          <p className="text-muted-foreground">Manage healthcare staff and human resources</p>
+          <p className="text-muted-foreground">Manage team members and performance</p>
         </div>
-        
-        <Dialog open={isAddStaffOpen} onOpenChange={setIsAddStaffOpen}>
+        <Dialog open={isStaffDialogOpen} onOpenChange={setIsStaffDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <UserPlus className="h-4 w-4 mr-2" />
+            <Button onClick={() => setSelectedStaff(null)}>
+              <Plus className="w-4 h-4 mr-2" />
               Add Staff Member
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Add New Staff Member</DialogTitle>
+              <DialogTitle>{selectedStaff ? 'Edit Staff Member' : 'Add New Staff Member'}</DialogTitle>
               <DialogDescription>
-                Register a new staff member in the system
+                Manage team member information and roles
               </DialogDescription>
             </DialogHeader>
-            <div className="text-center py-8 text-muted-foreground">
-              <UserPlus className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <p>Staff registration form coming soon</p>
-            </div>
+            <form onSubmit={handleSubmitStaff} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    defaultValue={selectedStaff?.name}
+                    placeholder="Enter full name"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    defaultValue={selectedStaff?.email}
+                    placeholder="Enter email address"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    defaultValue={selectedStaff?.phone}
+                    placeholder="Enter phone number"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="hire_date">Hire Date</Label>
+                  <Input
+                    id="hire_date"
+                    name="hire_date"
+                    type="date"
+                    defaultValue={selectedStaff?.hire_date}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="role">Role</Label>
+                  <Select name="role" defaultValue={selectedStaff?.role}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ROLES.map(role => (
+                        <SelectItem key={role} value={role}>
+                          {role.replace('_', ' ').toUpperCase()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="department">Department</Label>
+                  <Select name="department" defaultValue={selectedStaff?.department}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DEPARTMENTS.map(dept => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept.replace('_', ' ').toUpperCase()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="salary">Salary (₹)</Label>
+                  <Input
+                    id="salary"
+                    name="salary"
+                    type="number"
+                    min="0"
+                    defaultValue={selectedStaff?.salary}
+                    placeholder="Enter salary"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select name="status" defaultValue={selectedStaff?.status || 'active'}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="on_leave">On Leave</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button type="submit" disabled={saveStaffMutation.isPending}>
+                  {selectedStaff ? 'Update' : 'Add'} Staff Member
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsStaffDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold text-blue-600">{staffStats.total}</p>
-                <p className="text-sm text-muted-foreground">Total Staff</p>
-              </div>
-              <Users className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold text-green-600">{staffStats.active}</p>
-                <p className="text-sm text-muted-foreground">Active Staff</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold text-blue-600">{staffStats.doctors}</p>
-                <p className="text-sm text-muted-foreground">Doctors</p>
-              </div>
-              <Stethoscope className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold text-green-600">{staffStats.nurses}</p>
-                <p className="text-sm text-muted-foreground">Nurses</p>
-              </div>
-              <Heart className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold text-yellow-600">{staffStats.avgRating.toFixed(1)}</p>
-                <p className="text-sm text-muted-foreground">Avg Rating</p>
-              </div>
-              <Star className="h-8 w-8 text-yellow-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold text-purple-600">₹{(staffStats.totalSalary / 100000).toFixed(1)}L</p>
-                <p className="text-sm text-muted-foreground">Total Payroll</p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="staff">Staff Directory</TabsTrigger>
-          <TabsTrigger value="departments">Departments</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="payroll">Payroll</TabsTrigger>
+          <TabsTrigger value="attendance">Attendance</TabsTrigger>
         </TabsList>
 
-        {/* Staff Directory Tab */}
         <TabsContent value="staff" className="space-y-4">
+          {/* Filters */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex gap-4 items-end">
+                <div className="flex-1">
+                  <Label>Search Staff</Label>
+                  <Input
+                    placeholder="Search by name..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="min-w-[200px]">
+                  <Label>Department</Label>
+                  <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Departments</SelectItem>
+                      {DEPARTMENTS.map(dept => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept.replace('_', ' ').toUpperCase()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Staff List */}
+          <div className="space-y-4">
+            {staffLoading ? (
+              <div className="text-center py-8">Loading staff members...</div>
+            ) : staff && staff.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {staff.map((member) => (
+                  <Card key={member.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="font-semibold text-lg">{member.name}</h3>
+                          <p className="text-sm text-muted-foreground">{member.role?.replace('_', ' ')}</p>
+                        </div>
+                        <Badge variant={getStatusBadgeVariant(member.status) as "default" | "secondary" | "destructive" | "outline"}>
+                          {member.status}
+                        </Badge>
+                      </div>
+
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Users className="h-4 w-4" />
+                          <span>{member.department?.replace('_', ' ')}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Calendar className="h-4 w-4" />
+                          <span>Hired: {new Date(member.hire_date).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="font-medium">₹{member.salary?.toLocaleString()}/month</span>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedStaff(member);
+                            setIsStaffDialogOpen(true);
+                          }}
+                        >
+                          <Edit className="w-3 h-3 mr-1" />
+                          Edit
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => deleteStaffMutation.mutate(member.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          Remove
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <Users className="h-16 w-16 mx-auto text-muted-foreground opacity-50 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Staff Members Found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {searchTerm || selectedDepartment !== 'all' 
+                      ? 'No staff match your search criteria' 
+                      : 'No staff members have been added yet'}
+                  </p>
+                  <Button onClick={() => setIsStaffDialogOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add First Staff Member
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="performance">
           <Card>
             <CardHeader>
-              <CardTitle>Staff Directory</CardTitle>
-              <CardDescription>Manage all healthcare staff members</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Performance Metrics
+              </CardTitle>
+              <CardDescription>Track staff performance and productivity</CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Search and Filters */}
-              <div className="flex gap-4 mb-6">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search by name, email, or employee ID..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                
-                <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Filter by department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Departments</SelectItem>
-                    <SelectItem value="Cardiology">Cardiology</SelectItem>
-                    <SelectItem value="Emergency">Emergency</SelectItem>
-                    <SelectItem value="Pharmacy">Pharmacy</SelectItem>
-                    <SelectItem value="Laboratory">Laboratory</SelectItem>
-                    <SelectItem value="Administration">Administration</SelectItem>
-                    <SelectItem value="Nursing">Nursing</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={roleFilter} onValueChange={setRoleFilter}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Filter by role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Roles</SelectItem>
-                    <SelectItem value="doctor">Doctor</SelectItem>
-                    <SelectItem value="nurse">Nurse</SelectItem>
-                    <SelectItem value="technician">Technician</SelectItem>
-                    <SelectItem value="pharmacist">Pharmacist</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="on_leave">On Leave</SelectItem>
-                    <SelectItem value="terminated">Terminated</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Staff List */}
-              <div className="space-y-4">
-                {isLoading ? (
-                  <div className="text-center py-8">Loading staff...</div>
-                ) : staff && staff.length > 0 ? (
-                  staff.map((member) => (
-                    <Card key={member.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-6">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div>
-                              <div className="flex items-center gap-2 mb-2">
-                                <h3 className="font-semibold text-lg">{member.first_name} {member.last_name}</h3>
-                                <Badge className={getStatusColor(member.employment_status)}>
-                                  {member.employment_status}
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-muted-foreground">ID: {member.employee_id}</p>
-                              <p className="text-sm text-muted-foreground">{member.email}</p>
-                              <p className="text-sm text-muted-foreground">{member.phone}</p>
-                            </div>
-                            
-                            <div>
-                              <div className="flex items-center gap-2 mb-2">
-                                {getRoleIcon(member.role)}
-                                <Badge className={getRoleColor(member.role)}>
-                                  {member.role}
-                                </Badge>
-                              </div>
-                              <p className="text-sm font-medium">{member.position}</p>
-                              <p className="text-sm text-muted-foreground">{member.department}</p>
-                              <p className="text-sm text-muted-foreground">{member.experience_years} years exp.</p>
-                            </div>
-                            
-                            <div>
-                              <p className="text-sm font-medium">Qualifications:</p>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {member.qualifications.slice(0, 2).map((qual, index) => (
-                                  <Badge key={index} variant="outline" className="text-xs">{qual}</Badge>
-                                ))}
-                                {member.qualifications.length > 2 && (
-                                  <Badge variant="outline" className="text-xs">+{member.qualifications.length - 2}</Badge>
-                                )}
-                              </div>
-                              <div className="mt-2">
-                                <p className="text-sm">Shift: {member.shift}</p>
-                                <p className="text-sm">Salary: ₹{member.salary.toLocaleString()}</p>
-                              </div>
-                            </div>
-                            
-                            <div>
-                              <div className="flex items-center gap-2 mb-2">
-                                <Star className="h-4 w-4 text-yellow-500" />
-                                <span className="font-medium">{member.performance_rating}/5.0</span>
-                              </div>
-                              <p className="text-sm text-muted-foreground">
-                                Hired: {new Date(member.hire_date).toLocaleDateString()}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Next Review: {new Date(member.next_performance_review).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedStaff(member);
-                                setIsViewStaffOpen(true);
-                              }}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" variant="outline">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <div className="text-center py-12">
-                    <Users className="h-16 w-16 mx-auto text-muted-foreground opacity-50 mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Staff Found</h3>
-                    <p className="text-muted-foreground mb-4">
-                      {searchTerm || departmentFilter !== 'all' || roleFilter !== 'all' || statusFilter !== 'all' 
-                        ? 'No staff members match your search criteria' 
-                        : 'No staff members registered yet'}
-                    </p>
-                    <Button onClick={() => setIsAddStaffOpen(true)}>
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Add First Staff Member
-                    </Button>
-                  </div>
-                )}
+              <div className="text-center py-12">
+                <Award className="h-16 w-16 mx-auto text-muted-foreground opacity-50 mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Performance Dashboard</h3>
+                <p className="text-muted-foreground">Track sales, efficiency, and customer ratings</p>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Departments Tab */}
-        <TabsContent value="departments" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {departments?.map((department) => (
-              <Card key={department.id}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Building2 className="h-5 w-5" />
-                    {department.name}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Staff Count:</span>
-                      <Badge variant="outline">{department.staff_count}</Badge>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Budget:</span>
-                      <span className="font-medium">₹{(department.budget / 100000).toFixed(1)}L</span>
-                    </div>
-                    
-                    <Button className="w-full" variant="outline">
-                      View Department Details
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Performance Tab */}
-        <TabsContent value="performance" className="space-y-4">
-          <div className="text-center py-12 text-muted-foreground">
-            <BarChart className="h-16 w-16 mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-semibold mb-2">Performance Analytics</h3>
-            <p>Staff performance analytics and review management coming soon</p>
-          </div>
-        </TabsContent>
-
-        {/* Payroll Tab */}
-        <TabsContent value="payroll" className="space-y-4">
-          <div className="text-center py-12 text-muted-foreground">
-            <TrendingUp className="h-16 w-16 mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-semibold mb-2">Payroll Management</h3>
-            <p>Payroll processing and salary management coming soon</p>
-          </div>
+        <TabsContent value="attendance">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Attendance Management
+              </CardTitle>
+              <CardDescription>Monitor staff attendance and working hours</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <CheckCircle className="h-16 w-16 mx-auto text-muted-foreground opacity-50 mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Attendance Tracking</h3>
+                <p className="text-muted-foreground">View check-in/out times and work schedules</p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Staff Details Dialog */}
-      <Dialog open={isViewStaffOpen} onOpenChange={setIsViewStaffOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Staff Member Details</DialogTitle>
-            <DialogDescription>
-              Complete information for {selectedStaff?.first_name} {selectedStaff?.last_name}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedStaff && <StaffDetailsView staff={selectedStaff} />}
-        </DialogContent>
-      </Dialog>
     </div>
-  );
-};
-
-// Staff Details View Component
-const StaffDetailsView: React.FC<{ staff: Staff }> = ({ staff }) => {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
-      case 'terminated': return 'bg-red-100 text-red-800';
-      case 'on_leave': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-blue-100 text-blue-800';
-    }
-  };
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'doctor': return 'bg-blue-100 text-blue-800';
-      case 'nurse': return 'bg-green-100 text-green-800';
-      case 'technician': return 'bg-purple-100 text-purple-800';
-      case 'pharmacist': return 'bg-orange-100 text-orange-800';
-      case 'admin': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-blue-100 text-blue-800';
-    }
-  };
-
-  return (
-    <Tabs defaultValue="personal" className="space-y-4">
-      <TabsList>
-        <TabsTrigger value="personal">Personal Info</TabsTrigger>
-        <TabsTrigger value="employment">Employment</TabsTrigger>
-        <TabsTrigger value="performance">Performance</TabsTrigger>
-        <TabsTrigger value="permissions">Permissions</TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="personal" className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>Employee ID</Label>
-            <p className="font-medium">{staff.employee_id}</p>
-          </div>
-          <div>
-            <Label>Full Name</Label>
-            <p className="font-medium">{staff.first_name} {staff.last_name}</p>
-          </div>
-          <div>
-            <Label>Email</Label>
-            <p className="font-medium">{staff.email}</p>
-          </div>
-          <div>
-            <Label>Phone</Label>
-            <p className="font-medium">{staff.phone}</p>
-          </div>
-          <div>
-            <Label>Date of Birth</Label>
-            <p className="font-medium">{new Date(staff.date_of_birth).toLocaleDateString()}</p>
-          </div>
-          <div>
-            <Label>Gender</Label>
-            <p className="font-medium capitalize">{staff.gender}</p>
-          </div>
-        </div>
-
-        <div>
-          <Label>Address</Label>
-          <p className="font-medium">{staff.address}</p>
-        </div>
-
-        <div>
-          <Label>Emergency Contact</Label>
-          <div className="grid grid-cols-3 gap-4 mt-2">
-            <div>
-              <p className="text-sm font-medium">Name: {staff.emergency_contact.name}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Relationship: {staff.emergency_contact.relationship}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Phone: {staff.emergency_contact.phone}</p>
-            </div>
-          </div>
-        </div>
-      </TabsContent>
-
-      <TabsContent value="employment" className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>Department</Label>
-            <p className="font-medium">{staff.department}</p>
-          </div>
-          <div>
-            <Label>Position</Label>
-            <p className="font-medium">{staff.position}</p>
-          </div>
-          <div>
-            <Label>Role</Label>
-            <Badge className={getRoleColor(staff.role)}>
-              {staff.role}
-            </Badge>
-          </div>
-          <div>
-            <Label>Employment Status</Label>
-            <Badge className={getStatusColor(staff.employment_status)}>
-              {staff.employment_status}
-            </Badge>
-          </div>
-          <div>
-            <Label>Hire Date</Label>
-            <p className="font-medium">{new Date(staff.hire_date).toLocaleDateString()}</p>
-          </div>
-          <div>
-            <Label>Experience</Label>
-            <p className="font-medium">{staff.experience_years} years</p>
-          </div>
-          <div>
-            <Label>Salary</Label>
-            <p className="font-medium">₹{staff.salary.toLocaleString()}</p>
-          </div>
-          <div>
-            <Label>Shift</Label>
-            <p className="font-medium capitalize">{staff.shift}</p>
-          </div>
-        </div>
-
-        <div>
-          <Label>Qualifications</Label>
-          <div className="flex flex-wrap gap-2 mt-1">
-            {staff.qualifications.map((qual, index) => (
-              <Badge key={index} variant="outline">{qual}</Badge>
-            ))}
-          </div>
-        </div>
-
-        {staff.specialization && staff.specialization.length > 0 && (
-          <div>
-            <Label>Specializations</Label>
-            <div className="flex flex-wrap gap-2 mt-1">
-              {staff.specialization.map((spec, index) => (
-                <Badge key={index} variant="outline">{spec}</Badge>
-              ))}
-            </div>
-          </div>
-        )}
-      </TabsContent>
-
-      <TabsContent value="performance" className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>Performance Rating</Label>
-            <div className="flex items-center gap-2">
-              <Star className="h-5 w-5 text-yellow-500" />
-              <span className="text-xl font-bold">{staff.performance_rating}/5.0</span>
-            </div>
-          </div>
-          <div>
-            <Label>Last Review</Label>
-            <p className="font-medium">{new Date(staff.last_performance_review).toLocaleDateString()}</p>
-          </div>
-          <div>
-            <Label>Next Review</Label>
-            <p className="font-medium">{new Date(staff.next_performance_review).toLocaleDateString()}</p>
-          </div>
-          <div>
-            <Label>Supervisor</Label>
-            <p className="font-medium">{staff.supervisor_id || 'Not assigned'}</p>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Performance Actions</Label>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline">
-              <Edit className="h-4 w-4 mr-2" />
-              Update Rating
-            </Button>
-            <Button size="sm" variant="outline">
-              <Calendar className="h-4 w-4 mr-2" />
-              Schedule Review
-            </Button>
-            <Button size="sm" variant="outline">
-              <Award className="h-4 w-4 mr-2" />
-              Add Achievement
-            </Button>
-          </div>
-        </div>
-      </TabsContent>
-
-      <TabsContent value="permissions" className="space-y-4">
-        <div>
-          <Label>Current Permissions</Label>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            {staff.permissions.map((permission, index) => (
-              <div key={index} className="flex items-center gap-2 p-2 border rounded">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm">{permission.replace(/_/g, ' ')}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Permission Management</Label>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline">
-              <Shield className="h-4 w-4 mr-2" />
-              Edit Permissions
-            </Button>
-            <Button size="sm" variant="outline">
-              <UserCog className="h-4 w-4 mr-2" />
-              Role Settings
-            </Button>
-          </div>
-        </div>
-      </TabsContent>
-    </Tabs>
   );
 };
 

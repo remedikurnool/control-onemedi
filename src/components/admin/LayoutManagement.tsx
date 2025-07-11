@@ -67,13 +67,17 @@ const LayoutManagement: React.FC = () => {
 
       if (data) {
         // Update sections with saved config
+        const savedOrder = Array.isArray(data.homepage_sections_order) ? data.homepage_sections_order : [];
+        const savedVisibility = data.section_visibility && typeof data.section_visibility === 'object' ? data.section_visibility : {};
+        const savedBanners = Array.isArray(data.banner_urls) ? data.banner_urls : [];
+        
         const savedSections = DEFAULT_SECTIONS.map(section => ({
           ...section,
-          visible: data.section_visibility?.[section.id] ?? true,
-          order: data.homepage_sections_order?.indexOf(section.id) + 1 || section.order
+          visible: savedVisibility[section.id] ?? true,
+          order: savedOrder.indexOf(section.id) + 1 || section.order
         }));
         setSections(savedSections);
-        setBannerUrls(data.banner_urls || []);
+        setBannerUrls(savedBanners);
       }
 
       return data as LayoutConfig;

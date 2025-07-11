@@ -82,13 +82,27 @@ const LabTestManagement: React.FC = () => {
           .eq('id', selectedTest.id);
         if (error) throw error;
       } else {
+        // Ensure required fields are present for insert
+        const insertData = {
+          name_en: testData.name_en || '',
+          name_te: testData.name_te || '',
+          test_code: testData.test_code || '',
+          price: testData.price || 0,
+          is_home_collection: testData.is_home_collection || false,
+          is_fasting_required: testData.is_fasting_required || false,
+          is_active: testData.is_active !== false,
+          description_en: testData.description_en,
+          description_te: testData.description_te,
+          test_type: testData.test_type,
+          report_time: testData.report_time,
+          providers: testData.providers,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
         const { error } = await supabase
           .from('lab_tests')
-          .insert([{
-            ...testData,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }]);
+          .insert([insertData]);
         if (error) throw error;
       }
     },
