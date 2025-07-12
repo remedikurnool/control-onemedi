@@ -59,8 +59,8 @@ export const useAuth = () => {
 
         // Check if user is still active (default to true if not specified)
         // Since is_active might not exist on the profile, we treat undefined as active
-        const isActive = profile?.is_active !== false;
-        if (profile?.is_active === false) {
+        const isActive = (profile as any)?.is_active !== false;
+        if ((profile as any)?.is_active === false) {
           await logSecurityEvent('inactive_user_access', 'auth', {
             userId: session.user.id
           }, false);
