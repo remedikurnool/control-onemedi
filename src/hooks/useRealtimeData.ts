@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,7 +39,7 @@ export function useRealtimeData<T = any>(config: RealtimeConfig): UseRealtimeDat
   const serviceRef = useRef(new SupabaseService(config.table));
   const subscriptionRef = useRef<any>(null);
 
-  // Query for fetching data
+  // Query for fetching data with better error handling
   const { 
     data: queryResult, 
     isLoading, 
@@ -59,111 +58,161 @@ export function useRealtimeData<T = any>(config: RealtimeConfig): UseRealtimeDat
         const result = await serviceRef.current.getAll<T>(options, config.select);
         setCount(result.count);
         return result.data;
-      } catch (error) {
+      } catch (error: any) {
         console.error(`Error fetching data from ${config.table}:`, error);
-        // Return empty array on error to prevent crashes
+        
+        // Handle specific table not found errors gracefully
+        if (error?.message?.includes('does not exist') || error?.code === '42P01') {
+          console.warn(`Table ${config.table} does not exist yet, returning empty array`);
+          setCount(0);
+          return [];
+        }
+        
+        // For other errors, show user-friendly message but don't crash
+        if (error?.code !== 'PGRST116') { // PGRST116 is "not found" which is expected
+          toast.error(`Error loading ${config.table.replace('_', ' ')}: ${error?.message || 'Unknown error'}`);
+        }
+        
+        setCount(0);
         return [];
       }
     },
     refetchOnWindowFocus: false,
     staleTime: 30000, // 30 seconds
+    retry: (failureCount, error: any) => {
+      // Don't retry if table doesn't exist
+      if (error?.message?.includes('does not exist') || error?.code === '42P01') {
+        return false;
+      }
+      // Retry up to 2 times for other errors
+      return failureCount < 2;
+    }
   });
 
-  // Create mutation
+  // Create mutation with better error handling
   const createMutation = useMutation({
     mutationFn: async (data: Partial<T>) => {
-      return await serviceRef.current.create<T>(data);
+      try {
+        return await serviceRef.current.create<T>(data);
+      } catch (error: any) {
+        if (error?.message?.includes('does not exist')) {
+          throw new Error(`Table ${config.table} is not ready yet. Please try again in a moment.`);
+        }
+        throw error;
+      }
     },
     onSuccess: (newRecord) => {
       queryClient.invalidateQueries({ queryKey: config.queryKey });
-      toast.success('Record created successfully');
       config.onInsert?.(newRecord);
     },
-    onError: (error) => {
-      toast.error('Failed to create record');
+    onError: (error: any) => {
       console.error('Create error:', error);
+      toast.error(error.message || 'Failed to create record');
     }
   });
 
-  // Update mutation
+  // Update mutation with better error handling
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<T> }) => {
-      return await serviceRef.current.update<T>(id, data);
+      try {
+        return await serviceRef.current.update<T>(id, data);
+      } catch (error: any) {
+        if (error?.message?.includes('does not exist')) {
+          throw new Error(`Table ${config.table} is not ready yet. Please try again in a moment.`);
+        }
+        throw error;
+      }
     },
     onSuccess: (updatedRecord) => {
       queryClient.invalidateQueries({ queryKey: config.queryKey });
-      toast.success('Record updated successfully');
       config.onUpdate?.(updatedRecord);
     },
-    onError: (error) => {
-      toast.error('Failed to update record');
+    onError: (error: any) => {
       console.error('Update error:', error);
+      toast.error(error.message || 'Failed to update record');
     }
   });
 
-  // Delete mutation
+  // Delete mutation with better error handling
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await serviceRef.current.delete(id);
-      return id;
+      try {
+        await serviceRef.current.delete(id);
+        return id;
+      } catch (error: any) {
+        if (error?.message?.includes('does not exist')) {
+          throw new Error(`Table ${config.table} is not ready yet. Please try again in a moment.`);
+        }
+        throw error;
+      }
     },
     onSuccess: (deletedId) => {
       queryClient.invalidateQueries({ queryKey: config.queryKey });
-      toast.success('Record deleted successfully');
       config.onDelete?.({ id: deletedId });
     },
-    onError: (error) => {
-      toast.error('Failed to delete record');
+    onError: (error: any) => {
       console.error('Delete error:', error);
+      toast.error(error.message || 'Failed to delete record');
     }
   });
 
-  // Set up real-time subscription
+  // Set up real-time subscription with better error handling
   useEffect(() => {
     if (!config.enableRealtime) return;
 
-    const channel = supabase
-      .channel(`${config.table}_realtime`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: config.table
-        },
-        (payload) => {
-          console.log('Real-time update:', payload);
+    // Only set up realtime if we have data (table exists)
+    if (!queryResult || queryResult.length === 0) return;
 
-          switch (payload.eventType) {
-            case 'INSERT':
-              queryClient.invalidateQueries({ queryKey: config.queryKey });
-              config.onInsert?.(payload.new);
-              toast.success('New record added');
-              break;
+    try {
+      const channel = supabase
+        .channel(`${config.table}_realtime`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: config.table
+          },
+          (payload) => {
+            console.log('Real-time update:', payload);
 
-            case 'UPDATE':
-              queryClient.invalidateQueries({ queryKey: config.queryKey });
-              config.onUpdate?.(payload.new);
-              break;
+            switch (payload.eventType) {
+              case 'INSERT':
+                queryClient.invalidateQueries({ queryKey: config.queryKey });
+                config.onInsert?.(payload.new);
+                break;
 
-            case 'DELETE':
-              queryClient.invalidateQueries({ queryKey: config.queryKey });
-              config.onDelete?.(payload.old);
-              toast.info('Record deleted');
-              break;
+              case 'UPDATE':
+                queryClient.invalidateQueries({ queryKey: config.queryKey });
+                config.onUpdate?.(payload.new);
+                break;
+
+              case 'DELETE':
+                queryClient.invalidateQueries({ queryKey: config.queryKey });
+                config.onDelete?.(payload.old);
+                break;
+            }
           }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log(`Real-time subscription active for ${config.table}`);
+          } else if (status === 'CHANNEL_ERROR') {
+            console.warn(`Real-time subscription error for ${config.table}`);
+          }
+        });
+
+      subscriptionRef.current = channel;
+
+      return () => {
+        if (subscriptionRef.current) {
+          supabase.removeChannel(subscriptionRef.current);
         }
-      )
-      .subscribe();
-
-    subscriptionRef.current = channel;
-
-    return () => {
-      if (subscriptionRef.current) {
-        supabase.removeChannel(subscriptionRef.current);
-      }
-    };
-  }, [config.table, config.enableRealtime, queryClient]);
+      };
+    } catch (error) {
+      console.warn(`Failed to setup real-time subscription for ${config.table}:`, error);
+    }
+  }, [config.table, config.enableRealtime, queryClient, queryResult]);
 
   // Wrapper functions for mutations
   const create = useCallback(async (data: Partial<T>): Promise<T> => {
