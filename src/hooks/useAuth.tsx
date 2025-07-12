@@ -58,8 +58,9 @@ export const useAuth = () => {
         }
 
         // Check if user is still active (default to true if not specified)
+        // Since is_active might not exist on the profile, we treat undefined as active
         const isActive = profile?.is_active !== false;
-        if (!isActive) {
+        if (profile?.is_active === false) {
           await logSecurityEvent('inactive_user_access', 'auth', {
             userId: session.user.id
           }, false);
@@ -111,7 +112,7 @@ export const useAuth = () => {
       // Clear sensitive data from localStorage
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('supabase.') || key.includes('auth') || key.includes('session')) {
-          localStorage.removeKey(key);
+          localStorage.removeItem(key);
         }
       });
 
