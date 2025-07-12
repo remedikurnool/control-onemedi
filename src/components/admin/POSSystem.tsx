@@ -168,7 +168,8 @@ const POSSystem = () => {
       return null;
     }
 
-    return data.product;
+    // Return the product object, not the entire data
+    return data.product as Product;
   };
 
   // Handle barcode scan

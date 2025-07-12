@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -169,7 +168,8 @@ const EnhancedPOSSystem = () => {
       return null;
     }
 
-    return data.product;
+    // Return the product object, not the entire data
+    return data.product as Product;
   };
 
   // Handle barcode scan
