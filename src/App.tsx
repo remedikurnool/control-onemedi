@@ -23,6 +23,14 @@ import AdvancedAnalyticsPage from "./pages/admin/AdvancedAnalyticsPage";
 import SEOPage from "./pages/admin/SEOPage";
 import LayoutBuilderPage from "./pages/admin/LayoutBuilderPage";
 import EnhancedLabTestsPage from "./pages/admin/EnhancedLabTestsPage";
+import MedicinesPage from "./pages/admin/MedicinesPage";
+import LabTestsPage from "./pages/admin/LabTestsPage";
+import ScansPage from "./pages/admin/ScansPage";
+import DoctorsPage from "./pages/admin/DoctorsPage";
+import HomeCareServicesPage from "./pages/admin/HomeCareServicesPage";
+import SurgeryOpinionPage from "./pages/admin/SurgeryOpinionPage";
+import DiabetesCarePage from "./pages/admin/DiabetesCarePage";
+import AmbulancePage from "./pages/admin/AmbulancePage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
