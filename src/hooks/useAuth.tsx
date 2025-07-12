@@ -4,6 +4,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { SECURITY_CONFIG, createAuditLog } from '@/lib/security-config';
 import { toast } from 'sonner';
 
+// Define the expected user profile type
+interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string;
+  phone: string;
+  role: 'doctor' | 'admin' | 'user' | 'pharmacist' | 'lab_technician' | 'super_admin';
+  is_active?: boolean;
+  permissions?: Record<string, boolean>;
+  created_at: string;
+  updated_at: string;
+  location?: any;
+  preferences?: any;
+}
+
 export const useAuth = () => {
   const queryClient = useQueryClient();
 
@@ -27,31 +42,37 @@ export const useAuth = () => {
     queryFn: async () => {
       if (!session?.user?.id) return null;
 
-      const { data: profile, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
+      try {
+        const { data: profile, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
 
-      if (error) {
-        await logSecurityEvent('profile_fetch_failed', 'auth', {
-          userId: session.user.id,
-          error: error.message
-        }, false);
-        throw error;
-      }
+        if (error) {
+          await logSecurityEvent('profile_fetch_failed', 'auth', {
+            userId: session.user.id,
+            error: error.message
+          }, false);
+          throw error;
+        }
 
-      // Check if user is still active
-      if (!profile?.is_active) {
-        await logSecurityEvent('inactive_user_access', 'auth', {
-          userId: session.user.id
-        }, false);
-        await supabase.auth.signOut();
-        toast.error('Account has been deactivated');
+        // Check if user is still active (default to true if not specified)
+        const isActive = profile?.is_active !== false;
+        if (!isActive) {
+          await logSecurityEvent('inactive_user_access', 'auth', {
+            userId: session.user.id
+          }, false);
+          await supabase.auth.signOut();
+          toast.error('Account has been deactivated');
+          return null;
+        }
+
+        return profile as UserProfile;
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
         return null;
       }
-
-      return profile;
     },
     enabled: !!session?.user?.id,
   });
@@ -65,9 +86,12 @@ export const useAuth = () => {
       console.log('Security Event:', auditLog);
 
       // Store in Supabase if security_audit_log table exists
-      await supabase.from('security_audit_log').insert([auditLog]).catch(() => {
+      try {
+        await supabase.from('security_audit_log').insert([auditLog]);
+      } catch (error) {
         // Fail silently if table doesn't exist
-      });
+        console.warn('Could not log to security_audit_log table:', error);
+      }
     } catch (error) {
       console.error('Failed to log security event:', error);
     }
@@ -87,7 +111,7 @@ export const useAuth = () => {
       // Clear sensitive data from localStorage
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('supabase.') || key.includes('auth') || key.includes('session')) {
-          localStorage.removeItem(key);
+          localStorage.removeKey(key);
         }
       });
 
@@ -102,8 +126,8 @@ export const useAuth = () => {
     }
   });
 
-  // Check if user has admin privileges
-  const isAdmin = userProfile?.role && SECURITY_CONFIG.ADMIN_ROLES.includes(userProfile.role);
+  // Check if user has admin privileges - include super_admin role
+  const isAdmin = userProfile?.role && ['admin', 'super_admin'].includes(userProfile.role);
   const isSuperAdmin = userProfile?.role === 'super_admin';
 
   // Check specific permissions
