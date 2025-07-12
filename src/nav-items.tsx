@@ -1,7 +1,8 @@
 
-import { type LucideIcon, Home, Users, Package, ShoppingCart, TestTube, Stethoscope, 
-         Truck, Building, Droplets, Calendar, BarChart, Settings, Bell, MessageCircle, 
-         Search, Layout, TrendingUp, Palette, Globe } from "lucide-react";
+import { type LucideIcon, Home, Users, Package, ShoppingCart, TestTube, Stethoscope,
+         Truck, Building, Droplets, Calendar, BarChart, Settings, Bell, MessageCircle,
+         Search, Layout, TrendingUp, Palette, Globe, Pill, Scan, Heart, Activity,
+         Utensils, Dumbbell } from "lucide-react";
 
 export interface NavItem {
   title: string;
@@ -33,14 +34,54 @@ export const navItems: NavItem[] = [
     icon: ShoppingCart,
   },
   {
+    title: "Medicines",
+    url: "/admin/medicines",
+    icon: Pill,
+  },
+  {
     title: "Lab Tests",
-    url: "/admin/enhanced-lab-tests",
+    url: "/admin/lab-tests",
     icon: TestTube,
+  },
+  {
+    title: "Scans",
+    url: "/admin/scans",
+    icon: Scan,
+  },
+  {
+    title: "Doctors",
+    url: "/admin/doctors",
+    icon: Stethoscope,
+  },
+  {
+    title: "Surgery Opinion",
+    url: "/admin/surgery-opinion",
+    icon: Heart,
+  },
+  {
+    title: "Home Care",
+    url: "/admin/home-care",
+    icon: Heart,
+  },
+  {
+    title: "Diabetes Care",
+    url: "/admin/diabetes-care",
+    icon: Droplets,
+  },
+  {
+    title: "Diet Guide",
+    url: "/admin/diet-guide",
+    icon: Utensils,
+  },
+  {
+    title: "Physiotherapy",
+    url: "/admin/physiotherapy",
+    icon: Dumbbell,
   },
   {
     title: "Patients",
     url: "/admin/patients",
-    icon: Stethoscope,
+    icon: Activity,
   },
   {
     title: "Ambulance",

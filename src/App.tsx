@@ -31,6 +31,7 @@ import HomeCareServicesPage from "./pages/admin/HomeCareServicesPage";
 import SurgeryOpinionPage from "./pages/admin/SurgeryOpinionPage";
 import DiabetesCarePage from "./pages/admin/DiabetesCarePage";
 import AmbulancePage from "./pages/admin/AmbulancePage";
+import PhysiotherapyPage from "./pages/admin/PhysiotherapyPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,6 +69,15 @@ const App = () => (
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="blood-banks" element={<BloodBankPage />} />
                 <Route path="hospitals" element={<HospitalPage />} />
+                <Route path="medicines" element={<MedicinesPage />} />
+                <Route path="lab-tests" element={<LabTestsPage />} />
+                <Route path="scans" element={<ScansPage />} />
+                <Route path="doctors" element={<DoctorsPage />} />
+                <Route path="home-care" element={<HomeCareServicesPage />} />
+                <Route path="surgery-opinion" element={<SurgeryOpinionPage />} />
+                <Route path="diabetes-care" element={<DiabetesCarePage />} />
+                <Route path="ambulance" element={<AmbulancePage />} />
+                <Route path="physiotherapy" element={<PhysiotherapyPage />} />
               </Routes>
             </AdminLayout>
           } />
