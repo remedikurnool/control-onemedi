@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { navItems } from "./nav-items";
 import Index from "./pages/Index";
+import Login from "./pages/Login";
 import AdminLayout from "./components/admin/AdminLayout";
 import Dashboard from "./components/admin/Dashboard";
 import UsersPage from "./pages/admin/UsersPage";
@@ -48,6 +49,7 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
+<<<<<<< HEAD
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -92,6 +94,47 @@ const App = () => (
       </TooltipProvider>
     </QueryClientProvider>
   </ErrorBoundary>
+=======
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="users" element={<UsersPage />} />
+            <Route path="inventory" element={<InventoryPage />} />
+            <Route path="orders" element={<OrdersPage />} />
+            <Route path="enhanced-lab-tests" element={<EnhancedLabTestsPage />} />
+            <Route path="patients" element={<PatientPage />} />
+            <Route path="locations" element={<LocationsPage />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
+            <Route path="advanced-analytics" element={<AdvancedAnalyticsPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="chat" element={<ChatPage />} />
+            <Route path="seo" element={<SEOPage />} />
+            <Route path="layout-builder" element={<LayoutBuilderPage />} />
+            <Route path="marketing" element={<MarketingPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="blood-banks" element={<BloodBankPage />} />
+            <Route path="hospitals" element={<HospitalPage />} />
+            <Route path="medicines" element={<MedicinesPage />} />
+            <Route path="lab-tests" element={<LabTestsPage />} />
+            <Route path="scans" element={<ScansPage />} />
+            <Route path="doctors" element={<DoctorsPage />} />
+            <Route path="home-care" element={<HomeCareServicesPage />} />
+            <Route path="surgery-opinion" element={<SurgeryOpinionPage />} />
+            <Route path="diabetes-care" element={<DiabetesCarePage />} />
+            <Route path="ambulance" element={<AmbulancePage />} />
+            <Route path="physiotherapy" element={<PhysiotherapyPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+>>>>>>> 1153968f22f42d48fd71176956374509693b678b
 );
 
 export default App;

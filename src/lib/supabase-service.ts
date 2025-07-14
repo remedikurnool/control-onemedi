@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -21,11 +20,14 @@ export interface RealtimeSubscription {
   unsubscribe: () => void;
 }
 
-// Valid table names from the database schema
+// Valid table names from the database schema (updated with new tables)
 const VALID_TABLES = [
   'user_profiles', 'locations', 'products', 'customer_orders', 'consultations',
   'ambulance_bookings', 'ambulance_services', 'blood_banks', 'blood_inventory',
-  'analytics_events', 'coupons', 'hospitals', 'doctors', 'caregivers'
+  'analytics_events', 'coupons', 'hospitals', 'doctors', 'caregivers',
+  'notifications', 'customer_segments', 'marketing_campaigns', 'funnel_analytics',
+  'automation_triggers', 'whatsapp_templates', 'dynamic_pricing_rules',
+  'layout_config', 'seo_settings'
 ];
 
 // Generic CRUD Service
@@ -111,6 +113,14 @@ export class SupabaseService {
               query = query.in(key, value);
             } else if (typeof value === 'string' && value.includes('%')) {
               query = query.ilike(key, value);
+            } else if (typeof value === 'object' && value.$gte) {
+              query = query.gte(key, value.$gte);
+            } else if (typeof value === 'object' && value.$lte) {
+              query = query.lte(key, value.$lte);
+            } else if (typeof value === 'object' && value.$gt) {
+              query = query.gt(key, value.$gt);
+            } else if (typeof value === 'object' && value.$lt) {
+              query = query.lt(key, value.$lt);
             } else {
               query = query.eq(key, value);
             }
@@ -227,7 +237,7 @@ export class SupabaseService {
     }
   }
 
-  // Search
+  // Enhanced search with better filtering
   async search<T>(
     searchTerm: string, 
     searchFields: string[], 
@@ -246,11 +256,19 @@ export class SupabaseService {
         query = query.or(searchConditions);
       }
 
-      // Apply additional filters
+      // Apply additional filters (enhanced to support date ranges and comparisons)
       if (options.filters) {
         Object.entries(options.filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null && value !== '') {
-            query = query.eq(key, value);
+            if (typeof value === 'object' && value.$gte) {
+              query = query.gte(key, value.$gte);
+            } else if (typeof value === 'object' && value.$lte) {
+              query = query.lte(key, value.$lte);
+            } else if (typeof value === 'object' && value.$in) {
+              query = query.in(key, value.$in);
+            } else {
+              query = query.eq(key, value);
+            }
           }
         });
       }
@@ -279,7 +297,7 @@ export class SupabaseService {
       };
     } catch (error) {
       this.handleError('search', error);
-      throw error;
+      return { data: [], count: 0 };
     }
   }
 
@@ -471,7 +489,7 @@ export class SupabaseStorageService {
   }
 }
 
-// Service instances for common tables
+// Service instances for common tables (updated with new marketing tables)
 export const usersService = new SupabaseService('user_profiles');
 export const locationsService = new SupabaseService('locations');
 export const appointmentsService = new SupabaseService('consultations');
@@ -484,7 +502,20 @@ export const paymentsService = new SupabaseService('payments');
 export const emergencyCallsService = new SupabaseService('emergency_calls');
 export const staffService = new SupabaseService('staff');
 export const doctorsService = new SupabaseService('doctors');
+
+// New marketing service instances
+export const notificationsService = new SupabaseService('notifications');
+export const customerSegmentsService = new SupabaseService('customer_segments');
 export const marketingCampaignsService = new SupabaseService('marketing_campaigns');
+export const funnelAnalyticsService = new SupabaseService('funnel_analytics');
+export const automationTriggersService = new SupabaseService('automation_triggers');
+export const whatsappTemplatesService = new SupabaseService('whatsapp_templates');
+export const dynamicPricingService = new SupabaseService('dynamic_pricing_rules');
+export const layoutConfigService = new SupabaseService('layout_config');
+export const seoSettingsService = new SupabaseService('seo_settings');
+
+// Original service instances
+export const marketingCampaignService = new SupabaseService('marketing_campaigns');
 export const analyticsService = new SupabaseService('business_metrics');
 
 // Storage service instances

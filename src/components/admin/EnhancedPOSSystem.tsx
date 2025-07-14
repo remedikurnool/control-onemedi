@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -150,18 +149,17 @@ const EnhancedPOSSystem = () => {
   // Product search by barcode
   const searchByBarcode = async (barcode: string) => {
     const { data, error } = await supabase
-      .from('product_barcodes')
+      .from('products')
       .select(`
-        product:products(
-          id,
-          name_en,
-          name_te,
-          price,
-          image_url,
-          inventory:product_inventory(available_quantity, reserved_quantity)
-        )
+        id,
+        name_en,
+        name_te,
+        price,
+        image_url,
+        inventory:product_inventory(available_quantity, reserved_quantity),
+        product_barcodes!inner(barcode_value)
       `)
-      .eq('barcode_value', barcode)
+      .eq('product_barcodes.barcode_value', barcode)
       .single();
 
     if (error) {
@@ -169,7 +167,7 @@ const EnhancedPOSSystem = () => {
       return null;
     }
 
-    return data.product;
+    return data as Product;
   };
 
   // Handle barcode scan

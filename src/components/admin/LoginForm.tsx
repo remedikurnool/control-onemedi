@@ -1,77 +1,55 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Heart, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Shield, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  // Password strength validation
-  const validatePassword = (password: string) => {
-    const minLength = password.length >= 8;
-    const hasUpper = /[A-Z]/.test(password);
-    const hasLower = /[a-z]/.test(password);
-    const hasNumber = /\d/.test(password);
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    
-    return {
-      isValid: minLength && hasUpper && hasLower && hasNumber,
-      checks: {
-        minLength,
-        hasUpper,
-        hasLower,
-        hasNumber,
-        hasSpecial
-      }
-    };
-  };
-
-  // Clean up auth state
   const cleanupAuthState = () => {
-    Object.keys(localStorage).forEach((key) => {
+    // Remove all auth-related keys from localStorage
+    Object.keys(localStorage).forEach(key => {
       if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
         localStorage.removeItem(key);
       }
     });
-    Object.keys(sessionStorage || {}).forEach((key) => {
+    
+    // Remove from sessionStorage if in use
+    Object.keys(sessionStorage || {}).forEach(key => {
       if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
         sessionStorage.removeItem(key);
       }
     });
   };
 
-  // Log security events
-  const logSecurityEvent = async (action: string, success: boolean, details: any = {}) => {
-    try {
-      await supabase.rpc('log_security_event', {
-        p_action: action,
-        p_resource: 'login',
-        p_details: details,
-        p_success: success
-      });
-    } catch (error) {
-      console.error('Failed to log security event:', error);
-    }
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Check for rate limiting
-    if (loginAttempts >= 5) {
-      toast.error('Too many failed attempts. Please try again later.');
-      await logSecurityEvent('login_blocked', false, { email, attempts: loginAttempts });
+    setError('');
+
+    if (!email || !password) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address');
       return;
     }
 
@@ -88,52 +66,56 @@ const LoginForm = () => {
         // Continue even if this fails
       }
 
+      // Sign in with email/password
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        setLoginAttempts(prev => prev + 1);
-        await logSecurityEvent('login_failed', false, { 
-          email, 
-          error: error.message,
-          attempts: loginAttempts + 1 
-        });
-        throw error;
+        console.error('Login error:', error);
+        setError(error.message);
+        return;
       }
 
-      // Check if user is admin
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single();
+      if (data.user) {
+        // Check if user has admin privileges
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('role, is_active')
+          .eq('id', data.user.id)
+          .single();
 
-      if (!profile || !['super_admin', 'admin', 'manager'].includes(profile.role)) {
-        await supabase.auth.signOut({ scope: 'global' });
-        await logSecurityEvent('unauthorized_access_attempt', false, { 
-          email, 
-          role: profile?.role || 'none' 
-        });
-        throw new Error('You do not have admin access');
+        if (!profile) {
+          setError('User profile not found. Please contact support.');
+          await supabase.auth.signOut();
+          return;
+        }
+
+        if (profile.is_active === false) {
+          setError('Account has been deactivated. Please contact support.');
+          await supabase.auth.signOut();
+          return;
+        }
+
+        if (!['admin', 'super_admin', 'manager'].includes(profile.role)) {
+          setError('Access denied. Admin privileges required.');
+          await supabase.auth.signOut();
+          return;
+        }
+
+        // Update last login
+        await supabase
+          .from('user_profiles')
+          .update({ last_login_at: new Date().toISOString() })
+          .eq('id', data.user.id);
+
+        toast.success('Login successful');
+        navigate('/admin');
       }
-
-      // Log successful login
-      await logSecurityEvent('login_success', true, { 
-        email, 
-        role: profile.role 
-      });
-
-      // Reset login attempts on success
-      setLoginAttempts(0);
-      
-      toast.success('Login successful');
-      
-      // Force page reload for clean state
-      window.location.href = '/admin';
     } catch (error: any) {
-      toast.error(error.message || 'Login failed');
+      console.error('Login error:', error);
+      setError(error.message || 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
@@ -143,86 +125,75 @@ const LoginForm = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <Heart className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">ONE MEDI</h1>
-              <p className="text-sm text-muted-foreground">Admin Panel</p>
-            </div>
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+            <Shield className="h-6 w-6 text-blue-600" />
           </div>
-          <CardTitle>Welcome Back</CardTitle>
+          <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
           <CardDescription>
             Sign in to access the admin dashboard
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
+                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@onemedi.com"
+                disabled={isLoading}
                 required
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Input
                   id="password"
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  disabled={isLoading}
                   required
-                  className="pr-10"
                 />
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  disabled={isLoading}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-gray-400" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-gray-400" />
+                  )}
+                </Button>
               </div>
             </div>
-            {loginAttempts > 0 && (
-              <div className="flex items-center gap-2 text-yellow-600 text-sm">
-                <AlertTriangle className="h-4 w-4" />
-                <span>Failed attempts: {loginAttempts}/5</span>
-              </div>
-            )}
-            <Button type="submit" className="w-full" disabled={isLoading || loginAttempts >= 5}>
-              {isLoading ? 'Signing in...' : loginAttempts >= 5 ? 'Account Locked' : 'Sign In'}
+
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                'Sign In'
+              )}
             </Button>
           </form>
-          
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-semibold text-sm mb-2">Demo Credentials:</h3>
-            <div className="text-xs space-y-1">
-              <p><strong>Super Admin:</strong> superadmin@onemedi.com</p>
-              <p><strong>Admin:</strong> admin@onemedi.com</p>
-              <p><strong>Manager:</strong> manager@onemedi.com</p>
-              <p><strong>Pharmacist:</strong> pharmacist@onemedi.com</p>
-              <p><strong>Front Desk:</strong> frontdesk@onemedi.com</p>
-              <p><strong>Customer:</strong> customer@onemedi.com</p>
-              <p className="mt-2"><strong>Password:</strong> SecurePass123!</p>
-            </div>
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
-              <div className="flex items-center gap-2 text-yellow-700 mb-1">
-                <AlertTriangle className="h-3 w-3" />
-                <span className="font-semibold">Security Notice</span>
-              </div>
-              <p className="text-yellow-600">
-                These are demo credentials. In production, use strong passwords with uppercase, lowercase, numbers, and special characters.
-              </p>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

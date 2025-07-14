@@ -1,8 +1,25 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { SECURITY_CONFIG, createAuditLog } from '@/lib/security-config';
 import { toast } from 'sonner';
+import { cleanupAuthState } from '@/lib/security';
+
+// Define the expected user profile type
+interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string;
+  phone: string;
+  role: 'doctor' | 'admin' | 'user' | 'pharmacist' | 'lab_technician' | 'super_admin' | 'manager';
+  is_active?: boolean;
+  permissions?: Record<string, boolean>;
+  created_at: string;
+  updated_at: string;
+  location?: any;
+  preferences?: any;
+  avatar_url?: string;
+  last_login_at?: string;
+}
 
 export const useAuth = () => {
   const queryClient = useQueryClient();
@@ -27,31 +44,37 @@ export const useAuth = () => {
     queryFn: async () => {
       if (!session?.user?.id) return null;
 
-      const { data: profile, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
+      try {
+        const { data: profile, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
 
-      if (error) {
-        await logSecurityEvent('profile_fetch_failed', 'auth', {
-          userId: session.user.id,
-          error: error.message
-        }, false);
-        throw error;
-      }
+        if (error) {
+          await logSecurityEvent('profile_fetch_failed', 'auth', {
+            userId: session.user.id,
+            error: error.message
+          }, false);
+          throw error;
+        }
 
-      // Check if user is still active
-      if (!profile?.is_active) {
-        await logSecurityEvent('inactive_user_access', 'auth', {
-          userId: session.user.id
-        }, false);
-        await supabase.auth.signOut();
-        toast.error('Account has been deactivated');
+        // Check if user is still active (default to true if not specified)
+        const isActive = profile?.is_active !== false;
+        if (profile?.is_active === false) {
+          await logSecurityEvent('inactive_user_access', 'auth', {
+            userId: session.user.id
+          }, false);
+          await supabase.auth.signOut();
+          toast.error('Account has been deactivated');
+          return null;
+        }
+
+        return profile as UserProfile;
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
         return null;
       }
-
-      return profile;
     },
     enabled: !!session?.user?.id,
   });
@@ -59,15 +82,16 @@ export const useAuth = () => {
   // Security event logging
   const logSecurityEvent = async (action: string, resource: string, details: any = {}, success: boolean = true) => {
     try {
-      const auditLog = createAuditLog(action, resource, details, success, session?.user?.id);
-
-      // In a real app, this would be sent to a secure logging service
-      console.log('Security Event:', auditLog);
-
-      // Store in Supabase if security_audit_log table exists
-      await supabase.from('security_audit_log').insert([auditLog]).catch(() => {
-        // Fail silently if table doesn't exist
-      });
+      // Store in Supabase security_audit_log table
+      await supabase.from('security_audit_log').insert([{
+        user_id: session?.user?.id || null,
+        action,
+        resource,
+        details,
+        success,
+        ip_address: null, // Could be enhanced to capture real IP
+        user_agent: navigator.userAgent
+      }]);
     } catch (error) {
       console.error('Failed to log security event:', error);
     }
@@ -78,32 +102,28 @@ export const useAuth = () => {
     mutationFn: async () => {
       await logSecurityEvent('logout_initiated', 'auth', { userId: session?.user?.id });
 
+      // Clean up auth state first
+      cleanupAuthState();
+
       const { error } = await supabase.auth.signOut({ scope: 'global' });
       if (error) throw error;
 
       // Clear all cached data
       queryClient.clear();
 
-      // Clear sensitive data from localStorage
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('supabase.') || key.includes('auth') || key.includes('session')) {
-          localStorage.removeItem(key);
-        }
-      });
-
       await logSecurityEvent('logout_completed', 'auth', { userId: session?.user?.id });
     },
     onSuccess: () => {
       toast.success('Logged out successfully');
-      window.location.href = '/';
+      window.location.href = '/login';
     },
     onError: (error: any) => {
       toast.error('Logout failed: ' + error.message);
     }
   });
 
-  // Check if user has admin privileges
-  const isAdmin = userProfile?.role && SECURITY_CONFIG.ADMIN_ROLES.includes(userProfile.role);
+  // Check if user has admin privileges - include super_admin and manager roles
+  const isAdmin = userProfile?.role && ['admin', 'super_admin', 'manager'].includes(userProfile.role);
   const isSuperAdmin = userProfile?.role === 'super_admin';
 
   // Check specific permissions
