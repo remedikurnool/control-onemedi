@@ -33,11 +33,11 @@ import SurgeryOpinionPage from "./pages/admin/SurgeryOpinionPage";
 import DiabetesCarePage from "./pages/admin/DiabetesCarePage";
 import AmbulancePage from "./pages/admin/AmbulancePage";
 import PhysiotherapyPage from "./pages/admin/PhysiotherapyPage";
-import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import ErrorBoundary from "./components/ErrorBoundary";
 import POSPage from "./pages/admin/POSPage";
 import DietGuidePage from "./pages/admin/DietGuidePage";
+import FormEditorPage from "./pages/admin/FormEditorPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,7 +49,6 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
-<<<<<<< HEAD
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -87,6 +86,7 @@ const App = () => (
               <Route path="diet-guide" element={<DietGuidePage />} />
               <Route path="ambulance" element={<AmbulancePage />} />
               <Route path="physiotherapy" element={<PhysiotherapyPage />} />
+              <Route path="form-editor" element={<FormEditorPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
@@ -94,47 +94,6 @@ const App = () => (
       </TooltipProvider>
     </QueryClientProvider>
   </ErrorBoundary>
-=======
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="users" element={<UsersPage />} />
-            <Route path="inventory" element={<InventoryPage />} />
-            <Route path="orders" element={<OrdersPage />} />
-            <Route path="enhanced-lab-tests" element={<EnhancedLabTestsPage />} />
-            <Route path="patients" element={<PatientPage />} />
-            <Route path="locations" element={<LocationsPage />} />
-            <Route path="analytics" element={<AnalyticsPage />} />
-            <Route path="advanced-analytics" element={<AdvancedAnalyticsPage />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-            <Route path="chat" element={<ChatPage />} />
-            <Route path="seo" element={<SEOPage />} />
-            <Route path="layout-builder" element={<LayoutBuilderPage />} />
-            <Route path="marketing" element={<MarketingPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-            <Route path="blood-banks" element={<BloodBankPage />} />
-            <Route path="hospitals" element={<HospitalPage />} />
-            <Route path="medicines" element={<MedicinesPage />} />
-            <Route path="lab-tests" element={<LabTestsPage />} />
-            <Route path="scans" element={<ScansPage />} />
-            <Route path="doctors" element={<DoctorsPage />} />
-            <Route path="home-care" element={<HomeCareServicesPage />} />
-            <Route path="surgery-opinion" element={<SurgeryOpinionPage />} />
-            <Route path="diabetes-care" element={<DiabetesCarePage />} />
-            <Route path="ambulance" element={<AmbulancePage />} />
-            <Route path="physiotherapy" element={<PhysiotherapyPage />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
->>>>>>> 1153968f22f42d48fd71176956374509693b678b
 );
 
 export default App;

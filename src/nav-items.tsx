@@ -2,7 +2,7 @@
 import { type LucideIcon, Home, Users, Package, ShoppingCart, TestTube, Stethoscope,
          Truck, Building, Droplets, Calendar, BarChart, Settings, Bell, MessageCircle,
          Search, Layout, TrendingUp, Palette, Globe, Pill, Scan, Heart, Activity,
-         Utensils, Dumbbell } from "lucide-react";
+         Utensils, Dumbbell, FileText, Database } from "lucide-react";
 
 export interface NavItem {
   title: string;
@@ -137,5 +137,10 @@ export const navItems: NavItem[] = [
     title: "Settings",
     url: "/admin/settings",
     icon: Settings,
+  },
+  {
+    title: "Form Editor",
+    url: "/admin/form-editor",
+    icon: FileText,
   },
 ];

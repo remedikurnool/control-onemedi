@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useMockAuth } from '@/hooks/useMockAuth';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
@@ -49,30 +50,27 @@ const AdminLayout = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [searchResults, setSearchResults] = useState<any>(null);
 
-  // Check if user is admin
-  const { data: userProfile, isLoading } = useQuery({
-    queryKey: ['admin-profile'],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-      
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      
-      if (!profile || !['super_admin', 'admin', 'manager'].includes(profile.role)) {
-        throw new Error('Not authorized');
-      }
-      
-      return profile;
-    },
-  });
+  // Use mock authentication
+  const {
+    userProfile,
+    isLoading,
+    isAuthenticated,
+    logout,
+    hasPermission,
+    canAccessPOS,
+    canManageInventory,
+    canManageUsers,
+    canViewAnalytics,
+    canManageSettings
+  } = useMockAuth();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success('Logged out successfully');
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Logout failed');
+    }
   };
 
   const handleSearch = async (query: string, filters: any[]) => {
@@ -189,7 +187,7 @@ const AdminLayout = () => {
     );
   }
 
-  if (!userProfile) {
+  if (!isAuthenticated || !userProfile) {
     return <Navigate to="/login" replace />;
   }
 
