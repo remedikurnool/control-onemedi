@@ -38,6 +38,12 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import POSPage from "./pages/admin/POSPage";
 import DietGuidePage from "./pages/admin/DietGuidePage";
 import FormEditorPage from "./pages/admin/FormEditorPage";
+import PaymentManagementPage from "./pages/admin/PaymentManagementPage";
+import EnhancedLocationPage from "./pages/admin/EnhancedLocationPage";
+import EnhancedMarketingPage from "./pages/admin/EnhancedMarketingPage";
+import EnhancedAnalyticsPage from "./pages/admin/EnhancedAnalyticsPage";
+import EnhancedReportsPage from "./pages/admin/EnhancedReportsPage";
+import EnhancedOrdersPage from "./pages/admin/EnhancedOrdersPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -87,6 +93,12 @@ const App = () => (
               <Route path="ambulance" element={<AmbulancePage />} />
               <Route path="physiotherapy" element={<PhysiotherapyPage />} />
               <Route path="form-editor" element={<FormEditorPage />} />
+              <Route path="payments" element={<PaymentManagementPage />} />
+              <Route path="enhanced-location" element={<EnhancedLocationPage />} />
+              <Route path="enhanced-marketing" element={<EnhancedMarketingPage />} />
+              <Route path="enhanced-analytics" element={<EnhancedAnalyticsPage />} />
+              <Route path="enhanced-reports" element={<EnhancedReportsPage />} />
+              <Route path="enhanced-orders" element={<EnhancedOrdersPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

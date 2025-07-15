@@ -2,7 +2,8 @@
 import { type LucideIcon, Home, Users, Package, ShoppingCart, TestTube, Stethoscope,
          Truck, Building, Droplets, Calendar, BarChart, Settings, Bell, MessageCircle,
          Search, Layout, TrendingUp, Palette, Globe, Pill, Scan, Heart, Activity,
-         Utensils, Dumbbell, FileText, Database } from "lucide-react";
+         Utensils, Dumbbell, FileText, Database, CreditCard, MapPin, Mail,
+         BarChart3, FileSpreadsheet } from "lucide-react";
 
 export interface NavItem {
   title: string;
@@ -132,6 +133,36 @@ export const navItems: NavItem[] = [
     title: "Marketing",
     url: "/admin/marketing",
     icon: BarChart,
+  },
+  {
+    title: "Enhanced Orders",
+    url: "/admin/enhanced-orders",
+    icon: Package,
+  },
+  {
+    title: "Payments",
+    url: "/admin/payments",
+    icon: CreditCard,
+  },
+  {
+    title: "Enhanced Location",
+    url: "/admin/enhanced-location",
+    icon: MapPin,
+  },
+  {
+    title: "Enhanced Marketing",
+    url: "/admin/enhanced-marketing",
+    icon: Mail,
+  },
+  {
+    title: "Enhanced Analytics",
+    url: "/admin/enhanced-analytics",
+    icon: BarChart3,
+  },
+  {
+    title: "Enhanced Reports",
+    url: "/admin/enhanced-reports",
+    icon: FileSpreadsheet,
   },
   {
     title: "Settings",
