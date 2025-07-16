@@ -45,6 +45,8 @@ import EnhancedAnalyticsPage from "./pages/admin/EnhancedAnalyticsPage";
 import EnhancedReportsPage from "./pages/admin/EnhancedReportsPage";
 import EnhancedOrdersPage from "./pages/admin/EnhancedOrdersPage";
 import EVitalRxIntegrationPage from "./pages/admin/eVitalRxIntegrationPage";
+import LoginPage from "./pages/LoginPage";
+import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,12 +60,13 @@ const queryClient = new QueryClient({
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <BrowserRouter>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="users" element={<UsersPage />} />
@@ -105,7 +108,8 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-      </TooltipProvider>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   </ErrorBoundary>
 );

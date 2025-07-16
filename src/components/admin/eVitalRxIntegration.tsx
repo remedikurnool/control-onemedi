@@ -54,7 +54,7 @@ interface eVitalRxSettings {
   updated_at: string;
 }
 
-const eVitalRxIntegration: React.FC = () => {
+const EVitalRxIntegration: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [syncInProgress, setSyncInProgress] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
@@ -719,4 +719,4 @@ const eVitalRxIntegration: React.FC = () => {
   );
 };
 
-export default eVitalRxIntegration;
+export default EVitalRxIntegration;

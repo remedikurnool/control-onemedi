@@ -1,8 +1,8 @@
 import React from 'react';
-import eVitalRxIntegration from '@/components/admin/eVitalRxIntegration';
+import EVitalRxIntegration from '@/components/admin/eVitalRxIntegration';
 
-const eVitalRxIntegrationPage: React.FC = () => {
-  return <eVitalRxIntegration />;
+const EVitalRxIntegrationPage: React.FC = () => {
+  return <EVitalRxIntegration />;
 };
 
-export default eVitalRxIntegrationPage;
+export default EVitalRxIntegrationPage;

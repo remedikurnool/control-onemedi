@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useMockAuth } from '@/hooks/useMockAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
@@ -50,23 +50,24 @@ const AdminLayout = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [searchResults, setSearchResults] = useState<any>(null);
 
-  // Use mock authentication
+  // Use real authentication
   const {
-    userProfile,
-    isLoading,
-    isAuthenticated,
-    logout,
+    user,
+    profile: userProfile,
+    loading: isLoading,
+    signOut: logout,
     hasPermission,
-    canAccessPOS,
-    canManageInventory,
-    canManageUsers,
-    canViewAnalytics,
-    canManageSettings
-  } = useMockAuth();
+    hasRole,
+    isAdmin
+  } = useAuth();
+
+  const isAuthenticated = !!user && !!userProfile;
 
   const handleLogout = async () => {
     try {
       await logout();
+      // Redirect to login page after logout
+      window.location.href = '/login';
     } catch (error) {
       console.error('Logout error:', error);
       toast.error('Logout failed');
