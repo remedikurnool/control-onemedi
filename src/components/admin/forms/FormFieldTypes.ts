@@ -261,11 +261,11 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
           id: 'basic-info',
           title: 'Basic Information',
           fields: [
-            { id: 'name_en', name: 'name_en', ...COMMON_FIELD_CONFIGS.name_en },
-            { id: 'name_te', name: 'name_te', ...COMMON_FIELD_CONFIGS.name_te },
-            { id: 'description_en', name: 'description_en', ...COMMON_FIELD_CONFIGS.description_en },
-            { id: 'description_te', name: 'description_te', ...COMMON_FIELD_CONFIGS.description_te },
-            { id: 'is_active', name: 'is_active', ...COMMON_FIELD_CONFIGS.is_active }
+            { id: 'name_en', name: 'name_en', label: 'Name (English)', type: 'text', validation: { required: true, minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'name_te', name: 'name_te', label: 'Name (Telugu)', type: 'text', validation: { minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'description_en', name: 'description_en', label: 'Description (English)', type: 'textarea', validation: { maxLength: 1000 }, grid: { md: 6 } },
+            { id: 'description_te', name: 'description_te', label: 'Description (Telugu)', type: 'textarea', validation: { maxLength: 1000 }, grid: { md: 6 } },
+            { id: 'is_active', name: 'is_active', label: 'Active', type: 'switch', defaultValue: true, grid: { md: 3 } }
           ]
         }
       ]
@@ -278,19 +278,19 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
           id: 'basic-info',
           title: 'Basic Information',
           fields: [
-            { id: 'name_en', name: 'name_en', ...COMMON_FIELD_CONFIGS.name_en },
-            { id: 'name_te', name: 'name_te', ...COMMON_FIELD_CONFIGS.name_te },
-            { id: 'brand_name', name: 'brand_name', type: 'text', label: 'Brand Name', grid: { md: 6 } },
-            { id: 'generic_name', name: 'generic_name', type: 'text', label: 'Generic Name', grid: { md: 6 } },
-            { id: 'manufacturer', name: 'manufacturer', type: 'text', label: 'Manufacturer', grid: { md: 6 } },
-            { id: 'category_id', name: 'category_id', ...COMMON_FIELD_CONFIGS.category_id }
+            { id: 'name_en', name: 'name_en', label: 'Name (English)', type: 'text', validation: { required: true, minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'name_te', name: 'name_te', label: 'Name (Telugu)', type: 'text', validation: { minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'brand_name', name: 'brand_name', label: 'Brand Name', type: 'text', grid: { md: 6 } },
+            { id: 'generic_name', name: 'generic_name', label: 'Generic Name', type: 'text', grid: { md: 6 } },
+            { id: 'manufacturer', name: 'manufacturer', label: 'Manufacturer', type: 'text', grid: { md: 6 } },
+            { id: 'category_id', name: 'category_id', label: 'Category', type: 'select', validation: { required: true }, grid: { md: 6 } }
           ]
         },
         {
           id: 'product-details',
           title: 'Product Details',
           fields: [
-            { id: 'dosage_form', name: 'dosage_form', type: 'select', label: 'Dosage Form',
+            { id: 'dosage_form', name: 'dosage_form', label: 'Dosage Form', type: 'select',
               options: [
                 { label: 'Tablet', value: 'tablet' },
                 { label: 'Capsule', value: 'capsule' },
@@ -303,8 +303,8 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
               ],
               grid: { md: 4 }
             },
-            { id: 'strength', name: 'strength', type: 'text', label: 'Strength', grid: { md: 4 } },
-            { id: 'unit', name: 'unit', type: 'select', label: 'Unit',
+            { id: 'strength', name: 'strength', label: 'Strength', type: 'text', grid: { md: 4 } },
+            { id: 'unit', name: 'unit', label: 'Unit', type: 'select',
               options: [
                 { label: 'Piece', value: 'piece' },
                 { label: 'Strip', value: 'strip' },
@@ -320,24 +320,24 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
           id: 'pricing',
           title: 'Pricing & Inventory',
           fields: [
-            { id: 'price', name: 'price', ...COMMON_FIELD_CONFIGS.price },
-            { id: 'discount_price', name: 'discount_price', ...COMMON_FIELD_CONFIGS.discount_price },
-            { id: 'discount_percent', name: 'discount_percent', ...COMMON_FIELD_CONFIGS.discount_percent },
-            { id: 'stock_quantity', name: 'stock_quantity', type: 'number', label: 'Stock Quantity', validation: { min: 0 }, grid: { md: 4 } },
-            { id: 'min_stock_level', name: 'min_stock_level', type: 'number', label: 'Min Stock Level', validation: { min: 0 }, grid: { md: 4 } },
-            { id: 'expiry_date', name: 'expiry_date', type: 'date', label: 'Expiry Date', grid: { md: 4 } }
+            { id: 'price', name: 'price', label: 'Price (₹)', type: 'currency', validation: { required: true, min: 0 }, grid: { md: 4 } },
+            { id: 'discount_price', name: 'discount_price', label: 'Discount Price (₹)', type: 'currency', validation: { min: 0 }, grid: { md: 4 } },
+            { id: 'discount_percent', name: 'discount_percent', label: 'Discount %', type: 'percentage', validation: { min: 0, max: 100 }, grid: { md: 4 } },
+            { id: 'stock_quantity', name: 'stock_quantity', label: 'Stock Quantity', type: 'number', validation: { min: 0 }, grid: { md: 4 } },
+            { id: 'min_stock_level', name: 'min_stock_level', label: 'Min Stock Level', type: 'number', validation: { min: 0 }, grid: { md: 4 } },
+            { id: 'expiry_date', name: 'expiry_date', label: 'Expiry Date', type: 'date', grid: { md: 4 } }
           ]
         },
         {
           id: 'additional',
           title: 'Additional Information',
           fields: [
-            { id: 'is_prescription_required', name: 'is_prescription_required', type: 'switch', label: 'Prescription Required', grid: { md: 4 } },
-            { id: 'is_featured', name: 'is_featured', ...COMMON_FIELD_CONFIGS.is_featured },
-            { id: 'add_to_carousel', name: 'add_to_carousel', ...COMMON_FIELD_CONFIGS.add_to_carousel },
-            { id: 'image_url', name: 'image_url', ...COMMON_FIELD_CONFIGS.image_url },
-            { id: 'images', name: 'images', ...COMMON_FIELD_CONFIGS.images },
-            { id: 'tags', name: 'tags', ...COMMON_FIELD_CONFIGS.tags }
+            { id: 'is_prescription_required', name: 'is_prescription_required', label: 'Prescription Required', type: 'switch', grid: { md: 4 } },
+            { id: 'is_featured', name: 'is_featured', label: 'Featured', type: 'switch', defaultValue: false, grid: { md: 3 } },
+            { id: 'add_to_carousel', name: 'add_to_carousel', label: 'Add to Carousel', type: 'switch', defaultValue: false, grid: { md: 3 } },
+            { id: 'image_url', name: 'image_url', label: 'Primary Image', type: 'image', validation: { required: false }, grid: { md: 6 } },
+            { id: 'images', name: 'images', label: 'Additional Images', type: 'array', props: { itemType: 'image', maxItems: 10 }, grid: { md: 6 } },
+            { id: 'tags', name: 'tags', label: 'Tags', type: 'tags', grid: { md: 6 } }
           ]
         }
       ]
@@ -353,11 +353,11 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
           id: 'basic-info',
           title: 'Basic Information',
           fields: [
-            { id: 'name_en', name: 'name_en', ...COMMON_FIELD_CONFIGS.name_en },
-            { id: 'name_te', name: 'name_te', ...COMMON_FIELD_CONFIGS.name_te },
-            { id: 'description_en', name: 'description_en', ...COMMON_FIELD_CONFIGS.description_en },
-            { id: 'description_te', name: 'description_te', ...COMMON_FIELD_CONFIGS.description_te },
-            { id: 'is_active', name: 'is_active', ...COMMON_FIELD_CONFIGS.is_active }
+            { id: 'name_en', name: 'name_en', label: 'Name (English)', type: 'text', validation: { required: true, minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'name_te', name: 'name_te', label: 'Name (Telugu)', type: 'text', validation: { minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'description_en', name: 'description_en', label: 'Description (English)', type: 'textarea', validation: { maxLength: 1000 }, grid: { md: 6 } },
+            { id: 'description_te', name: 'description_te', label: 'Description (Telugu)', type: 'textarea', validation: { maxLength: 1000 }, grid: { md: 6 } },
+            { id: 'is_active', name: 'is_active', label: 'Active', type: 'switch', defaultValue: true, grid: { md: 3 } }
           ]
         }
       ]
@@ -370,17 +370,17 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
           id: 'basic-info',
           title: 'Basic Information',
           fields: [
-            { id: 'name_en', name: 'name_en', ...COMMON_FIELD_CONFIGS.name_en },
-            { id: 'name_te', name: 'name_te', ...COMMON_FIELD_CONFIGS.name_te },
-            { id: 'test_code', name: 'test_code', type: 'text', label: 'Test Code', validation: { required: true }, grid: { md: 6 } },
-            { id: 'category_id', name: 'category_id', ...COMMON_FIELD_CONFIGS.category_id }
+            { id: 'name_en', name: 'name_en', label: 'Name (English)', type: 'text', validation: { required: true, minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'name_te', name: 'name_te', label: 'Name (Telugu)', type: 'text', validation: { minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'test_code', name: 'test_code', label: 'Test Code', type: 'text', validation: { required: true }, grid: { md: 6 } },
+            { id: 'category_id', name: 'category_id', label: 'Category', type: 'select', validation: { required: true }, grid: { md: 6 } }
           ]
         },
         {
           id: 'test-details',
           title: 'Test Details',
           fields: [
-            { id: 'sample_type', name: 'sample_type', type: 'select', label: 'Sample Type',
+            { id: 'sample_type', name: 'sample_type', label: 'Sample Type', type: 'select',
               options: [
                 { label: 'Blood', value: 'blood' },
                 { label: 'Urine', value: 'urine' },
@@ -391,30 +391,30 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
               validation: { required: true },
               grid: { md: 6 }
             },
-            { id: 'fasting_required', name: 'fasting_required', type: 'switch', label: 'Fasting Required', grid: { md: 6 } },
-            { id: 'preparation_instructions', name: 'preparation_instructions', type: 'textarea', label: 'Preparation Instructions', grid: { md: 12 } },
-            { id: 'report_delivery_hours', name: 'report_delivery_hours', type: 'number', label: 'Report Delivery (Hours)', validation: { min: 1 }, defaultValue: 24, grid: { md: 6 } },
-            { id: 'normal_range', name: 'normal_range', type: 'text', label: 'Normal Range', grid: { md: 6 } }
+            { id: 'fasting_required', name: 'fasting_required', label: 'Fasting Required', type: 'switch', grid: { md: 6 } },
+            { id: 'preparation_instructions', name: 'preparation_instructions', label: 'Preparation Instructions', type: 'textarea', grid: { md: 12 } },
+            { id: 'report_delivery_hours', name: 'report_delivery_hours', label: 'Report Delivery (Hours)', type: 'number', validation: { min: 1 }, defaultValue: 24, grid: { md: 6 } },
+            { id: 'normal_range', name: 'normal_range', label: 'Normal Range', type: 'text', grid: { md: 6 } }
           ]
         },
         {
           id: 'pricing',
           title: 'Pricing',
           fields: [
-            { id: 'price', name: 'price', ...COMMON_FIELD_CONFIGS.price },
-            { id: 'discount_price', name: 'discount_price', ...COMMON_FIELD_CONFIGS.discount_price },
-            { id: 'discount_percent', name: 'discount_percent', ...COMMON_FIELD_CONFIGS.discount_percent }
+            { id: 'price', name: 'price', label: 'Price (₹)', type: 'currency', validation: { required: true, min: 0 }, grid: { md: 4 } },
+            { id: 'discount_price', name: 'discount_price', label: 'Discount Price (₹)', type: 'currency', validation: { min: 0 }, grid: { md: 4 } },
+            { id: 'discount_percent', name: 'discount_percent', label: 'Discount %', type: 'percentage', validation: { min: 0, max: 100 }, grid: { md: 4 } }
           ]
         },
         {
           id: 'additional',
           title: 'Additional Information',
           fields: [
-            { id: 'is_package', name: 'is_package', type: 'switch', label: 'Is Package', grid: { md: 4 } },
-            { id: 'is_featured', name: 'is_featured', ...COMMON_FIELD_CONFIGS.is_featured },
-            { id: 'add_to_carousel', name: 'add_to_carousel', ...COMMON_FIELD_CONFIGS.add_to_carousel },
-            { id: 'image_url', name: 'image_url', ...COMMON_FIELD_CONFIGS.image_url },
-            { id: 'methodology', name: 'methodology', type: 'text', label: 'Methodology', grid: { md: 6 } }
+            { id: 'is_package', name: 'is_package', label: 'Is Package', type: 'switch', grid: { md: 4 } },
+            { id: 'is_featured', name: 'is_featured', label: 'Featured', type: 'switch', defaultValue: false, grid: { md: 3 } },
+            { id: 'add_to_carousel', name: 'add_to_carousel', label: 'Add to Carousel', type: 'switch', defaultValue: false, grid: { md: 3 } },
+            { id: 'image_url', name: 'image_url', label: 'Primary Image', type: 'image', validation: { required: false }, grid: { md: 6 } },
+            { id: 'methodology', name: 'methodology', label: 'Methodology', type: 'text', grid: { md: 6 } }
           ]
         }
       ]
@@ -427,28 +427,28 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
           id: 'basic-info',
           title: 'Package Information',
           fields: [
-            { id: 'name_en', name: 'name_en', ...COMMON_FIELD_CONFIGS.name_en },
-            { id: 'name_te', name: 'name_te', ...COMMON_FIELD_CONFIGS.name_te },
-            { id: 'description_en', name: 'description_en', ...COMMON_FIELD_CONFIGS.description_en },
-            { id: 'description_te', name: 'description_te', ...COMMON_FIELD_CONFIGS.description_te },
-            { id: 'package_code', name: 'package_code', type: 'text', label: 'Package Code', validation: { required: true }, grid: { md: 6 } },
-            { id: 'category_id', name: 'category_id', ...COMMON_FIELD_CONFIGS.category_id }
+            { id: 'name_en', name: 'name_en', label: 'Name (English)', type: 'text', validation: { required: true, minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'name_te', name: 'name_te', label: 'Name (Telugu)', type: 'text', validation: { minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'description_en', name: 'description_en', label: 'Description (English)', type: 'textarea', validation: { maxLength: 1000 }, grid: { md: 6 } },
+            { id: 'description_te', name: 'description_te', label: 'Description (Telugu)', type: 'textarea', validation: { maxLength: 1000 }, grid: { md: 6 } },
+            { id: 'package_code', name: 'package_code', label: 'Package Code', type: 'text', validation: { required: true }, grid: { md: 6 } },
+            { id: 'category_id', name: 'category_id', label: 'Category', type: 'select', validation: { required: true }, grid: { md: 6 } }
           ]
         },
         {
           id: 'tests',
           title: 'Included Tests',
           fields: [
-            { id: 'included_tests', name: 'included_tests', type: 'multiselect', label: 'Select Tests', validation: { required: true }, grid: { md: 12 } }
+            { id: 'included_tests', name: 'included_tests', label: 'Select Tests', type: 'multiselect', validation: { required: true }, grid: { md: 12 } }
           ]
         },
         {
           id: 'pricing',
           title: 'Package Pricing',
           fields: [
-            { id: 'price', name: 'price', ...COMMON_FIELD_CONFIGS.price },
-            { id: 'discount_price', name: 'discount_price', ...COMMON_FIELD_CONFIGS.discount_price },
-            { id: 'discount_percent', name: 'discount_percent', ...COMMON_FIELD_CONFIGS.discount_percent }
+            { id: 'price', name: 'price', label: 'Price (₹)', type: 'currency', validation: { required: true, min: 0 }, grid: { md: 4 } },
+            { id: 'discount_price', name: 'discount_price', label: 'Discount Price (₹)', type: 'currency', validation: { min: 0 }, grid: { md: 4 } },
+            { id: 'discount_percent', name: 'discount_percent', label: 'Discount %', type: 'percentage', validation: { min: 0, max: 100 }, grid: { md: 4 } }
           ]
         }
       ]
@@ -461,28 +461,28 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
           id: 'basic-info',
           title: 'Center Information',
           fields: [
-            { id: 'name', name: 'name', type: 'text', label: 'Center Name', validation: { required: true }, grid: { md: 6 } },
-            { id: 'code', name: 'code', type: 'text', label: 'Center Code', validation: { required: true }, grid: { md: 6 } },
-            { id: 'phone', name: 'phone', ...COMMON_FIELD_CONFIGS.phone },
-            { id: 'email', name: 'email', ...COMMON_FIELD_CONFIGS.email }
+            { id: 'name', name: 'name', label: 'Center Name', type: 'text', validation: { required: true }, grid: { md: 6 } },
+            { id: 'code', name: 'code', label: 'Center Code', type: 'text', validation: { required: true }, grid: { md: 6 } },
+            { id: 'phone', name: 'phone', label: 'Phone Number', type: 'phone', validation: { required: true, pattern: '^[+]?[0-9]{10,15}$' }, grid: { md: 6 } },
+            { id: 'email', name: 'email', label: 'Email Address', type: 'email', validation: { required: true }, grid: { md: 6 } }
           ]
         },
         {
           id: 'location',
           title: 'Location Details',
           fields: [
-            { id: 'address', name: 'address', ...COMMON_FIELD_CONFIGS.address },
-            { id: 'location', name: 'location', ...COMMON_FIELD_CONFIGS.location },
-            { id: 'coordinates', name: 'coordinates', ...COMMON_FIELD_CONFIGS.coordinates }
+            { id: 'address', name: 'address', label: 'Address', type: 'textarea', validation: { required: true, maxLength: 500 }, grid: { md: 12 } },
+            { id: 'location', name: 'location', label: 'Location', type: 'location', grid: { md: 6 } },
+            { id: 'coordinates', name: 'coordinates', label: 'GPS Coordinates', type: 'coordinates', grid: { md: 6 } }
           ]
         },
         {
           id: 'operations',
           title: 'Operations',
           fields: [
-            { id: 'operating_hours', name: 'operating_hours', type: 'json', label: 'Operating Hours', grid: { md: 6 } },
-            { id: 'services_offered', name: 'services_offered', type: 'multiselect', label: 'Services Offered', grid: { md: 6 } },
-            { id: 'is_active', name: 'is_active', ...COMMON_FIELD_CONFIGS.is_active }
+            { id: 'operating_hours', name: 'operating_hours', label: 'Operating Hours', type: 'json', grid: { md: 6 } },
+            { id: 'services_offered', name: 'services_offered', label: 'Services Offered', type: 'multiselect', grid: { md: 6 } },
+            { id: 'is_active', name: 'is_active', label: 'Active', type: 'switch', defaultValue: true, grid: { md: 3 } }
           ]
         }
       ]
@@ -498,11 +498,11 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
           id: 'basic-info',
           title: 'Basic Information',
           fields: [
-            { id: 'name_en', name: 'name_en', ...COMMON_FIELD_CONFIGS.name_en },
-            { id: 'name_te', name: 'name_te', ...COMMON_FIELD_CONFIGS.name_te },
-            { id: 'description_en', name: 'description_en', ...COMMON_FIELD_CONFIGS.description_en },
-            { id: 'description_te', name: 'description_te', ...COMMON_FIELD_CONFIGS.description_te },
-            { id: 'is_active', name: 'is_active', ...COMMON_FIELD_CONFIGS.is_active }
+            { id: 'name_en', name: 'name_en', label: 'Name (English)', type: 'text', validation: { required: true, minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'name_te', name: 'name_te', label: 'Name (Telugu)', type: 'text', validation: { minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'description_en', name: 'description_en', label: 'Description (English)', type: 'textarea', validation: { maxLength: 1000 }, grid: { md: 6 } },
+            { id: 'description_te', name: 'description_te', label: 'Description (Telugu)', type: 'textarea', validation: { maxLength: 1000 }, grid: { md: 6 } },
+            { id: 'is_active', name: 'is_active', label: 'Active', type: 'switch', defaultValue: true, grid: { md: 3 } }
           ]
         }
       ]
@@ -515,17 +515,17 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
           id: 'basic-info',
           title: 'Basic Information',
           fields: [
-            { id: 'name_en', name: 'name_en', ...COMMON_FIELD_CONFIGS.name_en },
-            { id: 'name_te', name: 'name_te', ...COMMON_FIELD_CONFIGS.name_te },
-            { id: 'scan_code', name: 'scan_code', type: 'text', label: 'Scan Code', validation: { required: true }, grid: { md: 6 } },
-            { id: 'category_id', name: 'category_id', ...COMMON_FIELD_CONFIGS.category_id }
+            { id: 'name_en', name: 'name_en', label: 'Name (English)', type: 'text', validation: { required: true, minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'name_te', name: 'name_te', label: 'Name (Telugu)', type: 'text', validation: { minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'scan_code', name: 'scan_code', label: 'Scan Code', type: 'text', validation: { required: true }, grid: { md: 6 } },
+            { id: 'category_id', name: 'category_id', label: 'Category', type: 'select', validation: { required: true }, grid: { md: 6 } }
           ]
         },
         {
           id: 'scan-details',
           title: 'Scan Details',
           fields: [
-            { id: 'scan_type', name: 'scan_type', type: 'select', label: 'Scan Type',
+            { id: 'scan_type', name: 'scan_type', label: 'Scan Type', type: 'select',
               options: [
                 { label: 'X-Ray', value: 'xray' },
                 { label: 'CT Scan', value: 'ct' },
@@ -537,26 +537,26 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
               validation: { required: true },
               grid: { md: 6 }
             },
-            { id: 'contrast_required', name: 'contrast_required', type: 'switch', label: 'Contrast Required', grid: { md: 6 } },
-            { id: 'preparation_instructions', name: 'preparation_instructions', type: 'textarea', label: 'Preparation Instructions', grid: { md: 12 } },
-            { id: 'duration_minutes', name: 'duration_minutes', type: 'number', label: 'Duration (Minutes)', validation: { min: 1 }, grid: { md: 6 } },
-            { id: 'radiation_dose', name: 'radiation_dose', type: 'text', label: 'Radiation Dose', grid: { md: 6 } }
+            { id: 'contrast_required', name: 'contrast_required', label: 'Contrast Required', type: 'switch', grid: { md: 6 } },
+            { id: 'preparation_instructions', name: 'preparation_instructions', label: 'Preparation Instructions', type: 'textarea', grid: { md: 12 } },
+            { id: 'duration_minutes', name: 'duration_minutes', label: 'Duration (Minutes)', type: 'number', validation: { min: 1 }, grid: { md: 6 } },
+            { id: 'radiation_dose', name: 'radiation_dose', label: 'Radiation Dose', type: 'text', grid: { md: 6 } }
           ]
         },
         {
           id: 'pricing',
           title: 'Pricing',
           fields: [
-            { id: 'price', name: 'price', ...COMMON_FIELD_CONFIGS.price },
-            { id: 'discount_price', name: 'discount_price', ...COMMON_FIELD_CONFIGS.discount_price },
-            { id: 'discount_percent', name: 'discount_percent', ...COMMON_FIELD_CONFIGS.discount_percent }
+            { id: 'price', name: 'price', label: 'Price (₹)', type: 'currency', validation: { required: true, min: 0 }, grid: { md: 4 } },
+            { id: 'discount_price', name: 'discount_price', label: 'Discount Price (₹)', type: 'currency', validation: { min: 0 }, grid: { md: 4 } },
+            { id: 'discount_percent', name: 'discount_percent', label: 'Discount %', type: 'percentage', validation: { min: 0, max: 100 }, grid: { md: 4 } }
           ]
         },
         {
           id: 'additional',
           title: 'Additional Information',
           fields: [
-            { id: 'organ_system', name: 'organ_system', type: 'multiselect', label: 'Organ Systems',
+            { id: 'organ_system', name: 'organ_system', label: 'Organ Systems', type: 'multiselect',
               options: [
                 { label: 'Cardiovascular', value: 'cardiovascular' },
                 { label: 'Respiratory', value: 'respiratory' },
@@ -567,10 +567,10 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
               ],
               grid: { md: 6 }
             },
-            { id: 'disease_conditions', name: 'disease_conditions', type: 'tags', label: 'Disease Conditions', grid: { md: 6 } },
-            { id: 'is_featured', name: 'is_featured', ...COMMON_FIELD_CONFIGS.is_featured },
-            { id: 'add_to_carousel', name: 'add_to_carousel', ...COMMON_FIELD_CONFIGS.add_to_carousel },
-            { id: 'image_url', name: 'image_url', ...COMMON_FIELD_CONFIGS.image_url }
+            { id: 'disease_conditions', name: 'disease_conditions', label: 'Disease Conditions', type: 'tags', grid: { md: 6 } },
+            { id: 'is_featured', name: 'is_featured', label: 'Featured', type: 'switch', defaultValue: false, grid: { md: 3 } },
+            { id: 'add_to_carousel', name: 'add_to_carousel', label: 'Add to Carousel', type: 'switch', defaultValue: false, grid: { md: 3 } },
+            { id: 'image_url', name: 'image_url', label: 'Primary Image', type: 'image', validation: { required: false }, grid: { md: 6 } }
           ]
         }
       ]
@@ -583,26 +583,26 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
           id: 'basic-info',
           title: 'Center Information',
           fields: [
-            { id: 'name', name: 'name', type: 'text', label: 'Center Name', validation: { required: true }, grid: { md: 6 } },
-            { id: 'code', name: 'code', type: 'text', label: 'Center Code', validation: { required: true }, grid: { md: 6 } },
-            { id: 'phone', name: 'phone', ...COMMON_FIELD_CONFIGS.phone },
-            { id: 'email', name: 'email', ...COMMON_FIELD_CONFIGS.email }
+            { id: 'name', name: 'name', label: 'Center Name', type: 'text', validation: { required: true }, grid: { md: 6 } },
+            { id: 'code', name: 'code', label: 'Center Code', type: 'text', validation: { required: true }, grid: { md: 6 } },
+            { id: 'phone', name: 'phone', label: 'Phone Number', type: 'phone', validation: { required: true, pattern: '^[+]?[0-9]{10,15}$' }, grid: { md: 6 } },
+            { id: 'email', name: 'email', label: 'Email Address', type: 'email', validation: { required: true }, grid: { md: 6 } }
           ]
         },
         {
           id: 'location',
           title: 'Location Details',
           fields: [
-            { id: 'address', name: 'address', ...COMMON_FIELD_CONFIGS.address },
-            { id: 'location', name: 'location', ...COMMON_FIELD_CONFIGS.location },
-            { id: 'coordinates', name: 'coordinates', ...COMMON_FIELD_CONFIGS.coordinates }
+            { id: 'address', name: 'address', label: 'Address', type: 'textarea', validation: { required: true, maxLength: 500 }, grid: { md: 12 } },
+            { id: 'location', name: 'location', label: 'Location', type: 'location', grid: { md: 6 } },
+            { id: 'coordinates', name: 'coordinates', label: 'GPS Coordinates', type: 'coordinates', grid: { md: 6 } }
           ]
         },
         {
           id: 'equipment',
           title: 'Equipment & Services',
           fields: [
-            { id: 'equipment_available', name: 'equipment_available', type: 'multiselect', label: 'Available Equipment',
+            { id: 'equipment_available', name: 'equipment_available', label: 'Available Equipment', type: 'multiselect',
               options: [
                 { label: 'X-Ray Machine', value: 'xray' },
                 { label: 'CT Scanner', value: 'ct' },
@@ -613,8 +613,8 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
               ],
               grid: { md: 6 }
             },
-            { id: 'operating_hours', name: 'operating_hours', type: 'json', label: 'Operating Hours', grid: { md: 6 } },
-            { id: 'is_active', name: 'is_active', ...COMMON_FIELD_CONFIGS.is_active }
+            { id: 'operating_hours', name: 'operating_hours', label: 'Operating Hours', type: 'json', grid: { md: 6 } },
+            { id: 'is_active', name: 'is_active', label: 'Active', type: 'switch', defaultValue: true, grid: { md: 3 } }
           ]
         }
       ]
@@ -630,11 +630,11 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
           id: 'basic-info',
           title: 'Basic Information',
           fields: [
-            { id: 'name_en', name: 'name_en', ...COMMON_FIELD_CONFIGS.name_en },
-            { id: 'name_te', name: 'name_te', ...COMMON_FIELD_CONFIGS.name_te },
-            { id: 'description_en', name: 'description_en', ...COMMON_FIELD_CONFIGS.description_en },
-            { id: 'description_te', name: 'description_te', ...COMMON_FIELD_CONFIGS.description_te },
-            { id: 'is_active', name: 'is_active', ...COMMON_FIELD_CONFIGS.is_active }
+            { id: 'name_en', name: 'name_en', label: 'Name (English)', type: 'text', validation: { required: true, minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'name_te', name: 'name_te', label: 'Name (Telugu)', type: 'text', validation: { minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'description_en', name: 'description_en', label: 'Description (English)', type: 'textarea', validation: { maxLength: 1000 }, grid: { md: 6 } },
+            { id: 'description_te', name: 'description_te', label: 'Description (Telugu)', type: 'textarea', validation: { maxLength: 1000 }, grid: { md: 6 } },
+            { id: 'is_active', name: 'is_active', label: 'Active', type: 'switch', defaultValue: true, grid: { md: 3 } }
           ]
         }
       ]
@@ -647,11 +647,11 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
           id: 'personal-info',
           title: 'Personal Information',
           fields: [
-            { id: 'full_name', name: 'full_name', type: 'text', label: 'Full Name', validation: { required: true }, grid: { md: 6 } },
-            { id: 'phone', name: 'phone', ...COMMON_FIELD_CONFIGS.phone },
-            { id: 'email', name: 'email', ...COMMON_FIELD_CONFIGS.email },
-            { id: 'date_of_birth', name: 'date_of_birth', type: 'date', label: 'Date of Birth', grid: { md: 6 } },
-            { id: 'gender', name: 'gender', type: 'select', label: 'Gender',
+            { id: 'full_name', name: 'full_name', label: 'Full Name', type: 'text', validation: { required: true }, grid: { md: 6 } },
+            { id: 'phone', name: 'phone', label: 'Phone Number', type: 'phone', validation: { required: true, pattern: '^[+]?[0-9]{10,15}$' }, grid: { md: 6 } },
+            { id: 'email', name: 'email', label: 'Email Address', type: 'email', validation: { required: true }, grid: { md: 6 } },
+            { id: 'date_of_birth', name: 'date_of_birth', label: 'Date of Birth', type: 'date', grid: { md: 6 } },
+            { id: 'gender', name: 'gender', label: 'Gender', type: 'select',
               options: [
                 { label: 'Male', value: 'male' },
                 { label: 'Female', value: 'female' },
@@ -659,37 +659,50 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
               ],
               grid: { md: 6 }
             },
-            { id: 'image_url', name: 'image_url', type: 'image', label: 'Profile Photo', grid: { md: 6 } }
+            { id: 'image_url', name: 'image_url', label: 'Profile Photo', type: 'image', grid: { md: 6 } }
           ]
         },
         {
           id: 'professional-info',
           title: 'Professional Information',
           fields: [
-            { id: 'qualification', name: 'qualification', ...COMMON_FIELD_CONFIGS.qualification },
-            { id: 'specialization', name: 'specialization', ...COMMON_FIELD_CONFIGS.specialization },
-            { id: 'experience_years', name: 'experience_years', ...COMMON_FIELD_CONFIGS.experience_years },
-            { id: 'license_number', name: 'license_number', type: 'text', label: 'License Number', validation: { required: true }, grid: { md: 6 } },
-            { id: 'registration_number', name: 'registration_number', type: 'text', label: 'Registration Number', grid: { md: 6 } },
-            { id: 'rating', name: 'rating', ...COMMON_FIELD_CONFIGS.rating }
+            { id: 'qualification', name: 'qualification', label: 'Qualification', type: 'text', validation: { required: true, maxLength: 200 }, grid: { md: 6 } },
+            { id: 'specialization', name: 'specialization', label: 'Specializations', type: 'multiselect', grid: { md: 6 } },
+            { id: 'experience_years', name: 'experience_years', label: 'Experience (Years)', type: 'number', validation: { min: 0, max: 50 }, grid: { md: 4 } },
+            { id: 'license_number', name: 'license_number', label: 'License Number', type: 'text', validation: { required: true }, grid: { md: 6 } },
+            { id: 'registration_number', name: 'registration_number', label: 'Registration Number', type: 'text', grid: { md: 6 } },
+            { id: 'rating', name: 'rating', label: 'Rating', type: 'rating', validation: { min: 1, max: 5 }, grid: { md: 4 } }
           ]
         },
         {
           id: 'consultation',
           title: 'Consultation Details',
           fields: [
-            { id: 'consultation_fee', name: 'consultation_fee', type: 'currency', label: 'Consultation Fee (₹)', validation: { required: true, min: 0 }, grid: { md: 4 } },
-            { id: 'follow_up_fee', name: 'follow_up_fee', type: 'currency', label: 'Follow-up Fee (₹)', validation: { min: 0 }, grid: { md: 4 } },
-            { id: 'video_consultation_fee', name: 'video_consultation_fee', type: 'currency', label: 'Video Consultation Fee (₹)', validation: { min: 0 }, grid: { md: 4 } },
-            { id: 'consultation_duration', name: 'consultation_duration', type: 'number', label: 'Consultation Duration (Minutes)', validation: { min: 5 }, defaultValue: 30, grid: { md: 6 } },
-            { id: 'availability_schedule', name: 'availability_schedule', ...COMMON_FIELD_CONFIGS.availability_schedule }
+            { id: 'consultation_fee', name: 'consultation_fee', label: 'Consultation Fee (₹)', type: 'currency', validation: { required: true, min: 0 }, grid: { md: 4 } },
+            { id: 'follow_up_fee', name: 'follow_up_fee', label: 'Follow-up Fee (₹)', type: 'currency', validation: { min: 0 }, grid: { md: 4 } },
+            { id: 'video_consultation_fee', name: 'video_consultation_fee', label: 'Video Consultation Fee (₹)', type: 'currency', validation: { min: 0 }, grid: { md: 4 } },
+            { id: 'consultation_duration', name: 'consultation_duration', label: 'Consultation Duration (Minutes)', type: 'number', validation: { min: 5 }, defaultValue: 30, grid: { md: 6 } },
+            { id: 'availability_schedule', name: 'availability_schedule', label: 'Availability Schedule', type: 'json', props: { 
+              schema: {
+                type: 'object',
+                properties: {
+                  monday: { type: 'array', items: { type: 'string' } },
+                  tuesday: { type: 'array', items: { type: 'string' } },
+                  wednesday: { type: 'array', items: { type: 'string' } },
+                  thursday: { type: 'array', items: { type: 'string' } },
+                  friday: { type: 'array', items: { type: 'string' } },
+                  saturday: { type: 'array', items: { type: 'string' } },
+                  sunday: { type: 'array', items: { type: 'string' } }
+                }
+              }
+            }, grid: { md: 12 } }
           ]
         },
         {
           id: 'additional',
           title: 'Additional Information',
           fields: [
-            { id: 'languages_spoken', name: 'languages_spoken', type: 'multiselect', label: 'Languages Spoken',
+            { id: 'languages_spoken', name: 'languages_spoken', label: 'Languages Spoken', type: 'multiselect',
               options: [
                 { label: 'English', value: 'english' },
                 { label: 'Telugu', value: 'telugu' },
@@ -699,10 +712,10 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
               ],
               grid: { md: 6 }
             },
-            { id: 'awards_achievements', name: 'awards_achievements', type: 'textarea', label: 'Awards & Achievements', grid: { md: 6 } },
-            { id: 'is_available_for_emergency', name: 'is_available_for_emergency', type: 'switch', label: 'Available for Emergency', grid: { md: 4 } },
-            { id: 'is_featured', name: 'is_featured', ...COMMON_FIELD_CONFIGS.is_featured },
-            { id: 'is_active', name: 'is_active', ...COMMON_FIELD_CONFIGS.is_active }
+            { id: 'awards_achievements', name: 'awards_achievements', label: 'Awards & Achievements', type: 'textarea', grid: { md: 6 } },
+            { id: 'is_available_for_emergency', name: 'is_available_for_emergency', label: 'Available for Emergency', type: 'switch', grid: { md: 4 } },
+            { id: 'is_featured', name: 'is_featured', label: 'Featured', type: 'switch', defaultValue: false, grid: { md: 3 } },
+            { id: 'is_active', name: 'is_active', label: 'Active', type: 'switch', defaultValue: true, grid: { md: 3 } }
           ]
         }
       ]
@@ -718,11 +731,11 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
           id: 'basic-info',
           title: 'Basic Information',
           fields: [
-            { id: 'name_en', name: 'name_en', ...COMMON_FIELD_CONFIGS.name_en },
-            { id: 'name_te', name: 'name_te', ...COMMON_FIELD_CONFIGS.name_te },
-            { id: 'description_en', name: 'description_en', ...COMMON_FIELD_CONFIGS.description_en },
-            { id: 'description_te', name: 'description_te', ...COMMON_FIELD_CONFIGS.description_te },
-            { id: 'is_active', name: 'is_active', ...COMMON_FIELD_CONFIGS.is_active }
+            { id: 'name_en', name: 'name_en', label: 'Name (English)', type: 'text', validation: { required: true, minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'name_te', name: 'name_te', label: 'Name (Telugu)', type: 'text', validation: { minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'description_en', name: 'description_en', label: 'Description (English)', type: 'textarea', validation: { maxLength: 1000 }, grid: { md: 6 } },
+            { id: 'description_te', name: 'description_te', label: 'Description (Telugu)', type: 'textarea', validation: { maxLength: 1000 }, grid: { md: 6 } },
+            { id: 'is_active', name: 'is_active', label: 'Active', type: 'switch', defaultValue: true, grid: { md: 3 } }
           ]
         }
       ]
@@ -735,17 +748,17 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
           id: 'basic-info',
           title: 'Service Information',
           fields: [
-            { id: 'name_en', name: 'name_en', ...COMMON_FIELD_CONFIGS.name_en },
-            { id: 'name_te', name: 'name_te', ...COMMON_FIELD_CONFIGS.name_te },
-            { id: 'service_code', name: 'service_code', type: 'text', label: 'Service Code', validation: { required: true }, grid: { md: 6 } },
-            { id: 'category_id', name: 'category_id', ...COMMON_FIELD_CONFIGS.category_id }
+            { id: 'name_en', name: 'name_en', label: 'Name (English)', type: 'text', validation: { required: true, minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'name_te', name: 'name_te', label: 'Name (Telugu)', type: 'text', validation: { minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'service_code', name: 'service_code', label: 'Service Code', type: 'text', validation: { required: true }, grid: { md: 6 } },
+            { id: 'category_id', name: 'category_id', label: 'Category', type: 'select', validation: { required: true }, grid: { md: 6 } }
           ]
         },
         {
           id: 'service-details',
           title: 'Service Details',
           fields: [
-            { id: 'service_type', name: 'service_type', type: 'select', label: 'Service Type',
+            { id: 'service_type', name: 'service_type', label: 'Service Type', type: 'select',
               options: [
                 { label: 'Nursing Care', value: 'nursing' },
                 { label: 'Physiotherapy', value: 'physiotherapy' },
@@ -757,31 +770,31 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
               validation: { required: true },
               grid: { md: 6 }
             },
-            { id: 'duration_hours', name: 'duration_hours', type: 'number', label: 'Duration (Hours)', validation: { min: 0.5 }, grid: { md: 6 } },
-            { id: 'requirements', name: 'requirements', type: 'textarea', label: 'Requirements', grid: { md: 12 } },
-            { id: 'equipment_needed', name: 'equipment_needed', type: 'tags', label: 'Equipment Needed', grid: { md: 6 } },
-            { id: 'qualifications_required', name: 'qualifications_required', type: 'tags', label: 'Qualifications Required', grid: { md: 6 } }
+            { id: 'duration_hours', name: 'duration_hours', label: 'Duration (Hours)', type: 'number', validation: { min: 0.5 }, grid: { md: 6 } },
+            { id: 'requirements', name: 'requirements', label: 'Requirements', type: 'textarea', grid: { md: 12 } },
+            { id: 'equipment_needed', name: 'equipment_needed', label: 'Equipment Needed', type: 'tags', grid: { md: 6 } },
+            { id: 'qualifications_required', name: 'qualifications_required', label: 'Qualifications Required', type: 'tags', grid: { md: 6 } }
           ]
         },
         {
           id: 'pricing',
           title: 'Pricing',
           fields: [
-            { id: 'price_per_hour', name: 'price_per_hour', type: 'currency', label: 'Price per Hour (₹)', validation: { required: true, min: 0 }, grid: { md: 4 } },
-            { id: 'minimum_hours', name: 'minimum_hours', type: 'number', label: 'Minimum Hours', validation: { min: 1 }, defaultValue: 2, grid: { md: 4 } },
-            { id: 'travel_charges', name: 'travel_charges', type: 'currency', label: 'Travel Charges (₹)', validation: { min: 0 }, grid: { md: 4 } }
+            { id: 'price_per_hour', name: 'price_per_hour', label: 'Price per Hour (₹)', type: 'currency', validation: { required: true, min: 0 }, grid: { md: 4 } },
+            { id: 'minimum_hours', name: 'minimum_hours', label: 'Minimum Hours', type: 'number', validation: { min: 1 }, defaultValue: 2, grid: { md: 4 } },
+            { id: 'travel_charges', name: 'travel_charges', label: 'Travel Charges (₹)', type: 'currency', validation: { min: 0 }, grid: { md: 4 } }
           ]
         },
         {
           id: 'availability',
           title: 'Availability',
           fields: [
-            { id: 'available_24x7', name: 'available_24x7', type: 'switch', label: '24x7 Available', grid: { md: 4 } },
-            { id: 'emergency_service', name: 'emergency_service', type: 'switch', label: 'Emergency Service', grid: { md: 4 } },
-            { id: 'advance_booking_required', name: 'advance_booking_required', type: 'switch', label: 'Advance Booking Required', grid: { md: 4 } },
-            { id: 'service_areas', name: 'service_areas', type: 'tags', label: 'Service Areas', grid: { md: 6 } },
-            { id: 'is_featured', name: 'is_featured', ...COMMON_FIELD_CONFIGS.is_featured },
-            { id: 'is_active', name: 'is_active', ...COMMON_FIELD_CONFIGS.is_active }
+            { id: 'available_24x7', name: 'available_24x7', label: '24x7 Available', type: 'switch', grid: { md: 4 } },
+            { id: 'emergency_service', name: 'emergency_service', label: 'Emergency Service', type: 'switch', grid: { md: 4 } },
+            { id: 'advance_booking_required', name: 'advance_booking_required', label: 'Advance Booking Required', type: 'switch', grid: { md: 4 } },
+            { id: 'service_areas', name: 'service_areas', label: 'Service Areas', type: 'tags', grid: { md: 6 } },
+            { id: 'is_featured', name: 'is_featured', label: 'Featured', type: 'switch', defaultValue: false, grid: { md: 3 } },
+            { id: 'is_active', name: 'is_active', label: 'Active', type: 'switch', defaultValue: true, grid: { md: 3 } }
           ]
         }
       ]
@@ -797,11 +810,11 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
           id: 'basic-info',
           title: 'Basic Information',
           fields: [
-            { id: 'name_en', name: 'name_en', ...COMMON_FIELD_CONFIGS.name_en },
-            { id: 'name_te', name: 'name_te', ...COMMON_FIELD_CONFIGS.name_te },
-            { id: 'description_en', name: 'description_en', ...COMMON_FIELD_CONFIGS.description_en },
-            { id: 'description_te', name: 'description_te', ...COMMON_FIELD_CONFIGS.description_te },
-            { id: 'is_active', name: 'is_active', ...COMMON_FIELD_CONFIGS.is_active }
+            { id: 'name_en', name: 'name_en', label: 'Name (English)', type: 'text', validation: { required: true, minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'name_te', name: 'name_te', label: 'Name (Telugu)', type: 'text', validation: { minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'description_en', name: 'description_en', label: 'Description (English)', type: 'textarea', validation: { maxLength: 1000 }, grid: { md: 6 } },
+            { id: 'description_te', name: 'description_te', label: 'Description (Telugu)', type: 'textarea', validation: { maxLength: 1000 }, grid: { md: 6 } },
+            { id: 'is_active', name: 'is_active', label: 'Active', type: 'switch', defaultValue: true, grid: { md: 3 } }
           ]
         }
       ]
@@ -814,17 +827,17 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
           id: 'basic-info',
           title: 'Plan Information',
           fields: [
-            { id: 'name_en', name: 'name_en', ...COMMON_FIELD_CONFIGS.name_en },
-            { id: 'name_te', name: 'name_te', ...COMMON_FIELD_CONFIGS.name_te },
-            { id: 'plan_code', name: 'plan_code', type: 'text', label: 'Plan Code', validation: { required: true }, grid: { md: 6 } },
-            { id: 'category_id', name: 'category_id', ...COMMON_FIELD_CONFIGS.category_id }
+            { id: 'name_en', name: 'name_en', label: 'Name (English)', type: 'text', validation: { required: true, minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'name_te', name: 'name_te', label: 'Name (Telugu)', type: 'text', validation: { minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'plan_code', name: 'plan_code', label: 'Plan Code', type: 'text', validation: { required: true }, grid: { md: 6 } },
+            { id: 'category_id', name: 'category_id', label: 'Category', type: 'select', validation: { required: true }, grid: { md: 6 } }
           ]
         },
         {
           id: 'plan-details',
           title: 'Plan Details',
           fields: [
-            { id: 'diabetes_type', name: 'diabetes_type', type: 'select', label: 'Diabetes Type',
+            { id: 'diabetes_type', name: 'diabetes_type', label: 'Diabetes Type', type: 'select',
               options: [
                 { label: 'Type 1', value: 'type1' },
                 { label: 'Type 2', value: 'type2' },
@@ -834,32 +847,32 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
               validation: { required: true },
               grid: { md: 6 }
             },
-            { id: 'duration_months', name: 'duration_months', type: 'number', label: 'Duration (Months)', validation: { min: 1 }, grid: { md: 6 } },
-            { id: 'diet_plan', name: 'diet_plan', type: 'rich-text', label: 'Diet Plan', grid: { md: 12 } },
-            { id: 'exercise_plan', name: 'exercise_plan', type: 'rich-text', label: 'Exercise Plan', grid: { md: 12 } },
-            { id: 'monitoring_schedule', name: 'monitoring_schedule', type: 'json', label: 'Monitoring Schedule', grid: { md: 6 } },
-            { id: 'medication_reminders', name: 'medication_reminders', type: 'json', label: 'Medication Reminders', grid: { md: 6 } }
+            { id: 'duration_months', name: 'duration_months', label: 'Duration (Months)', type: 'number', validation: { min: 1 }, grid: { md: 6 } },
+            { id: 'diet_plan', name: 'diet_plan', label: 'Diet Plan', type: 'rich-text', grid: { md: 12 } },
+            { id: 'exercise_plan', name: 'exercise_plan', label: 'Exercise Plan', type: 'rich-text', grid: { md: 12 } },
+            { id: 'monitoring_schedule', name: 'monitoring_schedule', label: 'Monitoring Schedule', type: 'json', grid: { md: 6 } },
+            { id: 'medication_reminders', name: 'medication_reminders', label: 'Medication Reminders', type: 'json', grid: { md: 6 } }
           ]
         },
         {
           id: 'pricing',
           title: 'Plan Pricing',
           fields: [
-            { id: 'monthly_price', name: 'monthly_price', type: 'currency', label: 'Monthly Price (₹)', validation: { required: true, min: 0 }, grid: { md: 4 } },
-            { id: 'setup_fee', name: 'setup_fee', type: 'currency', label: 'Setup Fee (₹)', validation: { min: 0 }, grid: { md: 4 } },
-            { id: 'discount_percent', name: 'discount_percent', ...COMMON_FIELD_CONFIGS.discount_percent }
+            { id: 'monthly_price', name: 'monthly_price', label: 'Monthly Price (₹)', type: 'currency', validation: { required: true, min: 0 }, grid: { md: 4 } },
+            { id: 'setup_fee', name: 'setup_fee', label: 'Setup Fee (₹)', type: 'currency', validation: { min: 0 }, grid: { md: 4 } },
+            { id: 'discount_percent', name: 'discount_percent', label: 'Discount %', type: 'percentage', validation: { min: 0, max: 100 }, grid: { md: 4 } }
           ]
         },
         {
           id: 'features',
           title: 'Plan Features',
           fields: [
-            { id: 'includes_consultation', name: 'includes_consultation', type: 'switch', label: 'Includes Doctor Consultation', grid: { md: 4 } },
-            { id: 'includes_monitoring_device', name: 'includes_monitoring_device', type: 'switch', label: 'Includes Monitoring Device', grid: { md: 4 } },
-            { id: 'includes_medication_delivery', name: 'includes_medication_delivery', type: 'switch', label: 'Includes Medication Delivery', grid: { md: 4 } },
-            { id: 'features_list', name: 'features_list', type: 'array', label: 'Features List', grid: { md: 6 } },
-            { id: 'is_featured', name: 'is_featured', ...COMMON_FIELD_CONFIGS.is_featured },
-            { id: 'is_active', name: 'is_active', ...COMMON_FIELD_CONFIGS.is_active }
+            { id: 'includes_consultation', name: 'includes_consultation', label: 'Includes Doctor Consultation', type: 'switch', grid: { md: 4 } },
+            { id: 'includes_monitoring_device', name: 'includes_monitoring_device', label: 'Includes Monitoring Device', type: 'switch', grid: { md: 4 } },
+            { id: 'includes_medication_delivery', name: 'includes_medication_delivery', label: 'Includes Medication Delivery', type: 'switch', grid: { md: 4 } },
+            { id: 'features_list', name: 'features_list', label: 'Features List', type: 'array', grid: { md: 6 } },
+            { id: 'is_featured', name: 'is_featured', label: 'Featured', type: 'switch', defaultValue: false, grid: { md: 3 } },
+            { id: 'is_active', name: 'is_active', label: 'Active', type: 'switch', defaultValue: true, grid: { md: 3 } }
           ]
         }
       ]
@@ -872,17 +885,17 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
           id: 'basic-info',
           title: 'Product Information',
           fields: [
-            { id: 'name_en', name: 'name_en', ...COMMON_FIELD_CONFIGS.name_en },
-            { id: 'name_te', name: 'name_te', ...COMMON_FIELD_CONFIGS.name_te },
-            { id: 'product_code', name: 'product_code', type: 'text', label: 'Product Code', validation: { required: true }, grid: { md: 6 } },
-            { id: 'category_id', name: 'category_id', ...COMMON_FIELD_CONFIGS.category_id }
+            { id: 'name_en', name: 'name_en', label: 'Name (English)', type: 'text', validation: { required: true, minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'name_te', name: 'name_te', label: 'Name (Telugu)', type: 'text', validation: { minLength: 2, maxLength: 100 }, grid: { md: 6 } },
+            { id: 'product_code', name: 'product_code', label: 'Product Code', type: 'text', validation: { required: true }, grid: { md: 6 } },
+            { id: 'category_id', name: 'category_id', label: 'Category', type: 'select', validation: { required: true }, grid: { md: 6 } }
           ]
         },
         {
           id: 'product-details',
           title: 'Product Details',
           fields: [
-            { id: 'product_type', name: 'product_type', type: 'select', label: 'Product Type',
+            { id: 'product_type', name: 'product_type', label: 'Product Type', type: 'select',
               options: [
                 { label: 'Blood Glucose Monitor', value: 'glucose_monitor' },
                 { label: 'Test Strips', value: 'test_strips' },
@@ -894,31 +907,31 @@ export const MODULE_FORM_SCHEMAS: Record<string, Record<string, FormSchema>> = {
               validation: { required: true },
               grid: { md: 6 }
             },
-            { id: 'brand', name: 'brand', type: 'text', label: 'Brand', validation: { required: true }, grid: { md: 6 } },
-            { id: 'specifications', name: 'specifications', type: 'json', label: 'Specifications', grid: { md: 12 } },
-            { id: 'usage_instructions', name: 'usage_instructions', type: 'rich-text', label: 'Usage Instructions', grid: { md: 12 } }
+            { id: 'brand', name: 'brand', label: 'Brand', type: 'text', validation: { required: true }, grid: { md: 6 } },
+            { id: 'specifications', name: 'specifications', label: 'Specifications', type: 'json', grid: { md: 12 } },
+            { id: 'usage_instructions', name: 'usage_instructions', label: 'Usage Instructions', type: 'rich-text', grid: { md: 12 } }
           ]
         },
         {
           id: 'pricing',
           title: 'Pricing & Inventory',
           fields: [
-            { id: 'price', name: 'price', ...COMMON_FIELD_CONFIGS.price },
-            { id: 'discount_price', name: 'discount_price', ...COMMON_FIELD_CONFIGS.discount_price },
-            { id: 'discount_percent', name: 'discount_percent', ...COMMON_FIELD_CONFIGS.discount_percent },
-            { id: 'stock_quantity', name: 'stock_quantity', type: 'number', label: 'Stock Quantity', validation: { min: 0 }, grid: { md: 6 } },
-            { id: 'expiry_date', name: 'expiry_date', type: 'date', label: 'Expiry Date', grid: { md: 6 } }
+            { id: 'price', name: 'price', label: 'Price (₹)', type: 'currency', validation: { required: true, min: 0 }, grid: { md: 6 } },
+            { id: 'discount_price', name: 'discount_price', label: 'Discount Price (₹)', type: 'currency', validation: { min: 0 }, grid: { md: 6 } },
+            { id: 'discount_percent', name: 'discount_percent', label: 'Discount %', type: 'percentage', validation: { min: 0, max: 100 }, grid: { md: 6 } },
+            { id: 'stock_quantity', name: 'stock_quantity', label: 'Stock Quantity', type: 'number', validation: { min: 0 }, grid: { md: 6 } },
+            { id: 'expiry_date', name: 'expiry_date', label: 'Expiry Date', type: 'date', grid: { md: 6 } }
           ]
         },
         {
           id: 'additional',
           title: 'Additional Information',
           fields: [
-            { id: 'is_prescription_required', name: 'is_prescription_required', type: 'switch', label: 'Prescription Required', grid: { md: 4 } },
-            { id: 'is_featured', name: 'is_featured', ...COMMON_FIELD_CONFIGS.is_featured },
-            { id: 'add_to_carousel', name: 'add_to_carousel', ...COMMON_FIELD_CONFIGS.add_to_carousel },
-            { id: 'image_url', name: 'image_url', ...COMMON_FIELD_CONFIGS.image_url },
-            { id: 'images', name: 'images', ...COMMON_FIELD_CONFIGS.images }
+            { id: 'is_prescription_required', name: 'is_prescription_required', label: 'Prescription Required', type: 'switch', grid: { md: 4 } },
+            { id: 'is_featured', name: 'is_featured', label: 'Featured', type: 'switch', defaultValue: false, grid: { md: 3 } },
+            { id: 'add_to_carousel', name: 'add_to_carousel', label: 'Add to Carousel', type: 'switch', defaultValue: false, grid: { md: 3 } },
+            { id: 'image_url', name: 'image_url', label: 'Primary Image', type: 'image', validation: { required: false }, grid: { md: 6 } },
+            { id: 'images', name: 'images', label: 'Additional Images', type: 'array', props: { itemType: 'image', maxItems: 10 }, grid: { md: 6 } }
           ]
         }
       ]

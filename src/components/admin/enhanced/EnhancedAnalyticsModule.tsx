@@ -75,7 +75,10 @@ interface ServiceAnalytics {
 
 const EnhancedAnalyticsModule: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [dateRange, setDateRange] = useState({
+  const [dateRange, setDateRange] = useState<{
+    from: Date;
+    to: Date;
+  }>({
     from: subDays(new Date(), 30),
     to: new Date()
   });
@@ -185,9 +188,9 @@ const EnhancedAnalyticsModule: React.FC = () => {
   const renderMetricCard = (
     title: string,
     value: string | number,
-    growth?: number,
     icon: React.ReactNode,
-    format: 'currency' | 'number' | 'percentage' = 'number'
+    format: 'currency' | 'number' | 'percentage' = 'number',
+    growth?: number
   ) => {
     const formatValue = (val: string | number) => {
       if (format === 'currency') {
@@ -303,6 +306,12 @@ const EnhancedAnalyticsModule: React.FC = () => {
     }
   };
 
+  const handleDateRangeChange = (date: { from?: Date; to?: Date }) => {
+    if (date.from && date.to) {
+      setDateRange({ from: date.from, to: date.to });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -316,7 +325,7 @@ const EnhancedAnalyticsModule: React.FC = () => {
         <div className="flex items-center gap-4">
           <DatePickerWithRange
             date={dateRange}
-            onDateChange={setDateRange}
+            onDateChange={handleDateRangeChange}
           />
           
           <Button variant="outline">
@@ -337,26 +346,25 @@ const EnhancedAnalyticsModule: React.FC = () => {
           {renderMetricCard(
             'Total Revenue',
             summaryMetrics.totalRevenue,
-            summaryMetrics.revenueGrowth,
             <DollarSign className="h-6 w-6 text-primary" />,
-            'currency'
+            'currency',
+            summaryMetrics.revenueGrowth
           )}
           {renderMetricCard(
             'Total Orders',
             summaryMetrics.totalOrders,
-            summaryMetrics.ordersGrowth,
-            <ShoppingCart className="h-6 w-6 text-primary" />
+            <ShoppingCart className="h-6 w-6 text-primary" />,
+            'number',
+            summaryMetrics.ordersGrowth
           )}
           {renderMetricCard(
             'Active Users',
             summaryMetrics.totalUsers,
-            undefined,
             <Users className="h-6 w-6 text-primary" />
           )}
           {renderMetricCard(
             'Avg Order Value',
             Math.round(summaryMetrics.avgOrderValue),
-            undefined,
             <Activity className="h-6 w-6 text-primary" />,
             'currency'
           )}
