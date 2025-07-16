@@ -3,7 +3,7 @@ import { type LucideIcon, Home, Users, Package, ShoppingCart, TestTube, Stethosc
          Truck, Building, Droplets, Calendar, BarChart, Settings, Bell, MessageCircle,
          Search, Layout, TrendingUp, Palette, Globe, Pill, Scan, Heart, Activity,
          Utensils, Dumbbell, FileText, Database, CreditCard, MapPin, Mail,
-         BarChart3, FileSpreadsheet } from "lucide-react";
+         BarChart3, FileSpreadsheet, Zap } from "lucide-react";
 
 export interface NavItem {
   title: string;
@@ -163,6 +163,11 @@ export const navItems: NavItem[] = [
     title: "Enhanced Reports",
     url: "/admin/enhanced-reports",
     icon: FileSpreadsheet,
+  },
+  {
+    title: "eVitalRx Integration",
+    url: "/admin/evitalrx-integration",
+    icon: Zap,
   },
   {
     title: "Settings",

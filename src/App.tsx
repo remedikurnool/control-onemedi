@@ -44,6 +44,7 @@ import EnhancedMarketingPage from "./pages/admin/EnhancedMarketingPage";
 import EnhancedAnalyticsPage from "./pages/admin/EnhancedAnalyticsPage";
 import EnhancedReportsPage from "./pages/admin/EnhancedReportsPage";
 import EnhancedOrdersPage from "./pages/admin/EnhancedOrdersPage";
+import EVitalRxIntegrationPage from "./pages/admin/eVitalRxIntegrationPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -99,6 +100,7 @@ const App = () => (
               <Route path="enhanced-analytics" element={<EnhancedAnalyticsPage />} />
               <Route path="enhanced-reports" element={<EnhancedReportsPage />} />
               <Route path="enhanced-orders" element={<EnhancedOrdersPage />} />
+              <Route path="evitalrx-integration" element={<EVitalRxIntegrationPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
