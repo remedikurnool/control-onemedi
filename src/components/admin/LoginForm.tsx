@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Shield, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { validateEmail, cleanupAuthState, checkRateLimit } from '@/lib/security';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -17,27 +18,6 @@ const LoginForm = () => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-
-  const cleanupAuthState = () => {
-    // Remove all auth-related keys from localStorage
-    Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-        localStorage.removeItem(key);
-      }
-    });
-    
-    // Remove from sessionStorage if in use
-    Object.keys(sessionStorage || {}).forEach(key => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-        sessionStorage.removeItem(key);
-      }
-    });
-  };
-
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +30,13 @@ const LoginForm = () => {
 
     if (!validateEmail(email)) {
       setError('Please enter a valid email address');
+      return;
+    }
+
+    // Rate limiting check
+    const clientId = 'login_' + email;
+    if (!checkRateLimit(clientId, 5, 15 * 60 * 1000)) {
+      setError('Too many login attempts. Please try again later.');
       return;
     }
 

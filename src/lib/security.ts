@@ -1,54 +1,7 @@
 
-// Security utilities for enhanced authentication
-export const sanitizeHtml = (str: string): string => {
-  if (!str) return '';
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;')
-    .replace(/\//g, '&#x2F;');
-};
+// Security utilities for authentication and data validation
 
-export const generateSessionId = (): string => {
-  return 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-};
-
-export const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
-
-export const validatePassword = (password: string): {
-  isValid: boolean;
-  errors: string[];
-} => {
-  const errors: string[] = [];
-  
-  if (password.length < 8) {
-    errors.push('Password must be at least 8 characters long');
-  }
-  
-  if (!/[A-Z]/.test(password)) {
-    errors.push('Password must contain at least one uppercase letter');
-  }
-  
-  if (!/[a-z]/.test(password)) {
-    errors.push('Password must contain at least one lowercase letter');
-  }
-  
-  if (!/\d/.test(password)) {
-    errors.push('Password must contain at least one number');
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
-};
-
-export const cleanupAuthState = (): void => {
+export const cleanupAuthState = () => {
   // Remove all auth-related keys from localStorage
   Object.keys(localStorage).forEach(key => {
     if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
@@ -64,29 +17,52 @@ export const cleanupAuthState = (): void => {
   });
 };
 
-// Rate limiting for login attempts
-const rateLimitMap = new Map<string, { count: number; lastAttempt: number }>();
+export const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
 
-export const checkRateLimit = (identifier: string, maxAttempts: number = 5, windowMs: number = 15 * 60 * 1000): boolean => {
+export const validatePassword = (password: string) => {
+  const minLength = 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumbers = /\d/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  return {
+    isValid: password.length >= minLength && hasUpperCase && hasLowerCase && hasNumbers,
+    minLength: password.length >= minLength,
+    hasUpperCase,
+    hasLowerCase,
+    hasNumbers,
+    hasSpecialChar
+  };
+};
+
+export const sanitizeInput = (input: string): string => {
+  return input.trim().replace(/[<>]/g, '');
+};
+
+// Rate limiting utilities
+const rateLimitStore: Map<string, { count: number; resetTime: number }> = new Map();
+
+export const checkRateLimit = (
+  identifier: string,
+  maxRequests: number,
+  windowMs: number
+): boolean => {
   const now = Date.now();
-  const record = rateLimitMap.get(identifier);
-  
-  if (!record) {
-    rateLimitMap.set(identifier, { count: 1, lastAttempt: now });
+  const record = rateLimitStore.get(identifier);
+
+  if (!record || now > record.resetTime) {
+    rateLimitStore.set(identifier, { count: 1, resetTime: now + windowMs });
     return true;
   }
-  
-  if (now - record.lastAttempt > windowMs) {
-    // Reset the counter after the time window
-    rateLimitMap.set(identifier, { count: 1, lastAttempt: now });
-    return true;
-  }
-  
-  if (record.count >= maxAttempts) {
+
+  if (record.count >= maxRequests) {
     return false;
   }
-  
+
   record.count++;
-  record.lastAttempt = now;
   return true;
 };
