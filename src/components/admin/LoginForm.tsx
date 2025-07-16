@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Shield, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { validateEmail, cleanupAuthState, checkRateLimit } from '@/lib/security';
+import { validateEmail, cleanupAuthState } from '@/lib/security';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -17,6 +17,7 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loginAttempts, setLoginAttempts] = useState(0);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,9 +34,8 @@ const LoginForm = () => {
       return;
     }
 
-    // Rate limiting check
-    const clientId = 'login_' + email;
-    if (!checkRateLimit(clientId, 5, 15 * 60 * 1000)) {
+    // Simple rate limiting check
+    if (loginAttempts >= 5) {
       setError('Too many login attempts. Please try again later.');
       return;
     }
@@ -62,6 +62,7 @@ const LoginForm = () => {
       if (error) {
         console.error('Login error:', error);
         setError(error.message);
+        setLoginAttempts(prev => prev + 1);
         return;
       }
 
@@ -103,6 +104,7 @@ const LoginForm = () => {
     } catch (error: any) {
       console.error('Login error:', error);
       setError(error.message || 'An unexpected error occurred');
+      setLoginAttempts(prev => prev + 1);
     } finally {
       setIsLoading(false);
     }

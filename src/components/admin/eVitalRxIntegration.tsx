@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,10 +62,14 @@ const eVitalRxIntegration: React.FC = () => {
 
       return data as IntegrationSettings;
     },
-    onSuccess: (data) => {
-      setSettings(data);
-    }
   });
+
+  // Update settings when data is fetched
+  useEffect(() => {
+    if (integrationSettings) {
+      setSettings(integrationSettings);
+    }
+  }, [integrationSettings]);
 
   // Update integration settings
   const updateSettings = useMutation({
@@ -136,7 +141,7 @@ const eVitalRxIntegration: React.FC = () => {
             Manage connection and synchronization with eVitalRx
           </p>
         </div>
-        <Badge variant={settings.is_active ? 'success' : 'secondary'}>
+        <Badge variant={settings.is_active ? 'default' : 'secondary'}>
           {settings.is_active ? 'Active' : 'Inactive'}
         </Badge>
       </div>

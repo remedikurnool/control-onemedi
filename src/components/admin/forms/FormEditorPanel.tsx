@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -220,14 +221,7 @@ const FormEditorPanel: React.FC<FormEditorPanelProps> = ({ defaultModule = 'medi
                   
                   {Object.keys(MODULE_FORM_SCHEMAS[module]).map((formType) => (
                     <TabsContent key={formType} value={formType} className="p-4">
-                      <FormManager
-                        module={module}
-                        formType={formType}
-                        title={`${getFormTypeTitle(formType)} Management`}
-                        description={`Manage ${getFormTypeTitle(formType).toLowerCase()}s for ${getModuleTitle(module).toLowerCase()}`}
-                        tableName={getTableName(module, formType)}
-                        categoryType={getCategoryType(module, formType)}
-                      />
+                      <FormManager />
                     </TabsContent>
                   ))}
                 </Tabs>
