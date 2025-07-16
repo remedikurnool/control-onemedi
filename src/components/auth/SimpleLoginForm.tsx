@@ -6,12 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Eye, EyeOff, LogIn, Shield, User, Lock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Shield, User, Lock, AlertTriangle, CheckCircle, TestTube } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { testLogin, DEMO_CREDENTIALS } from '@/utils/test-login';
 
-// Demo credentials for easy access
-const DEMO_CREDENTIALS = [
+// Demo credentials for easy access with colors
+const DEMO_CREDS_WITH_COLORS = [
   { role: 'Super Admin', email: 'superadmin@onemedi.com', password: 'SuperAdmin@123', color: 'bg-red-100 text-red-800' },
   { role: 'Admin', email: 'admin@onemedi.com', password: 'Admin@123', color: 'bg-blue-100 text-blue-800' },
   { role: 'Manager', email: 'manager@onemedi.com', password: 'Manager@123', color: 'bg-green-100 text-green-800' },
@@ -29,6 +30,7 @@ const SimpleLoginForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showDemoCredentials, setShowDemoCredentials] = useState(true);
+  const [isTesting, setIsTesting] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -37,6 +39,8 @@ const SimpleLoginForm: React.FC = () => {
     setError('');
 
     try {
+      console.log('🔍 Attempting login for:', email);
+
       // Clear any existing session first
       await supabase.auth.signOut();
 
@@ -47,12 +51,15 @@ const SimpleLoginForm: React.FC = () => {
       });
 
       if (authError) {
-        throw authError;
+        console.error('Auth error:', authError);
+        throw new Error(`Authentication failed: ${authError.message}`);
       }
 
       if (!data.user) {
         throw new Error('Login failed - no user data received');
       }
+
+      console.log('✅ Authentication successful for:', email);
 
       // Check if user profile exists and is active
       const { data: profile, error: profileError } = await supabase
@@ -63,12 +70,14 @@ const SimpleLoginForm: React.FC = () => {
 
       if (profileError) {
         console.error('Profile error:', profileError);
-        throw new Error('User profile not found. Please contact support.');
+        throw new Error(`User profile not found: ${profileError.message}. Please run the setup script.`);
       }
 
       if (!profile.is_active) {
         throw new Error('Account is inactive. Please contact support.');
       }
+
+      console.log('✅ Profile loaded successfully:', profile.full_name, '- Role:', profile.role);
 
       // Update last login
       await supabase
@@ -77,7 +86,7 @@ const SimpleLoginForm: React.FC = () => {
         .eq('id', data.user.id);
 
       toast.success(`Welcome back, ${profile.full_name}!`);
-      
+
       // Navigate based on role
       if (['super_admin', 'admin', 'manager'].includes(profile.role)) {
         navigate('/admin');
@@ -87,8 +96,14 @@ const SimpleLoginForm: React.FC = () => {
 
     } catch (error: any) {
       console.error('Login error:', error);
-      setError(error.message || 'Login failed. Please try again.');
-      toast.error(error.message || 'Login failed');
+      const errorMessage = error.message || 'Login failed. Please try again.';
+      setError(errorMessage);
+      toast.error(errorMessage);
+
+      // Show helpful message if it's a common issue
+      if (errorMessage.includes('Invalid login credentials')) {
+        toast.error('Please run the setup-demo-users.sql script in Supabase SQL Editor');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -99,6 +114,28 @@ const SimpleLoginForm: React.FC = () => {
     setPassword(credentials.password);
     setShowDemoCredentials(false);
     toast.info(`Demo credentials loaded for ${credentials.role}`);
+  };
+
+  const handleTestCredentials = async () => {
+    setIsTesting(true);
+    toast.info('Testing demo credentials...');
+
+    try {
+      const testResult = await testLogin('admin@onemedi.com', 'Admin@123');
+
+      if (testResult.success) {
+        toast.success('✅ Demo credentials are working!');
+        setEmail('admin@onemedi.com');
+        setPassword('Admin@123');
+      } else {
+        toast.error(`❌ Demo credentials failed: ${testResult.error}`);
+        toast.error('Please run the setup-demo-users.sql script in Supabase SQL Editor');
+      }
+    } catch (error: any) {
+      toast.error(`Test failed: ${error.message}`);
+    } finally {
+      setIsTesting(false);
+    }
   };
 
   const validateEmail = (email: string) => {
@@ -131,7 +168,7 @@ const SimpleLoginForm: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
-                {DEMO_CREDENTIALS.map((cred) => (
+                {DEMO_CREDS_WITH_COLORS.map((cred) => (
                   <Button
                     key={cred.role}
                     variant="outline"
@@ -148,14 +185,35 @@ const SimpleLoginForm: React.FC = () => {
                   </Button>
                 ))}
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-xs"
-                onClick={() => setShowDemoCredentials(false)}
-              >
-                Hide Demo Credentials
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 text-xs"
+                  onClick={handleTestCredentials}
+                  disabled={isTesting}
+                >
+                  {isTesting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                      Testing...
+                    </>
+                  ) : (
+                    <>
+                      <TestTube className="w-3 h-3 mr-1" />
+                      Test Login
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 text-xs"
+                  onClick={() => setShowDemoCredentials(false)}
+                >
+                  Hide
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
