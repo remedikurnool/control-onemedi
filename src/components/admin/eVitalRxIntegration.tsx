@@ -1,235 +1,232 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
 import { 
   RefreshCw, 
-  Settings, 
-  Activity, 
-  AlertCircle, 
   CheckCircle, 
-  Clock, 
-  Database, 
-  Zap 
+  XCircle, 
+  AlertTriangle, 
+  Settings, 
+  Database,
+  Activity,
+  Users,
+  ShoppingCart,
+  Package
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
-interface IntegrationStatus {
-  status: 'connected' | 'disconnected' | 'pending' | 'error';
-  lastSync: string | null;
-  details?: string;
+interface IntegrationSettings {
+  is_active: boolean;
+  api_url: string;
+  api_key: string;
+  last_sync_date: string | null;
 }
 
-const EVitalRxIntegration: React.FC = () => {
-  const [apiKey, setApiKey] = useState('');
-  const [apiSecret, setApiSecret] = useState('');
-  const [integrationStatus, setIntegrationStatus] = useState<IntegrationStatus>({
-    status: 'disconnected',
-    lastSync: null
+const eVitalRxIntegration: React.FC = () => {
+  const [settings, setSettings] = useState<IntegrationSettings>({
+    is_active: false,
+    api_url: '',
+    api_key: '',
+    last_sync_date: null,
   });
-  const [logs, setLogs] = useState<string[]>([]);
-  const [settingsTab, setSettingsTab] = useState('general');
 
-  useEffect(() => {
-    // Load API keys and status from local storage or database
-    const storedApiKey = localStorage.getItem('evitalrx_api_key');
-    const storedApiSecret = localStorage.getItem('evitalrx_api_secret');
-    if (storedApiKey) setApiKey(storedApiKey);
-    if (storedApiSecret) setApiSecret(storedApiSecret);
+  const queryClient = useQueryClient();
 
-    // Mock status update
-    setTimeout(() => {
-      setIntegrationStatus({
-        status: 'connected',
-        lastSync: new Date().toLocaleTimeString(),
-        details: 'Successfully connected to eVitalRx'
-      });
-    }, 2000);
-  }, []);
+  // Fetch integration settings
+  const { data: integrationSettings, isLoading } = useQuery({
+    queryKey: ['evitalrx-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('evitalrx_integration_settings')
+        .select('*')
+        .single();
 
-  const connectToEVitalRx = () => {
-    // Store API keys securely (e.g., in a database)
-    localStorage.setItem('evitalrx_api_key', apiKey);
-    localStorage.setItem('evitalrx_api_secret', apiSecret);
-
-    // Mock connection attempt
-    setIntegrationStatus({ status: 'pending', lastSync: null });
-    setLogs([...logs, `[${new Date().toLocaleTimeString()}] Attempting to connect to eVitalRx...`]);
-
-    setTimeout(() => {
-      const isSuccess = Math.random() > 0.5;
-      if (isSuccess) {
-        setIntegrationStatus({
-          status: 'connected',
-          lastSync: new Date().toLocaleTimeString(),
-          details: 'Successfully connected to eVitalRx'
-        });
-        setLogs([...logs, `[${new Date().toLocaleTimeString()}] Successfully connected to eVitalRx.`]);
-      } else {
-        setIntegrationStatus({
-          status: 'error',
-          lastSync: null,
-          details: 'Failed to connect. Check API keys.'
-        });
-        setLogs([...logs, `[${new Date().toLocaleTimeString()}] Failed to connect to eVitalRx. Check API keys.`]);
+      if (error) {
+        console.error('Error fetching eVitalRx settings:', error);
+        return {
+          is_active: false,
+          api_url: '',
+          api_key: '',
+          last_sync_date: null,
+        };
       }
-    }, 3000);
+
+      return data as IntegrationSettings;
+    },
+    onSuccess: (data) => {
+      setSettings(data);
+    }
+  });
+
+  // Update integration settings
+  const updateSettings = useMutation({
+    mutationFn: async (updates: Partial<IntegrationSettings>) => {
+      const { data, error } = await supabase
+        .from('evitalrx_integration_settings')
+        .upsert(
+          {
+            ...settings,
+            ...updates,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        )
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Error updating eVitalRx settings:', error);
+        throw error;
+      }
+
+      return data as IntegrationSettings;
+    },
+    onSuccess: (data) => {
+      setSettings(data);
+      queryClient.invalidateQueries({ queryKey: ['evitalrx-settings'] });
+      toast.success('eVitalRx settings updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error('Failed to update eVitalRx settings: ' + error.message);
+    },
+  });
+
+  // Test connection
+  const testConnection = useMutation({
+    mutationFn: async () => {
+      // Mock API call to eVitalRx
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      return true;
+    },
+    onSuccess: () => {
+      toast.success('Connection to eVitalRx successful');
+    },
+    onError: (error: any) => {
+      toast.error('Failed to connect to eVitalRx: ' + error.message);
+    },
+  });
+
+  // Handle settings change
+  const handleSettingsChange = (field: string, value: any) => {
+    setSettings((prevSettings) => ({
+      ...prevSettings,
+      [field]: value,
+    }));
   };
 
-  const disconnectFromEVitalRx = () => {
-    // Clear API keys
-    localStorage.removeItem('evitalrx_api_key');
-    localStorage.removeItem('evitalrx_api_secret');
-
-    // Mock disconnection
-    setIntegrationStatus({ status: 'disconnected', lastSync: null });
-    setLogs([...logs, `[${new Date().toLocaleTimeString()}] Disconnected from eVitalRx.`]);
-  };
-
-  const syncData = () => {
-    // Mock data synchronization
-    setLogs([...logs, `[${new Date().toLocaleTimeString()}] Starting data synchronization...`]);
-    setTimeout(() => {
-      const isSuccess = Math.random() > 0.7;
-      if (isSuccess) {
-        setIntegrationStatus({
-          status: 'connected',
-          lastSync: new Date().toLocaleTimeString(),
-          details: 'Successfully synced data from eVitalRx'
-        });
-        setLogs([...logs, `[${new Date().toLocaleTimeString()}] Data synchronization complete.`]);
-      } else {
-        setIntegrationStatus({
-          status: 'error',
-          lastSync: integrationStatus.lastSync,
-          details: 'Data synchronization failed.'
-        });
-        setLogs([...logs, `[${new Date().toLocaleTimeString()}] Data synchronization failed.`]);
-      }
-    }, 4000);
+  // Save settings
+  const handleSaveSettings = () => {
+    updateSettings.mutate(settings);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">eVitalRx Integration</h1>
           <p className="text-muted-foreground">
-            Connect and synchronize data with eVitalRx
+            Manage connection and synchronization with eVitalRx
           </p>
         </div>
-        <Button variant="outline">
-          <Settings className="h-4 w-4 mr-2" />
-          Settings
-        </Button>
+        <Badge variant={settings.is_active ? 'success' : 'secondary'}>
+          {settings.is_active ? 'Active' : 'Inactive'}
+        </Badge>
       </div>
 
-      <Tabs value={settingsTab} onValueChange={setSettingsTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="logs">Logs</TabsTrigger>
-        </TabsList>
-        <TabsContent value="general" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Connection Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="api-key">API Key</Label>
-                <Input
-                  id="api-key"
-                  type="text"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="api-secret">API Secret</Label>
-                <Input
-                  id="api-secret"
-                  type="password"
-                  value={apiSecret}
-                  onChange={(e) => setApiSecret(e.target.value)}
-                />
-              </div>
-              {integrationStatus.status === 'connected' ? (
-                <Button variant="destructive" onClick={disconnectFromEVitalRx}>
-                  Disconnect
-                </Button>
-              ) : (
-                <Button onClick={connectToEVitalRx} disabled={integrationStatus.status === 'pending'}>
-                  {integrationStatus.status === 'pending' ? 'Connecting...' : 'Connect'}
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Connection Settings</CardTitle>
+          <CardDescription>
+            Configure the connection to your eVitalRx account
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="api-url">API URL</Label>
+            <Input
+              id="api-url"
+              placeholder="https://api.evitalrx.com"
+              value={settings.api_url}
+              onChange={(e) => handleSettingsChange('api_url', e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="api-key">API Key</Label>
+            <Input
+              id="api-key"
+              type="password"
+              value={settings.api_key}
+              onChange={(e) => handleSettingsChange('api_key', e.target.value)}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="is-active">Integration Status</Label>
+            <Switch
+              id="is-active"
+              checked={settings.is_active}
+              onCheckedChange={(checked) => handleSettingsChange('is_active', checked)}
+            />
+          </div>
+        </CardContent>
+      </Card>
+      
+      <div className="flex gap-4">
+        <Button 
+          onClick={() => testConnection.mutate()}
+          disabled={testConnection.isPending}
+          variant="default"
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Test Connection
+        </Button>
+        
+        <Button onClick={handleSaveSettings} disabled={updateSettings.isPending}>
+          {updateSettings.isPending ? (
+            <>
+              <RefreshCw className="animate-spin h-4 w-4 mr-2" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Save Settings
+            </>
+          )}
+        </Button>
+      </div>
+      
+      {settings.last_sync_date && (
+        <Alert>
+          <Database className="h-4 w-4" />
+          <AlertDescription>
+            Last synced on {new Date(settings.last_sync_date).toLocaleDateString()}
+          </AlertDescription>
+        </Alert>
+      )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Integration Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {integrationStatus.status === 'connected' && (
-                <Badge variant="success">
-                  Connected
-                </Badge>
-              )}
-              {integrationStatus.status === 'disconnected' && (
-                <Badge variant="secondary">
-                  Disconnected
-                </Badge>
-              )}
-              {integrationStatus.status === 'pending' && (
-                <Badge variant="outline">
-                  Connecting...
-                </Badge>
-              )}
-              {integrationStatus.status === 'error' && (
-                <Badge variant="destructive">
-                  Error
-                </Badge>
-              )}
-              {integrationStatus.lastSync && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Last Sync: {integrationStatus.lastSync}
-                </p>
-              )}
-              {integrationStatus.details && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {integrationStatus.details}
-                </p>
-              )}
-              <Button variant="outline" className="mt-4" onClick={syncData}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Synchronize Data
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="logs">
-          <Card>
-            <CardHeader>
-              <CardTitle>Logs</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {logs.map((log, index) => (
-                  <p key={index} className="text-sm text-muted-foreground">
-                    {log}
-                  </p>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <Card>
+        <CardHeader>
+          <CardTitle>Data Synchronization</CardTitle>
+          <CardDescription>
+            Synchronize data between OneMedi and eVitalRx
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            Manual data synchronization is not yet implemented.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
-export default EVitalRxIntegration;
+export default eVitalRxIntegration;

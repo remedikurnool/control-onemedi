@@ -77,6 +77,42 @@ export const validateInput = (input: string, options: InputValidationOptions): b
 // Rate Limiter Instance
 const rateLimiter = new RateLimiter({ points: 10, duration: 60000 }); // 10 requests per minute
 
+// Communication Service
+export class CommunicationService {
+  async sendOrderConfirmation(
+    customer: { phone: string; email: string; name: string; userId: string },
+    orderDetails: { orderNumber: string; items: any[]; total: number; deliveryAddress: string }
+  ): Promise<boolean> {
+    try {
+      // Mock implementation - integrate with SMS/Email services
+      console.log('Sending order confirmation to:', customer.email);
+      console.log('Order details:', orderDetails);
+      return true;
+    } catch (error) {
+      console.error('Failed to send order confirmation:', error);
+      return false;
+    }
+  }
+
+  async sendPaymentConfirmation(
+    customer: { phone: string; email: string; userId: string },
+    paymentDetails: { orderId: string; amount: number; paymentId: string }
+  ): Promise<boolean> {
+    try {
+      // Mock implementation
+      console.log('Sending payment confirmation to:', customer.email);
+      console.log('Payment details:', paymentDetails);
+      return true;
+    } catch (error) {
+      console.error('Failed to send payment confirmation:', error);
+      return false;
+    }
+  }
+}
+
+// Export communication service instance
+export const communicationService = new CommunicationService();
+
 // Payment Gateway Integrations
 export interface PaymentGatewayConfig {
   name: string;
@@ -87,21 +123,41 @@ export interface PaymentGatewayConfig {
 }
 
 export class PaymentService {
-  private config: PaymentGatewayConfig;
+  private gatewayType: string;
 
-  constructor(config: PaymentGatewayConfig) {
-    this.config = config;
+  constructor(gatewayType: string) {
+    this.gatewayType = gatewayType;
   }
 
-  async processPayment(amount: number, method: string, metadata?: any) {
-    // Mock payment processing
-    return {
-      success: true,
-      transactionId: `txn_${Date.now()}`,
-      amount,
-      method,
-      metadata
+  async processPayment(paymentData: {
+    orderId: string;
+    amount: number;
+    currency: string;
+    customerInfo: {
+      name: string;
+      email: string;
+      phone: string;
     };
+    notes?: any;
+  }): Promise<{
+    success: boolean;
+    transactionId?: string;
+    paymentId?: string;
+    error?: string;
+  }> {
+    try {
+      // Mock payment processing
+      return {
+        success: true,
+        transactionId: `txn_${Date.now()}`,
+        paymentId: `pay_${Date.now()}`,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
   }
 
   async refundPayment(transactionId: string, amount?: number) {

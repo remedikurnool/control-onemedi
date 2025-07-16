@@ -1,6 +1,13 @@
 // Payment Gateway Integration for OneMedi Healthcare Platform
 // Supports Razorpay, Paytm, PhonePe, and other Indian payment gateways
 
+// Declare Razorpay global
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 export interface PaymentConfig {
   gateway: 'razorpay' | 'paytm' | 'phonepe' | 'cashfree' | 'instamojo';
   keyId: string;
