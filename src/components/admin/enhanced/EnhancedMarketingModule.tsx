@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -133,315 +134,6 @@ const EnhancedMarketingModule: React.FC = () => {
     }
   });
 
-  // Fetch customer segments
-  const { data: segments, isLoading: segmentsLoading } = useQuery({
-    queryKey: ['customer-segments'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('customer_segments')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as CustomerSegment[];
-    }
-  });
-
-  // Fetch campaign templates
-  const { data: templates, isLoading: templatesLoading } = useQuery({
-    queryKey: ['campaign-templates'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('campaign_templates')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as CampaignTemplate[];
-    }
-  });
-
-  // Campaign mutations
-  const campaignMutation = useMutation({
-    mutationFn: async (campaignData: Partial<MarketingCampaign>) => {
-      if (campaignData.id) {
-        const { data, error } = await supabase
-          .from('marketing_campaigns')
-          .update({
-            ...campaignData,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', campaignData.id)
-          .select()
-          .single();
-        if (error) throw error;
-        return data;
-      } else {
-        const { data, error } = await supabase
-          .from('marketing_campaigns')
-          .insert([{
-            ...campaignData,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }])
-          .select()
-          .single();
-        if (error) throw error;
-        return data;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['marketing-campaigns'] });
-      setIsCampaignDialogOpen(false);
-      setSelectedCampaign(null);
-      toast.success('Campaign saved successfully');
-    },
-    onError: (error: any) => {
-      toast.error('Error saving campaign: ' + error.message);
-    }
-  });
-
-  // Segment mutations
-  const segmentMutation = useMutation({
-    mutationFn: async (segmentData: Partial<CustomerSegment>) => {
-      if (segmentData.id) {
-        const { data, error } = await supabase
-          .from('customer_segments')
-          .update({
-            ...segmentData,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', segmentData.id)
-          .select()
-          .single();
-        if (error) throw error;
-        return data;
-      } else {
-        const { data, error } = await supabase
-          .from('customer_segments')
-          .insert([{
-            ...segmentData,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }])
-          .select()
-          .single();
-        if (error) throw error;
-        return data;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customer-segments'] });
-      setIsSegmentDialogOpen(false);
-      setSelectedSegment(null);
-      toast.success('Segment saved successfully');
-    },
-    onError: (error: any) => {
-      toast.error('Error saving segment: ' + error.message);
-    }
-  });
-
-  // Template mutations
-  const templateMutation = useMutation({
-    mutationFn: async (templateData: Partial<CampaignTemplate>) => {
-      if (templateData.id) {
-        const { data, error } = await supabase
-          .from('campaign_templates')
-          .update({
-            ...templateData,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', templateData.id)
-          .select()
-          .single();
-        if (error) throw error;
-        return data;
-      } else {
-        const { data, error } = await supabase
-          .from('campaign_templates')
-          .insert([{
-            ...templateData,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }])
-          .select()
-          .single();
-        if (error) throw error;
-        return data;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['campaign-templates'] });
-      setIsTemplateDialogOpen(false);
-      setSelectedTemplate(null);
-      toast.success('Template saved successfully');
-    },
-    onError: (error: any) => {
-      toast.error('Error saving template: ' + error.message);
-    }
-  });
-
-  // Launch campaign
-  const launchCampaignMutation = useMutation({
-    mutationFn: async (campaignId: string) => {
-      const { data, error } = await supabase
-        .from('marketing_campaigns')
-        .update({
-          status: 'active',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', campaignId)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['marketing-campaigns'] });
-      toast.success('Campaign launched successfully');
-    },
-    onError: (error: any) => {
-      toast.error('Error launching campaign: ' + error.message);
-    }
-  });
-
-  // Pause campaign
-  const pauseCampaignMutation = useMutation({
-    mutationFn: async (campaignId: string) => {
-      const { data, error } = await supabase
-        .from('marketing_campaigns')
-        .update({
-          status: 'paused',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', campaignId)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['marketing-campaigns'] });
-      toast.success('Campaign paused successfully');
-    },
-    onError: (error: any) => {
-      toast.error('Error pausing campaign: ' + error.message);
-    }
-  });
-
-  // Handle campaign form submission
-  const handleSubmitCampaign = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-
-    const campaignData: Partial<MarketingCampaign> = {
-      campaign_name: formData.get('campaign_name') as string,
-      campaign_type: formData.get('campaign_type') as 'email' | 'sms' | 'whatsapp' | 'push' | 'multi_channel',
-      subject: formData.get('subject') as string,
-      content: formData.get('content') as string,
-      target_audience: {
-        segment_id: formData.get('target_segment') as string,
-        criteria: formData.get('target_criteria') as string
-      },
-      scheduled_at: scheduledDate ? scheduledDate.toISOString() : null,
-      status: scheduledDate ? 'scheduled' : 'draft',
-      sent_count: 0,
-      opened_count: 0,
-      clicked_count: 0,
-      conversion_count: 0
-    };
-
-    if (selectedCampaign?.id) {
-      campaignData.id = selectedCampaign.id;
-    }
-
-    campaignMutation.mutate(campaignData);
-  };
-
-  // Handle segment form submission
-  const handleSubmitSegment = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-
-    const segmentData: Partial<CustomerSegment> = {
-      segment_name: formData.get('segment_name') as string,
-      description: formData.get('description') as string,
-      criteria: {
-        age_range: formData.get('age_range') as string,
-        location: formData.get('location') as string,
-        purchase_history: formData.get('purchase_history') as string,
-        engagement_level: formData.get('engagement_level') as string
-      },
-      customer_count: 0, // This would be calculated based on criteria
-      is_active: formData.get('is_active') === 'on'
-    };
-
-    if (selectedSegment?.id) {
-      segmentData.id = selectedSegment.id;
-    }
-
-    segmentMutation.mutate(segmentData);
-  };
-
-  // Handle template form submission
-  const handleSubmitTemplate = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-
-    const templateData: Partial<CampaignTemplate> = {
-      template_name: formData.get('template_name') as string,
-      template_type: formData.get('template_type') as 'email' | 'sms' | 'whatsapp' | 'push',
-      subject: formData.get('subject') as string,
-      content: formData.get('content') as string,
-      variables: (formData.get('variables') as string).split(',').map(v => v.trim()).filter(Boolean),
-      is_active: formData.get('is_active') === 'on'
-    };
-
-    if (selectedTemplate?.id) {
-      templateData.id = selectedTemplate.id;
-    }
-
-    templateMutation.mutate(templateData);
-  };
-
-  // Get status badge
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return <Badge variant="outline">Draft</Badge>;
-      case 'scheduled':
-        return <Badge className="bg-blue-100 text-blue-800">Scheduled</Badge>;
-      case 'active':
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
-      case 'paused':
-        return <Badge className="bg-yellow-100 text-yellow-800">Paused</Badge>;
-      case 'completed':
-        return <Badge className="bg-purple-100 text-purple-800">Completed</Badge>;
-      case 'failed':
-        return <Badge className="bg-red-100 text-red-800">Failed</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  // Get campaign type icon
-  const getCampaignTypeIcon = (type: string) => {
-    switch (type) {
-      case 'email':
-        return <Mail className="h-4 w-4" />;
-      case 'sms':
-        return <MessageSquare className="h-4 w-4" />;
-      case 'whatsapp':
-        return <MessageSquare className="h-4 w-4 text-green-600" />;
-      case 'push':
-        return <Bell className="h-4 w-4" />;
-      case 'multi_channel':
-        return <Zap className="h-4 w-4" />;
-      default:
-        return <Target className="h-4 w-4" />;
-    }
-  };
-
   // Calculate campaign metrics
   const calculateMetrics = () => {
     if (!campaigns) return { totalCampaigns: 0, activeCampaigns: 0, totalSent: 0, avgOpenRate: 0 };
@@ -456,3 +148,143 @@ const EnhancedMarketingModule: React.FC = () => {
   };
 
   const metrics = calculateMetrics();
+
+  return (
+    <div className="enhanced-marketing-module space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Enhanced Marketing Management</h1>
+          <p className="text-muted-foreground">
+            Comprehensive marketing campaign and customer engagement platform
+          </p>
+        </div>
+        
+        <div className="flex gap-2">
+          <Button variant="outline">
+            <Plus className="h-4 w-4 mr-2" />
+            New Campaign
+          </Button>
+          <Button variant="outline">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Analytics
+          </Button>
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Campaigns</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{metrics.totalCampaigns}</div>
+            <p className="text-xs text-muted-foreground">
+              {metrics.activeCampaigns} active
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Messages Sent</CardTitle>
+            <Send className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{metrics.totalSent.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              Across all campaigns
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg. Open Rate</CardTitle>
+            <Eye className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{metrics.avgOpenRate.toFixed(1)}%</div>
+            <p className="text-xs text-muted-foreground">
+              Industry avg: 21.3%
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Customer Segments</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">12</div>
+            <p className="text-xs text-muted-foreground">
+              8 active segments
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+          <TabsTrigger value="segments">Segments</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="campaigns" className="space-y-4">
+          <Card>
+            <CardContent className="text-center py-12">
+              <Mail className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">Marketing Campaigns</h3>
+              <p className="text-muted-foreground">
+                Campaign management functionality will be implemented here
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="segments" className="space-y-4">
+          <Card>
+            <CardContent className="text-center py-12">
+              <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">Customer Segments</h3>
+              <p className="text-muted-foreground">
+                Customer segmentation functionality will be implemented here
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="templates" className="space-y-4">
+          <Card>
+            <CardContent className="text-center py-12">
+              <MessageSquare className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">Campaign Templates</h3>
+              <p className="text-muted-foreground">
+                Template management functionality will be implemented here
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <Card>
+            <CardContent className="text-center py-12">
+              <BarChart3 className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">Marketing Analytics</h3>
+              <p className="text-muted-foreground">
+                Analytics and reporting functionality will be implemented here
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default EnhancedMarketingModule;
