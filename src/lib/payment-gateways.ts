@@ -43,24 +43,24 @@ export interface PaymentResponse {
 export const PAYMENT_CONFIG: Record<string, PaymentConfig> = {
   razorpay: {
     gateway: 'razorpay',
-    keyId: process.env.VITE_RAZORPAY_KEY_ID || '',
-    keySecret: process.env.RAZORPAY_KEY_SECRET || '', // Server-side only
-    webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || '',
-    environment: (process.env.NODE_ENV === 'production' ? 'production' : 'test') as 'test' | 'production',
+    keyId: import.meta.env.VITE_RAZORPAY_KEY_ID || '',
+    keySecret: '', // This should only be used server-side
+    webhookSecret: '', // This should only be used server-side
+    environment: (import.meta.env.MODE === 'production' ? 'production' : 'test') as 'test' | 'production',
     isActive: true
   },
   paytm: {
     gateway: 'paytm',
-    keyId: process.env.VITE_PAYTM_MERCHANT_ID || '',
-    keySecret: process.env.PAYTM_MERCHANT_KEY || '', // Server-side only
-    environment: (process.env.NODE_ENV === 'production' ? 'production' : 'test') as 'test' | 'production',
+    keyId: import.meta.env.VITE_PAYTM_MERCHANT_ID || '',
+    keySecret: '', // This should only be used server-side
+    environment: (import.meta.env.MODE === 'production' ? 'production' : 'test') as 'test' | 'production',
     isActive: false
   },
   phonepe: {
     gateway: 'phonepe',
-    keyId: process.env.VITE_PHONEPE_MERCHANT_ID || '',
-    keySecret: process.env.PHONEPE_SALT_KEY || '', // Server-side only
-    environment: (process.env.NODE_ENV === 'production' ? 'production' : 'test') as 'test' | 'production',
+    keyId: import.meta.env.VITE_PHONEPE_MERCHANT_ID || '',
+    keySecret: '', // This should only be used server-side
+    environment: (import.meta.env.MODE === 'production' ? 'production' : 'test') as 'test' | 'production',
     isActive: false
   }
 };
