@@ -2,15 +2,11 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export const DEMO_CREDENTIALS = [
-  { email: 'superadmin@onemedi.com', password: 'SuperAdmin@123', role: 'Super Admin' },
   { email: 'admin@onemedi.com', password: 'Admin@123', role: 'Admin' },
-  { email: 'manager@onemedi.com', password: 'Manager@123', role: 'Manager' },
-  { email: 'doctor@onemedi.com', password: 'Doctor@123', role: 'Doctor' },
-  { email: 'pharmacist@onemedi.com', password: 'Pharma@123', role: 'Pharmacist' },
-  { email: 'labtech@onemedi.com', password: 'LabTech@123', role: 'Lab Technician' },
-  { email: 'frontdesk@onemedi.com', password: 'FrontDesk@123', role: 'Front Desk' },
-  { email: 'nurse@onemedi.com', password: 'Nurse@123', role: 'Nurse' },
-  { email: 'customer@onemedi.com', password: 'Customer@123', role: 'Customer' }
+  { email: 'dr.kumar@onemedi.com', password: 'Doctor@123', role: 'Dr. Kumar' },
+  { email: 'dr.priya@onemedi.com', password: 'Doctor@123', role: 'Dr. Priya' },
+  { email: 'dr.anitha@onemedi.com', password: 'Doctor@123', role: 'Dr. Anitha' },
+  { email: 'dr.sharma@onemedi.com', password: 'Doctor@123', role: 'Dr. Sharma' }
 ];
 
 export async function testLogin(email: string, password: string): Promise<{

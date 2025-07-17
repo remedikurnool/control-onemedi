@@ -5,78 +5,46 @@
 
 ---
 
-## 🚀 **QUICK ACCESS DEMO CREDENTIALS:**
-
-### **🔴 SUPER ADMIN ACCESS**
-```
-Email: superadmin@onemedi.com
-Password: SuperAdmin@123
-Role: Super Admin
-Access: Full system access + System configuration
-```
+## 🚀 **WORKING DEMO CREDENTIALS (UPDATED):**
 
 ### **🔵 ADMIN ACCESS**
 ```
 Email: admin@onemedi.com
 Password: Admin@123
 Role: Admin
-Access: All modules except system settings
+Access: All modules and system management
 ```
 
-### **🟢 MANAGER ACCESS**
+### **🟣 DR. KUMAR ACCESS**
 ```
-Email: manager@onemedi.com
-Password: Manager@123
-Role: Manager
-Access: Orders, Inventory, Analytics, Users (read-only)
-```
-
-### **🟣 DOCTOR ACCESS**
-```
-Email: doctor@onemedi.com
+Email: dr.kumar@onemedi.com
 Password: Doctor@123
 Role: Doctor
 Access: Consultations, Prescriptions, Patients
 ```
 
-### **🟠 PHARMACIST ACCESS**
+### **🟣 DR. PRIYA ACCESS**
 ```
-Email: pharmacist@onemedi.com
-Password: Pharma@123
-Role: Pharmacist
-Access: Medicines, Inventory, Orders, Prescriptions (read)
-```
-
-### **🔵 LAB TECHNICIAN ACCESS**
-```
-Email: labtech@onemedi.com
-Password: LabTech@123
-Role: Lab Technician
-Access: Lab Tests, Lab Bookings, Reports
+Email: dr.priya@onemedi.com
+Password: Doctor@123
+Role: Doctor
+Access: Consultations, Prescriptions, Patients
 ```
 
-### **🟡 FRONT DESK ACCESS**
+### **🟣 DR. ANITHA ACCESS**
 ```
-Email: frontdesk@onemedi.com
-Password: FrontDesk@123
-Role: Front Desk
-Access: Appointments, Patients, POS System
-```
-
-### **🟢 NURSE ACCESS**
-```
-Email: nurse@onemedi.com
-Password: Nurse@123
-Role: Nurse
-Access: Patients, Consultations, Appointments
+Email: dr.anitha@onemedi.com
+Password: Doctor@123
+Role: Doctor
+Access: Consultations, Prescriptions, Patients
 ```
 
-### **⚪ CUSTOMER ACCESS**
+### **🟣 DR. SHARMA ACCESS**
 ```
-Email: customer@onemedi.com
-Password: Customer@123
-Role: Customer
-Access: Profile, Orders, Appointments
+Email: dr.sharma@onemedi.com
+Password: Doctor@123
+Role: Doctor
+Access: Consultations, Prescriptions, Patients
 ```
 
 ---

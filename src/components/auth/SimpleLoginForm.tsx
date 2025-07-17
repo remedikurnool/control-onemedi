@@ -11,16 +11,13 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { testLogin, DEMO_CREDENTIALS } from '@/utils/test-login';
 
-// Demo credentials for easy access with colors
+// Demo credentials for easy access with colors - UPDATED TO MATCH EXISTING USERS
 const DEMO_CREDS_WITH_COLORS = [
-  { role: 'Super Admin', email: 'superadmin@onemedi.com', password: 'SuperAdmin@123', color: 'bg-red-100 text-red-800' },
   { role: 'Admin', email: 'admin@onemedi.com', password: 'Admin@123', color: 'bg-blue-100 text-blue-800' },
-  { role: 'Manager', email: 'manager@onemedi.com', password: 'Manager@123', color: 'bg-green-100 text-green-800' },
-  { role: 'Doctor', email: 'doctor@onemedi.com', password: 'Doctor@123', color: 'bg-purple-100 text-purple-800' },
-  { role: 'Pharmacist', email: 'pharmacist@onemedi.com', password: 'Pharma@123', color: 'bg-orange-100 text-orange-800' },
-  { role: 'Lab Technician', email: 'labtech@onemedi.com', password: 'LabTech@123', color: 'bg-teal-100 text-teal-800' },
-  { role: 'Front Desk', email: 'frontdesk@onemedi.com', password: 'FrontDesk@123', color: 'bg-pink-100 text-pink-800' },
-  { role: 'Nurse', email: 'nurse@onemedi.com', password: 'Nurse@123', color: 'bg-indigo-100 text-indigo-800' },
+  { role: 'Dr. Kumar', email: 'dr.kumar@onemedi.com', password: 'Doctor@123', color: 'bg-purple-100 text-purple-800' },
+  { role: 'Dr. Priya', email: 'dr.priya@onemedi.com', password: 'Doctor@123', color: 'bg-purple-100 text-purple-800' },
+  { role: 'Dr. Anitha', email: 'dr.anitha@onemedi.com', password: 'Doctor@123', color: 'bg-purple-100 text-purple-800' },
+  { role: 'Dr. Sharma', email: 'dr.sharma@onemedi.com', password: 'Doctor@123', color: 'bg-purple-100 text-purple-800' },
 ];
 
 const SimpleLoginForm: React.FC = () => {
