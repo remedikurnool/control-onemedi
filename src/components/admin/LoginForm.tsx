@@ -1,110 +1,37 @@
 
 import React, { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Shield, Eye, EyeOff } from 'lucide-react';
+import { Heart, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
-import { validateEmail, cleanupAuthState } from '@/lib/security';
+import { useAuth } from '@/contexts/AuthContext';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  
   const navigate = useNavigate();
+  const { signIn } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
-    if (!email || !password) {
-      setError('Please fill in all fields');
-      return;
-    }
-
-    if (!validateEmail(email)) {
-      setError('Please enter a valid email address');
-      return;
-    }
-
-    // Simple rate limiting check
-    if (loginAttempts >= 5) {
-      setError('Too many login attempts. Please try again later.');
-      return;
-    }
-
     setIsLoading(true);
-
+    
     try {
-      // Clean up existing auth state
-      cleanupAuthState();
-      
-      // Attempt global sign out first
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Continue even if this fails
-      }
-
-      // Sign in with email/password
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        console.error('Login error:', error);
-        setError(error.message);
-        setLoginAttempts(prev => prev + 1);
-        return;
-      }
-
-      if (data.user) {
-        // Check if user has admin privileges
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('role, is_active')
-          .eq('id', data.user.id)
-          .single();
-
-        if (!profile) {
-          setError('User profile not found. Please contact support.');
-          await supabase.auth.signOut();
-          return;
-        }
-
-        if (profile.is_active === false) {
-          setError('Account has been deactivated. Please contact support.');
-          await supabase.auth.signOut();
-          return;
-        }
-
-        if (!['admin', 'super_admin', 'manager'].includes(profile.role)) {
-          setError('Access denied. Admin privileges required.');
-          await supabase.auth.signOut();
-          return;
-        }
-
-        // Update last login
-        await supabase
-          .from('user_profiles')
-          .update({ last_login_at: new Date().toISOString() })
-          .eq('id', data.user.id);
-
-        toast.success('Login successful');
+      const result = await signIn(email, password);
+      if (result.success) {
+        toast.success('Login successful (Development Mode)');
         navigate('/admin');
+      } else {
+        toast.error(result.error || 'Login failed');
       }
     } catch (error: any) {
-      console.error('Login error:', error);
-      setError(error.message || 'An unexpected error occurred');
-      setLoginAttempts(prev => prev + 1);
+      toast.error('Login failed: ' + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -114,75 +41,77 @@ const LoginForm = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-            <Shield className="h-6 w-6 text-blue-600" />
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <Heart className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">ONE MEDI</h1>
+              <p className="text-sm text-muted-foreground">Admin Panel</p>
+            </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
+          <CardTitle>Sign In</CardTitle>
           <CardDescription>
-            Sign in to access the admin dashboard
+            Development Mode - Authentication Disabled
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-center gap-2 text-yellow-800">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">Development Mode: Any credentials will work</span>
+            </div>
+          </div>
+          
+          <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
+                placeholder="admin@onemedi.com"
                 required
               />
             </div>
-
+            
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Input
                   id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
+                  placeholder="Enter your password"
                   required
+                  className="pr-10"
                 />
-                <Button
+                <button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-gray-400" />
-                  )}
-                </Button>
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </div>
-
+            
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                'Sign In'
-              )}
+              {isLoading ? 'Signing in...' : 'Sign In (Dev Mode)'}
             </Button>
           </form>
+          
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+            <h3 className="font-semibold text-sm mb-2">Development Mode Active:</h3>
+            <div className="text-xs space-y-1 text-gray-600">
+              <div>• Authentication is disabled</div>
+              <div>• All permissions granted</div>
+              <div>• Any email/password will work</div>
+              <div>• Full admin access enabled</div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

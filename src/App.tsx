@@ -45,7 +45,6 @@ import EnhancedOrdersPage from "./pages/admin/EnhancedOrdersPage";
 import EVitalRxIntegrationPage from "./pages/admin/eVitalRxIntegrationPage";
 import LoginPage from "./pages/LoginPage";
 import LoginForm from "./components/admin/LoginForm";
-import ProtectedRoute from "./components/admin/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient({
@@ -68,11 +67,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<LoginForm />} />
               <Route path="/admin/login" element={<LoginForm />} />
-              <Route path="/admin" element={
-                <ProtectedRoute>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }>
+              <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="users" element={<UsersPage />} />
                 <Route path="inventory" element={<InventoryPage />} />

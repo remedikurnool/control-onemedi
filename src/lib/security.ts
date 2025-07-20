@@ -1,4 +1,4 @@
-import CryptoJS from 'crypto-js';
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Interfaces
@@ -68,7 +68,7 @@ export const validateEmail = (email: string): boolean => {
 };
 
 export const generateSessionId = (): string => {
-  return CryptoJS.lib.WordArray.random(32).toString();
+  return crypto.randomUUID();
 };
 
 export const cleanupAuthState = (): void => {
@@ -84,11 +84,7 @@ export const checkRateLimit = (userId: string): boolean => {
   return rateLimiter.consume(userId);
 };
 
-export const validateInput = (input: string, options: {
-  minLength?: number;
-  maxLength?: number;
-  regex?: RegExp;
-}): boolean => {
+export const validateInput = (input: string, options: InputValidationOptions): boolean => {
   if (options.minLength && input.length < options.minLength) {
     return false;
   }
@@ -101,12 +97,19 @@ export const validateInput = (input: string, options: {
   return true;
 };
 
-// Security logging
+// Security logging - simplified for development
 export const logSecurityEvent = async (
   action: string,
   details: Record<string, any> = {}
 ): Promise<void> => {
   try {
+    // In development mode, just log to console
+    if (import.meta.env.MODE === 'development') {
+      console.log('Security Event:', { action, details, timestamp: new Date().toISOString() });
+      return;
+    }
+
+    // In production, log to Supabase
     await supabase
       .from('security_audit_log')
       .insert({
@@ -118,4 +121,98 @@ export const logSecurityEvent = async (
   } catch (error) {
     console.error('Failed to log security event:', error);
   }
+};
+
+// Generate secure random token
+export const generateSecureToken = (length: number = 32): string => {
+  return crypto.randomUUID().replace(/-/g, '').slice(0, length);
+};
+
+// Validate and sanitize input
+export const validateAndSanitizeInput = (
+  input: string,
+  maxLength: number = 1000
+): { isValid: boolean; sanitized: string; errors: string[] } => {
+  const errors: string[] = [];
+  let sanitized = input;
+
+  // Check length
+  if (input.length > maxLength) {
+    errors.push(`Input too long (max ${maxLength} characters)`);
+  }
+
+  // Basic sanitization
+  sanitized = sanitizeHtml(input.trim());
+
+  // Check for potentially dangerous patterns
+  const dangerousPatterns = [
+    /<script/i,
+    /javascript:/i,
+    /on\w+=/i,
+    /data:text\/html/i
+  ];
+
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(input)) {
+      errors.push('Input contains potentially dangerous content');
+      break;
+    }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    sanitized,
+    errors
+  };
+};
+
+// Password validation
+export const validatePassword = (password: string): { isValid: boolean; strength: number; errors: string[] } => {
+  const errors: string[] = [];
+  let strength = 0;
+
+  if (password.length < 8) {
+    errors.push('Password must be at least 8 characters long');
+  } else {
+    strength++;
+  }
+
+  if (!/[a-z]/.test(password)) {
+    errors.push('Password must contain at least one lowercase letter');
+  } else {
+    strength++;
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Password must contain at least one uppercase letter');
+  } else {
+    strength++;
+  }
+
+  if (!/\d/.test(password)) {
+    errors.push('Password must contain at least one number');
+  } else {
+    strength++;
+  }
+
+  if (!/[!@#$%^&*]/.test(password)) {
+    errors.push('Password must contain at least one special character');
+  } else {
+    strength++;
+  }
+
+  return {
+    isValid: errors.length === 0,
+    strength,
+    errors
+  };
+};
+
+// Development mode helpers
+export const isDevelopmentMode = (): boolean => {
+  return import.meta.env.MODE === 'development';
+};
+
+export const isProductionMode = (): boolean => {
+  return import.meta.env.MODE === 'production';
 };

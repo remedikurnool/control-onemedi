@@ -1,381 +1,225 @@
-// Payment Gateway Integration for OneMedi Healthcare Platform
-// Supports Razorpay, Paytm, PhonePe, and other Indian payment gateways
 
-// Declare Razorpay global
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
+// Payment Gateway Configuration for OneMedi Healthcare Platform
 
-export interface PaymentConfig {
-  gateway: 'razorpay' | 'paytm' | 'phonepe' | 'cashfree' | 'instamojo';
-  keyId: string;
-  keySecret: string;
-  webhookSecret?: string;
-  environment: 'test' | 'production';
-  isActive: boolean;
-}
-
-export interface PaymentOrder {
-  orderId: string;
-  amount: number; // in paise for Razorpay
-  currency: string;
-  customerInfo: {
-    name: string;
-    email: string;
-    phone: string;
+export interface PaymentGatewayConfig {
+  name: string;
+  isEnabled: boolean;
+  mode: 'test' | 'production';
+  config: Record<string, any>;
+  supportedMethods: string[];
+  fees: {
+    percentage: number;
+    fixed: number;
   };
-  notes?: Record<string, string>;
-  receipt?: string;
+  processingTime: string;
+  currencies: string[];
 }
 
-export interface PaymentResponse {
-  success: boolean;
-  paymentId?: string;
-  orderId?: string;
-  signature?: string;
-  error?: string;
-  gatewayResponse?: any;
-}
-
-// Secure payment configuration - should be stored in environment variables
-export const PAYMENT_CONFIG: Record<string, PaymentConfig> = {
+// Payment gateway configurations
+export const PAYMENT_GATEWAYS: Record<string, PaymentGatewayConfig> = {
   razorpay: {
-    gateway: 'razorpay',
-    keyId: import.meta.env.VITE_RAZORPAY_KEY_ID || '',
-    keySecret: '', // This should only be used server-side
-    webhookSecret: '', // This should only be used server-side
-    environment: (import.meta.env.MODE === 'production' ? 'production' : 'test') as 'test' | 'production',
-    isActive: true
+    name: 'Razorpay',
+    isEnabled: true,
+    mode: import.meta.env.MODE === 'production' ? 'production' : 'test',
+    config: {
+      keyId: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_key',
+      keySecret: import.meta.env.VITE_RAZORPAY_KEY_SECRET || 'rzp_test_secret',
+      webhookSecret: import.meta.env.VITE_RAZORPAY_WEBHOOK_SECRET || 'webhook_secret',
+      currency: 'INR',
+      theme: {
+        color: '#3B82F6',
+        backdrop_color: '#F1F5F9'
+      }
+    },
+    supportedMethods: ['card', 'netbanking', 'wallet', 'upi'],
+    fees: {
+      percentage: 2.0,
+      fixed: 0
+    },
+    processingTime: 'Instant',
+    currencies: ['INR']
   },
-  paytm: {
-    gateway: 'paytm',
-    keyId: import.meta.env.VITE_PAYTM_MERCHANT_ID || '',
-    keySecret: '', // This should only be used server-side
-    environment: (import.meta.env.MODE === 'production' ? 'production' : 'test') as 'test' | 'production',
-    isActive: false
-  },
-  phonepe: {
-    gateway: 'phonepe',
-    keyId: import.meta.env.VITE_PHONEPE_MERCHANT_ID || '',
-    keySecret: '', // This should only be used server-side
-    environment: (import.meta.env.MODE === 'production' ? 'production' : 'test') as 'test' | 'production',
-    isActive: false
-  }
-};
-
-// Razorpay Integration
-export class RazorpayGateway {
-  private config: PaymentConfig;
-
-  constructor() {
-    this.config = PAYMENT_CONFIG.razorpay;
-  }
-
-  async createOrder(orderData: PaymentOrder): Promise<any> {
-    try {
-      // This should be called from server-side
-      const response = await fetch('/api/payments/razorpay/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount: orderData.amount,
-          currency: orderData.currency,
-          receipt: orderData.receipt || orderData.orderId,
-          notes: orderData.notes
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create Razorpay order');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Razorpay order creation failed:', error);
-      throw error;
-    }
-  }
-
-  async initializePayment(order: any, customerInfo: PaymentOrder['customerInfo']): Promise<PaymentResponse> {
-    return new Promise((resolve) => {
-      if (!window.Razorpay) {
-        resolve({
-          success: false,
-          error: 'Razorpay SDK not loaded'
-        });
-        return;
-      }
-
-      const options = {
-        key: this.config.keyId,
-        amount: order.amount,
-        currency: order.currency,
-        name: 'OneMedi Healthcare',
-        description: 'Healthcare Services Payment',
-        order_id: order.id,
-        prefill: {
-          name: customerInfo.name,
-          email: customerInfo.email,
-          contact: customerInfo.phone
-        },
-        theme: {
-          color: '#3b82f6'
-        },
-        handler: (response: any) => {
-          resolve({
-            success: true,
-            paymentId: response.razorpay_payment_id,
-            orderId: response.razorpay_order_id,
-            signature: response.razorpay_signature,
-            gatewayResponse: response
-          });
-        },
-        modal: {
-          ondismiss: () => {
-            resolve({
-              success: false,
-              error: 'Payment cancelled by user'
-            });
-          }
-        }
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    });
-  }
-
-  async verifyPayment(paymentData: {
-    paymentId: string;
-    orderId: string;
-    signature: string;
-  }): Promise<boolean> {
-    try {
-      const response = await fetch('/api/payments/razorpay/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(paymentData)
-      });
-
-      const result = await response.json();
-      return result.verified === true;
-    } catch (error) {
-      console.error('Payment verification failed:', error);
-      return false;
-    }
-  }
-}
-
-// PhonePe Integration
-export class PhonePeGateway {
-  private config: PaymentConfig;
-
-  constructor() {
-    this.config = PAYMENT_CONFIG.phonepe;
-  }
-
-  async createOrder(orderData: PaymentOrder): Promise<any> {
-    try {
-      const response = await fetch('/api/payments/phonepe/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          merchantTransactionId: orderData.orderId,
-          amount: orderData.amount,
-          merchantUserId: orderData.customerInfo.phone,
-          callbackUrl: `${window.location.origin}/payment/callback`,
-          mobileNumber: orderData.customerInfo.phone
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create PhonePe order');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('PhonePe order creation failed:', error);
-      throw error;
-    }
-  }
-
-  async initializePayment(order: any): Promise<PaymentResponse> {
-    try {
-      // Redirect to PhonePe payment page
-      window.location.href = order.paymentUrl;
-      
-      return {
-        success: true,
-        orderId: order.merchantTransactionId
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Failed to initialize PhonePe payment'
-      };
-    }
-  }
-}
-
-// Payment Gateway Factory
-export class PaymentGatewayFactory {
-  static createGateway(gateway: string) {
-    switch (gateway) {
-      case 'razorpay':
-        return new RazorpayGateway();
-      case 'phonepe':
-        return new PhonePeGateway();
-      default:
-        throw new Error(`Unsupported payment gateway: ${gateway}`);
-    }
-  }
-
-  static getActiveGateways(): string[] {
-    return Object.entries(PAYMENT_CONFIG)
-      .filter(([_, config]) => config.isActive)
-      .map(([gateway, _]) => gateway);
-  }
-
-  static getGatewayConfig(gateway: string): PaymentConfig | null {
-    return PAYMENT_CONFIG[gateway] || null;
-  }
-}
-
-// Payment Service
-export class PaymentService {
-  private gateway: RazorpayGateway | PhonePeGateway;
-
-  constructor(gatewayType: string = 'razorpay') {
-    this.gateway = PaymentGatewayFactory.createGateway(gatewayType);
-  }
-
-  async processPayment(orderData: PaymentOrder): Promise<PaymentResponse> {
-    try {
-      // Step 1: Create order with payment gateway
-      const order = await this.gateway.createOrder(orderData);
-
-      // Step 2: Initialize payment
-      const paymentResult = await this.gateway.initializePayment(order, orderData.customerInfo);
-
-      // Step 3: Verify payment (for Razorpay)
-      if (paymentResult.success && this.gateway instanceof RazorpayGateway && paymentResult.paymentId) {
-        const isVerified = await this.gateway.verifyPayment({
-          paymentId: paymentResult.paymentId,
-          orderId: paymentResult.orderId!,
-          signature: paymentResult.signature!
-        });
-
-        if (!isVerified) {
-          return {
-            success: false,
-            error: 'Payment verification failed'
-          };
-        }
-      }
-
-      return paymentResult;
-    } catch (error: any) {
-      console.error('Payment processing failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Payment processing failed'
-      };
-    }
-  }
-}
-
-// Webhook handler for payment status updates
-export const handlePaymentWebhook = async (
-  gateway: string,
-  payload: any,
-  signature: string
-): Promise<{ success: boolean; orderId?: string; status?: string }> => {
-  try {
-    const config = PaymentGatewayFactory.getGatewayConfig(gateway);
-    if (!config) {
-      throw new Error(`Invalid gateway: ${gateway}`);
-    }
-
-    // Verify webhook signature
-    const isValidSignature = await verifyWebhookSignature(gateway, payload, signature, config.webhookSecret!);
-    if (!isValidSignature) {
-      throw new Error('Invalid webhook signature');
-    }
-
-    // Process webhook based on gateway
-    switch (gateway) {
-      case 'razorpay':
-        return handleRazorpayWebhook(payload);
-      case 'phonepe':
-        return handlePhonePeWebhook(payload);
-      default:
-        throw new Error(`Webhook handler not implemented for ${gateway}`);
-    }
-  } catch (error) {
-    console.error('Webhook processing failed:', error);
-    return { success: false };
-  }
-};
-
-// Helper functions
-const verifyWebhookSignature = async (
-  gateway: string,
-  payload: any,
-  signature: string,
-  secret: string
-): Promise<boolean> => {
-  // Implementation depends on gateway-specific signature verification
-  // This should be implemented on the server-side
-  return true; // Placeholder
-};
-
-const handleRazorpayWebhook = async (payload: any) => {
-  const event = payload.event;
-  const paymentEntity = payload.payload.payment.entity;
-
-  return {
-    success: true,
-    orderId: paymentEntity.order_id,
-    status: event === 'payment.captured' ? 'paid' : 'failed'
-  };
-};
-
-const handlePhonePeWebhook = async (payload: any) => {
-  return {
-    success: true,
-    orderId: payload.merchantTransactionId,
-    status: payload.code === 'PAYMENT_SUCCESS' ? 'paid' : 'failed'
-  };
-};
-
-// Load payment gateway scripts
-export const loadPaymentGatewayScripts = () => {
-  // Load Razorpay script
-  if (!document.getElementById('razorpay-script')) {
-    const script = document.createElement('script');
-    script.id = 'razorpay-script';
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.head.appendChild(script);
-  }
-};
-
-// Initialize payment gateways on app load
-export const initializePaymentGateways = () => {
-  loadPaymentGatewayScripts();
   
-  // Log active gateways
-  const activeGateways = PaymentGatewayFactory.getActiveGateways();
-  console.log('Active payment gateways:', activeGateways);
+  paytm: {
+    name: 'Paytm',
+    isEnabled: true,
+    mode: import.meta.env.MODE === 'production' ? 'production' : 'test',
+    config: {
+      merchantId: import.meta.env.VITE_PAYTM_MERCHANT_ID || 'test_merchant',
+      merchantKey: import.meta.env.VITE_PAYTM_MERCHANT_KEY || 'test_key',
+      website: import.meta.env.VITE_PAYTM_WEBSITE || 'WEBSTAGING',
+      industryTypeId: import.meta.env.VITE_PAYTM_INDUSTRY_TYPE || 'Retail',
+      channelId: import.meta.env.VITE_PAYTM_CHANNEL_ID || 'WEB',
+      callbackUrl: `${window.location.origin}/payment/callback/paytm`
+    },
+    supportedMethods: ['paytm_wallet', 'card', 'netbanking', 'upi'],
+    fees: {
+      percentage: 1.99,
+      fixed: 0
+    },
+    processingTime: 'Instant',
+    currencies: ['INR']
+  },
+
+  phonepe: {
+    name: 'PhonePe',
+    isEnabled: true,
+    mode: import.meta.env.MODE === 'production' ? 'production' : 'test',
+    config: {
+      merchantId: import.meta.env.VITE_PHONEPE_MERCHANT_ID || 'test_merchant',
+      saltKey: import.meta.env.VITE_PHONEPE_SALT_KEY || 'test_salt',
+      saltIndex: import.meta.env.VITE_PHONEPE_SALT_INDEX || '1',
+      callbackUrl: `${window.location.origin}/payment/callback/phonepe`,
+      redirectUrl: `${window.location.origin}/payment/redirect/phonepe`
+    },
+    supportedMethods: ['phonepe_wallet', 'card', 'netbanking', 'upi'],
+    fees: {
+      percentage: 1.99,
+      fixed: 0
+    },
+    processingTime: 'Instant',
+    currencies: ['INR']
+  },
+
+  googlepay: {
+    name: 'Google Pay',
+    isEnabled: true,
+    mode: import.meta.env.MODE === 'production' ? 'production' : 'test',
+    config: {
+      merchantId: import.meta.env.VITE_GOOGLEPAY_MERCHANT_ID || 'test_merchant',
+      merchantName: 'OneMedi Healthcare',
+      environment: import.meta.env.MODE === 'production' ? 'PRODUCTION' : 'TEST',
+      gatewayMerchantId: import.meta.env.VITE_GOOGLEPAY_GATEWAY_MERCHANT_ID || 'test_gateway',
+      allowedCardNetworks: ['VISA', 'MASTERCARD', 'AMEX'],
+      allowedCardAuthMethods: ['PAN_ONLY', 'CRYPTOGRAM_3DS']
+    },
+    supportedMethods: ['googlepay'],
+    fees: {
+      percentage: 1.5,
+      fixed: 0
+    },
+    processingTime: 'Instant',
+    currencies: ['INR']
+  },
+
+  upi: {
+    name: 'UPI Direct',
+    isEnabled: true,
+    mode: import.meta.env.MODE === 'production' ? 'production' : 'test',
+    config: {
+      vpa: import.meta.env.VITE_UPI_VPA || 'onemedi@upi',
+      merchantCode: import.meta.env.VITE_UPI_MERCHANT_CODE || 'test_merchant',
+      supportedApps: ['phonepe', 'googlepay', 'paytm', 'bhim', 'amazonpay']
+    },
+    supportedMethods: ['upi'],
+    fees: {
+      percentage: 0.5,
+      fixed: 0
+    },
+    processingTime: 'Instant',
+    currencies: ['INR']
+  },
+
+  cod: {
+    name: 'Cash on Delivery',
+    isEnabled: true,
+    mode: 'production',
+    config: {
+      maxAmount: 5000,
+      serviceFee: 50,
+      availableLocations: ['hyderabad', 'secunderabad', 'cyberabad'],
+      verificationRequired: true
+    },
+    supportedMethods: ['cod'],
+    fees: {
+      percentage: 0,
+      fixed: 50
+    },
+    processingTime: 'On Delivery',
+    currencies: ['INR']
+  }
 };
 
-// Export default payment service instance
-export const defaultPaymentService = new PaymentService('razorpay');
+// Payment method configurations
+export const PAYMENT_METHODS = {
+  card: {
+    name: 'Credit/Debit Card',
+    icon: 'credit-card',
+    description: 'Secure payment with your card',
+    processingTime: 'Instant'
+  },
+  netbanking: {
+    name: 'Net Banking',
+    icon: 'building-bank',
+    description: 'Pay directly from your bank account',
+    processingTime: 'Instant'
+  },
+  wallet: {
+    name: 'Digital Wallet',
+    icon: 'wallet',
+    description: 'Pay with your digital wallet',
+    processingTime: 'Instant'
+  },
+  upi: {
+    name: 'UPI',
+    icon: 'smartphone',
+    description: 'Pay with UPI apps',
+    processingTime: 'Instant'
+  },
+  cod: {
+    name: 'Cash on Delivery',
+    icon: 'banknote',
+    description: 'Pay when you receive',
+    processingTime: 'On Delivery'
+  }
+};
+
+// Get enabled payment gateways
+export const getEnabledPaymentGateways = (): PaymentGatewayConfig[] => {
+  return Object.values(PAYMENT_GATEWAYS).filter(gateway => gateway.isEnabled);
+};
+
+// Get payment gateway by name
+export const getPaymentGateway = (name: string): PaymentGatewayConfig | null => {
+  return PAYMENT_GATEWAYS[name] || null;
+};
+
+// Calculate payment fees
+export const calculatePaymentFees = (amount: number, gatewayName: string): number => {
+  const gateway = getPaymentGateway(gatewayName);
+  if (!gateway) return 0;
+  
+  const { percentage, fixed } = gateway.fees;
+  return (amount * percentage / 100) + fixed;
+};
+
+// Get supported payment methods for a gateway
+export const getSupportedPaymentMethods = (gatewayName: string): string[] => {
+  const gateway = getPaymentGateway(gatewayName);
+  return gateway?.supportedMethods || [];
+};
+
+// Development mode configuration
+export const DEV_MODE_CONFIG = {
+  enableAllGateways: true,
+  skipVerification: true,
+  testCredentials: true,
+  mockResponses: true
+};
+
+// Get gateway configuration for development
+export const getGatewayConfig = (gatewayName: string): PaymentGatewayConfig | null => {
+  const gateway = getPaymentGateway(gatewayName);
+  if (!gateway) return null;
+
+  // In development mode, ensure all gateways are enabled with test credentials
+  if (import.meta.env.MODE === 'development') {
+    return {
+      ...gateway,
+      isEnabled: true,
+      mode: 'test'
+    };
+  }
+
+  return gateway;
+};
