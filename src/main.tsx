@@ -1,15 +1,29 @@
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/contexts/AuthContext';
+import App from './App';
 import './index.css';
 
-// Ensure we're in frontend-only mode
-console.log('🚀 OneMedi Admin Frontend - Development Mode');
-console.log('📝 Note: API functionality is mocked for development');
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
-  </StrictMode>,
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <App />
+        <Toaster />
+      </AuthProvider>
+    </QueryClientProvider>
+  </StrictMode>
 );

@@ -19,7 +19,9 @@ export default defineConfig({
     rollupOptions: {
       // Completely exclude API directory from build
       external: [
-        /^\/src\/api\/.*/
+        /^\/src\/api\/.*/,
+        /^src\/api\/.*/,
+        /api\/.*/
       ]
     }
   },
