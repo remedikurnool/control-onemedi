@@ -3,7 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface DevNoticeProps {
-  children?: React.ReactNode;
+  children: React.ReactNode;
 }
 
 export function DevNotice({ children }: DevNoticeProps) {
