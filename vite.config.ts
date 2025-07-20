@@ -18,14 +18,13 @@ export default defineConfig({
   build: {
     rollupOptions: {
       // Completely exclude API directory from build
-      external: [
-        /^\/src\/api\/.*/,
-        /^src\/api\/.*/,
-        /^api\/.*/,
-        /^\.\/src\/api\/.*/,
-        /^\.\/api\/.*/,
-        /api-server\/.*/
-      ]
+      external: (id) => {
+        return id.includes('/src/api/') || 
+               id.includes('src/api/') || 
+               id.includes('./src/api/') ||
+               id.startsWith('src/api') ||
+               id.includes('api-server/');
+      }
     }
   },
   // Exclude API directory from all processing
