@@ -1,217 +1,175 @@
 
-import React, { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Input } from '@/components/ui/input';
+import { useState } from "react";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
-  Pill, 
-  TestTube, 
-  Scan, 
-  Stethoscope, 
-  Heart, 
-  Droplets, 
-  Ambulance,
-  ShoppingCart,
-  Users,
-  Package,
-  MapPin,
-  BarChart3,
-  Megaphone,
+  Users, 
+  Package, 
+  ShoppingCart, 
+  CreditCard, 
   Settings,
-  Menu,
-  Sun,
-  Moon,
-  LogOut,
-  CreditCard,
-  Activity,
+  Bell,
   Search,
-  Plus,
-  Beaker,
-  Building2,
-  Dumbbell,
-  AlertCircle
-} from 'lucide-react';
-import { toast } from 'sonner';
+  Menu,
+  X,
+  LogOut,
+  UserCircle
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { DevNotice } from "@/components/DevNotice";
 
-const AdminLayout = () => {
-  const location = useLocation();
+const navigation = [
+  { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { name: "Users", href: "/admin/users", icon: Users },
+  { name: "Products", href: "/admin/products", icon: Package },
+  { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
+  { name: "Payments", href: "/admin/payments", icon: CreditCard },
+  { name: "Settings", href: "/admin/settings", icon: Settings },
+];
+
+export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const { userProfile, signOut } = useAuth();
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      toast.success('Logged out successfully');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Logout failed');
-    }
+  const handleLogout = () => {
+    // In development mode, just redirect to login
+    navigate('/admin/login');
   };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      toast.info(`Searching for: ${searchQuery} (Search not implemented yet)`);
-    }
-  };
-
-  const navigation = [
-    { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-    { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
-    { name: 'Users', href: '/admin/users', icon: Users },
-    { name: 'Patients', href: '/admin/patients', icon: Heart },
-    { name: 'Inventory', href: '/admin/inventory', icon: Package },
-    { name: 'POS', href: '/admin/pos', icon: CreditCard },
-    { name: 'Medicines', href: '/admin/medicines', icon: Pill },
-    { name: 'Lab Tests', href: '/admin/lab-tests', icon: TestTube },
-    { name: 'Scans', href: '/admin/scans', icon: Scan },
-    { name: 'Doctors', href: '/admin/doctors', icon: Stethoscope },
-    { name: 'Surgery Opinion', href: '/admin/surgery-opinion', icon: Heart },
-    { name: 'Home Care', href: '/admin/home-care', icon: Heart },
-    { name: 'Diabetes Care', href: '/admin/diabetes-care', icon: Droplets },
-    { name: 'Ambulance', href: '/admin/ambulance', icon: Ambulance },
-    { name: 'Blood Bank', href: '/admin/blood-banks', icon: Beaker },
-    { name: 'Diet Guide', href: '/admin/diet-guide', icon: Activity },
-    { name: 'Hospital', href: '/admin/hospitals', icon: Building2 },
-    { name: 'Physiotherapy', href: '/admin/physiotherapy', icon: Dumbbell },
-    { name: 'Locations', href: '/admin/locations', icon: MapPin },
-    { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
-    { name: 'Marketing', href: '/admin/marketing', icon: Megaphone },
-    { name: 'Settings', href: '/admin/settings', icon: Settings },
-  ];
-
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 p-6 border-b">
-        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-          <Heart className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <h1 className="font-bold text-lg">ONE MEDI</h1>
-          <p className="text-sm text-muted-foreground">Admin Panel</p>
-        </div>
-      </div>
-      
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        {navigation.map((item) => {
-          const isActive = location.pathname === item.href || 
-            (item.href !== '/admin' && location.pathname.startsWith(item.href));
-          
-          return (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              }`}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <item.icon className="w-4 h-4" />
-              {item.name}
-            </Link>
-          );
-        })}
-      </nav>
-      
-      <div className="p-4 border-t">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs">
-            {userProfile?.full_name?.charAt(0) || 'D'}
-          </div>
-          <div>
-            <p className="font-medium">{userProfile?.full_name || 'Dev User'}</p>
-            <p className="text-xs capitalize">{userProfile?.role?.replace('_', ' ') || 'super admin'}</p>
-          </div>
-        </div>
-        <Button
-          variant="ghost"
-          className="w-full justify-start"
-          onClick={handleLogout}
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Logout
-        </Button>
-      </div>
-    </div>
-  );
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Development Mode Banner */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-400 text-yellow-900 px-4 py-2 text-center text-sm font-medium">
-        <div className="flex items-center justify-center gap-2">
-          <AlertCircle className="w-4 h-4" />
-          <span>Development Mode - Authentication Disabled</span>
-        </div>
-      </div>
-
-      {/* Desktop Sidebar */}
-      <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 mt-10">
-        <div className="flex flex-col flex-1 bg-card border-r">
-          <SidebarContent />
-        </div>
-      </div>
-
-      {/* Mobile Sidebar */}
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="md:hidden fixed top-14 left-4 z-40">
-            <Menu className="w-5 h-5" />
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="w-64 p-0">
-          <SidebarContent />
-        </SheetContent>
-      </Sheet>
-
-      {/* Main Content */}
-      <div className="flex-1 md:ml-64">
-        {/* Header */}
-        <header className="bg-card border-b px-4 py-3 mt-10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h2 className="text-xl font-semibold">
-                {navigation.find(item => item.href === location.pathname)?.name || 'Admin Panel'}
-              </h2>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <form onSubmit={handleSearch} className="flex items-center gap-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 w-64"
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile sidebar */}
+      <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white">
+          <div className="flex h-16 flex-shrink-0 items-center justify-between px-4">
+            <span className="text-xl font-bold text-blue-600">OneMedi Admin</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <X className="h-6 w-6" />
+            </Button>
+          </div>
+          <nav className="flex-1 space-y-1 px-2 py-4">
+            {navigation.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`${
+                    isActive
+                      ? 'bg-blue-100 text-blue-900'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  } group flex items-center px-2 py-2 text-sm font-medium rounded-md`}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <item.icon
+                    className={`${
+                      isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
+                    } mr-3 h-6 w-6 flex-shrink-0`}
                   />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
+
+      {/* Desktop sidebar */}
+      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
+        <div className="flex min-h-0 flex-1 flex-col bg-white border-r border-gray-200">
+          <div className="flex h-16 flex-shrink-0 items-center px-4">
+            <span className="text-xl font-bold text-blue-600">OneMedi Admin</span>
+          </div>
+          <div className="flex flex-1 flex-col overflow-y-auto">
+            <nav className="flex-1 space-y-1 px-2 py-4">
+              {navigation.map((item) => {
+                const isActive = location.pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={`${
+                      isActive
+                        ? 'bg-blue-100 text-blue-900'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    } group flex items-center px-2 py-2 text-sm font-medium rounded-md`}
+                  >
+                    <item.icon
+                      className={`${
+                        isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
+                      } mr-3 h-6 w-6 flex-shrink-0`}
+                    />
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="lg:pl-64">
+        {/* Top nav */}
+        <div className="sticky top-0 z-40 flex h-16 flex-shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu className="h-6 w-6" />
+          </Button>
+
+          <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
+            <form className="relative flex flex-1" action="#" method="GET">
+              <Search className="pointer-events-none absolute inset-y-0 left-0 h-full w-5 text-gray-400 pl-3" />
+              <Input
+                className="block h-full w-full border-0 py-0 pl-10 pr-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm"
+                placeholder="Search..."
+                type="search"
+                name="search"
+              />
+            </form>
+            <div className="flex items-center gap-x-4 lg:gap-x-6">
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-6 w-6" />
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">3</Badge>
+              </Button>
+
+              <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" />
+
+              <div className="flex items-center gap-x-2">
+                <UserCircle className="h-8 w-8 text-gray-400" />
+                <div className="hidden lg:flex lg:flex-col">
+                  <span className="text-sm font-medium text-gray-900">Demo Admin</span>
+                  <span className="text-xs text-gray-500">admin@onemedi.com</span>
                 </div>
-                <Button type="submit" variant="ghost" size="icon">
-                  <Search className="w-4 h-4" />
-                </Button>
-              </form>
-              
-              <Button variant="ghost" size="icon">
-                <Plus className="w-5 h-5" />
+              </div>
+
+              <Button variant="ghost" size="icon" onClick={handleLogout}>
+                <LogOut className="h-5 w-5" />
               </Button>
             </div>
           </div>
-        </header>
+        </div>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          <Outlet />
+        {/* Page content */}
+        <main className="py-6">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <DevNotice />
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
   );
-};
-
-export default AdminLayout;
+}

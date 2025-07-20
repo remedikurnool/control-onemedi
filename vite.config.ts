@@ -17,14 +17,19 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      // Completely exclude API directory from build
       external: [
-        // Exclude API directory from frontend build
         /^\/src\/api\/.*/
       ]
     }
   },
-  // Exclude API directory from processing
+  // Exclude API directory from all processing
   optimizeDeps: {
     exclude: ['src/api']
+  },
+  // Define environment for frontend-only build
+  define: {
+    // Ensure we're building for frontend only
+    __API_EXCLUDED__: true
   }
 });
