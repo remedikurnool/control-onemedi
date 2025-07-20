@@ -2,6 +2,8 @@
 // Mock API service for frontend development
 // Simulates backend API responses when backend is not available
 
+import { enhancedMockApi } from './enhanced-mock-api';
+
 interface MockResponse<T = any> {
   success: boolean;
   data?: T;
@@ -10,13 +12,13 @@ interface MockResponse<T = any> {
 }
 
 // Mock delay to simulate network requests
-const delay = (ms: number = 1000) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number = 800) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Mock API responses
 export const mockApi = {
   // Authentication
   auth: {
-    login: async (credentials: { email: string; password: string }): Promise<MockResponse> => {
+    async login(credentials: { email: string; password: string }): Promise<MockResponse> {
       await delay(800);
       
       // Accept any credentials in development mode
@@ -27,8 +29,8 @@ export const mockApi = {
             user: {
               id: 'mock-user-id',
               email: credentials.email,
-              full_name: 'Mock User',
-              role: 'admin',
+              full_name: 'Mock Admin User',
+              role: 'super_admin',
               permissions: ['all']
             },
             token: 'mock-jwt-token',
@@ -44,7 +46,7 @@ export const mockApi = {
       };
     },
     
-    logout: async (): Promise<MockResponse> => {
+    async logout(): Promise<MockResponse> {
       await delay(300);
       return {
         success: true,
@@ -52,7 +54,7 @@ export const mockApi = {
       };
     },
     
-    profile: async (): Promise<MockResponse> => {
+    async profile(): Promise<MockResponse> {
       await delay(500);
       return {
         success: true,
@@ -60,100 +62,60 @@ export const mockApi = {
           id: 'mock-user-id',
           email: 'admin@onemedi.com',
           full_name: 'Admin User',
-          role: 'admin',
+          role: 'super_admin',
           permissions: ['all']
         }
       };
     }
   },
 
+  // Dashboard
+  dashboard: {
+    async getStats(): Promise<MockResponse> {
+      await delay(1000);
+      return enhancedMockApi.dashboard.getStats();
+    }
+  },
+
   // Medicines
   medicines: {
-    list: async (params?: any): Promise<MockResponse> => {
+    async list(params?: any): Promise<MockResponse> {
       await delay(1200);
-      return {
-        success: true,
-        data: [
-          {
-            id: '1',
-            name_en: 'Paracetamol 500mg',
-            manufacturer: 'Generic Pharma',
-            selling_price: 25.50,
-            stock_quantity: 100,
-            category: { name_en: 'Pain Relief' }
-          },
-          {
-            id: '2',
-            name_en: 'Amoxicillin 250mg',
-            manufacturer: 'Antibiotic Corp',
-            selling_price: 85.00,
-            stock_quantity: 50,
-            category: { name_en: 'Antibiotics' }
-          }
-        ],
-        pagination: {
-          page: 1,
-          limit: 20,
-          total: 2,
-          totalPages: 1
-        }
-      };
+      return enhancedMockApi.medicines.getList(params);
     },
     
-    create: async (medicine: any): Promise<MockResponse> => {
+    async create(medicine: any): Promise<MockResponse> {
       await delay(1000);
-      return {
-        success: true,
-        data: { id: 'new-medicine-id', ...medicine },
-        message: 'Medicine created successfully'
-      };
+      return enhancedMockApi.medicines.create(medicine);
     }
   },
 
   // Orders
   orders: {
-    list: async (params?: any): Promise<MockResponse> => {
+    async list(params?: any): Promise<MockResponse> {
       await delay(1000);
-      return {
-        success: true,
-        data: [
-          {
-            id: '1',
-            order_number: 'OM123456',
-            customer_name: 'John Doe',
-            total_amount: 150.00,
-            order_status: 'pending',
-            payment_status: 'pending'
-          }
-        ],
-        pagination: {
-          page: 1,
-          limit: 20,
-          total: 1,
-          totalPages: 1
-        }
-      };
+      return enhancedMockApi.orders.getList(params);
     }
   },
 
-  // Analytics
-  analytics: {
-    dashboard: async (): Promise<MockResponse> => {
-      await delay(800);
-      return {
-        success: true,
-        data: {
-          totalOrders: 156,
-          totalRevenue: 25680.50,
-          averageOrderValue: 164.62,
-          ordersByStatus: {
-            pending: 12,
-            confirmed: 8,
-            shipped: 25,
-            delivered: 111
-          }
-        }
-      };
+  // Users
+  users: {
+    async list(params?: any): Promise<MockResponse> {
+      await delay(900);
+      return enhancedMockApi.users.getList(params);
+    }
+  },
+
+  // eVitalRx
+  evitalrx: {
+    async products(params?: any): Promise<MockResponse> {
+      await delay(1500);
+      return enhancedMockApi.evitalrx.getProducts(params);
+    },
+    
+    async sync(syncData?: any): Promise<MockResponse> {
+      await delay(2000);
+      return enhancedMockApi.evitalrx.syncProducts(syncData);
     }
   }
 };
@@ -183,9 +145,21 @@ export async function apiRequest<T = any>(
     if (endpoint.includes('/orders')) {
       return mockApi.orders.list();
     }
-    if (endpoint.includes('/analytics')) {
-      return mockApi.analytics.dashboard();
+    if (endpoint.includes('/users')) {
+      return mockApi.users.list();
     }
+    if (endpoint.includes('/evitalrx')) {
+      return mockApi.evitalrx.products();
+    }
+    if (endpoint.includes('/analytics') || endpoint.includes('/dashboard')) {
+      return mockApi.dashboard.getStats();
+    }
+    
+    // Default mock response
+    return {
+      success: true,
+      data: { message: 'Mock response' }
+    };
   }
   
   // Fallback to actual API call

@@ -23,17 +23,17 @@ export default defineConfig({
         /^src\/api\/.*/,
         /^api\/.*/,
         /^\.\/src\/api\/.*/,
+        /^\.\/api\/.*/,
         /api-server\/.*/
       ]
     }
   },
   // Exclude API directory from all processing
   optimizeDeps: {
-    exclude: ['src/api', 'api-server']
+    exclude: ['src/api', 'api-server', './src/api', './api-server']
   },
   // Define environment for frontend-only build
   define: {
-    // Ensure we're building for frontend only
     __API_EXCLUDED__: true
   }
 });

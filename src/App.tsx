@@ -30,30 +30,32 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
-        <Routes>
-          <Route path="/admin/login" element={<LoginForm />} />
-          <Route
-            path="/admin/*"
-            element={
-              isAuthenticated ? (
-                <AdminLayout>
-                  <Routes>
-                    <Route index element={<Dashboard />} />
-                    <Route path="users" element={<UsersManagement />} />
-                    <Route path="products" element={<MedicineManagement />} />
-                    <Route path="orders" element={<OrdersManagement />} />
-                    <Route path="payments" element={<PaymentManagement />} />
-                    <Route path="settings" element={<SettingsPage />} />
-                  </Routes>
-                </AdminLayout>
-              ) : (
-                <Navigate to="/admin/login" replace />
-              )
-            }
-          />
-          <Route path="/" element={<Navigate to="/admin" replace />} />
-          <Route path="*" element={<Navigate to="/admin" replace />} />
-        </Routes>
+        <DevNotice>
+          <Routes>
+            <Route path="/admin/login" element={<LoginForm />} />
+            <Route
+              path="/admin/*"
+              element={
+                isAuthenticated ? (
+                  <AdminLayout>
+                    <Routes>
+                      <Route index element={<Dashboard />} />
+                      <Route path="users" element={<UsersManagement />} />
+                      <Route path="products" element={<MedicineManagement />} />
+                      <Route path="orders" element={<OrdersManagement />} />
+                      <Route path="payments" element={<PaymentManagement />} />
+                      <Route path="settings" element={<SettingsPage />} />
+                    </Routes>
+                  </AdminLayout>
+                ) : (
+                  <Navigate to="/admin/login" replace />
+                )
+              }
+            />
+            <Route path="/" element={<Navigate to="/admin" replace />} />
+            <Route path="*" element={<Navigate to="/admin" replace />} />
+          </Routes>
+        </DevNotice>
       </div>
     </Router>
   );
