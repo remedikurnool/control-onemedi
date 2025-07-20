@@ -1,21 +1,18 @@
 
-import { AlertTriangle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import React from 'react';
 
 interface DevNoticeProps {
   children: React.ReactNode;
 }
 
-export function DevNotice({ children }: DevNoticeProps) {
+export const DevNotice: React.FC<DevNoticeProps> = ({ children }) => {
   return (
-    <>
-      <Alert className="mb-4 border-amber-200 bg-amber-50">
-        <AlertTriangle className="h-4 w-4 text-amber-600" />
-        <AlertDescription className="text-amber-800">
-          <strong>Development Mode:</strong> This is a frontend-only build. API functionality is mocked for development purposes. The backend API files are excluded from compilation.
-        </AlertDescription>
-      </Alert>
+    <div className="relative">
       {children}
-    </>
+      <div className="fixed bottom-4 right-4 bg-yellow-100 border border-yellow-400 text-yellow-800 px-3 py-2 rounded-lg text-xs shadow-lg z-50 max-w-xs">
+        <div className="font-semibold">Development Mode</div>
+        <div>This is a demo version of OneMedi Admin</div>
+      </div>
+    </div>
   );
-}
+};

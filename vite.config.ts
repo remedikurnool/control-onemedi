@@ -25,7 +25,10 @@ export default defineConfig({
                id.startsWith('src/api') ||
                id.includes('api-server/') ||
                id.includes('/api/') ||
-               id.startsWith('api/');
+               id.startsWith('api/') ||
+               id.includes('\\src\\api\\') ||
+               id.includes('\\api\\') ||
+               id.includes('\\api-server\\');
       }
     }
   },
