@@ -57,7 +57,7 @@ export const EnhancedScanForm: React.FC<EnhancedScanFormProps> = ({
   const [activeTab, setActiveTab] = useState('basic');
   const [parameters, setParameters] = useState<Array<{name: string, description: string, normal_range?: string}>>([]);
   const [centerPricing, setCenterPricing] = useState<Array<{center_id: string, center_name: string, base_price: number, discounted_price?: number, discount_percentage?: number}>>([]);
-  const [imageUrl, setImageUrl] = useState<string>('');
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   const form = useForm<ScanFormData>({
     resolver: zodResolver(scanSchema),
@@ -123,10 +123,14 @@ export const EnhancedScanForm: React.FC<EnhancedScanFormProps> = ({
     setCenterPricing(updated);
   };
 
+  const handleImageUpload = (urls: string[]) => {
+    setImageUrls(urls);
+  };
+
   const handleSubmit = async (data: ScanFormData) => {
     const formData = {
       ...data,
-      image_url: imageUrl,
+      image_url: imageUrls.length > 0 ? imageUrls[0] : '',
       parameters: parameters
     };
 
@@ -183,7 +187,7 @@ export const EnhancedScanForm: React.FC<EnhancedScanFormProps> = ({
 
             <div className="space-y-2">
               <Label htmlFor="category_id">Category</Label>
-              <Select onValueChange={(value) => form.setValue('category_id', value)}>
+              <Select onValueChange={(value) => form.setValue('category_id', value === 'none' ? undefined : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
@@ -243,11 +247,12 @@ export const EnhancedScanForm: React.FC<EnhancedScanFormProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="equipment_type">Equipment Type</Label>
-              <Select onValueChange={(value) => form.setValue('equipment_type', value)}>
+              <Select onValueChange={(value) => form.setValue('equipment_type', value === 'none' ? undefined : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select equipment type" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">No Equipment Type</SelectItem>
                   <SelectItem value="ct_scanner">CT Scanner</SelectItem>
                   <SelectItem value="mri_machine">MRI Machine</SelectItem>
                   <SelectItem value="xray_machine">X-Ray Machine</SelectItem>
@@ -492,8 +497,11 @@ export const EnhancedScanForm: React.FC<EnhancedScanFormProps> = ({
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Scan Image</h3>
             <EnhancedImageUpload
-              onImageUpload={setImageUrl}
-              currentImage={imageUrl}
+              onUpload={handleImageUpload}
+              bucket="scan-services"
+              folder="images"
+              maxFiles={1}
+              currentImages={imageUrls}
               className="max-w-md"
             />
           </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -56,7 +55,7 @@ export const EnhancedLabTestForm: React.FC<EnhancedLabTestFormProps> = ({
   const [activeTab, setActiveTab] = useState('basic');
   const [parameters, setParameters] = useState<Array<{name: string, normal_range: string, unit?: string}>>([]);
   const [centerPricing, setCenterPricing] = useState<Array<{center_id: string, center_name: string, base_price: number, discounted_price?: number, discount_percentage?: number}>>([]);
-  const [imageUrl, setImageUrl] = useState<string>('');
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   const form = useForm<LabTestFormData>({
     resolver: zodResolver(labTestSchema),
@@ -120,11 +119,15 @@ export const EnhancedLabTestForm: React.FC<EnhancedLabTestFormProps> = ({
     setCenterPricing(updated);
   };
 
+  const handleImageUpload = (urls: string[]) => {
+    setImageUrls(urls);
+  };
+
   const handleSubmit = async (data: LabTestFormData) => {
     try {
       const formData = {
         ...data,
-        image_url: imageUrl,
+        image_url: imageUrls.length > 0 ? imageUrls[0] : '',
         parameters: parameters
       };
 
@@ -210,7 +213,7 @@ export const EnhancedLabTestForm: React.FC<EnhancedLabTestFormProps> = ({
 
                 <div className="space-y-2">
                   <Label htmlFor="category_id">Category</Label>
-                  <Select onValueChange={(value) => form.setValue('category_id', value)}>
+                  <Select onValueChange={(value) => form.setValue('category_id', value === 'none' ? undefined : value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -450,8 +453,11 @@ export const EnhancedLabTestForm: React.FC<EnhancedLabTestFormProps> = ({
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Test Image</h3>
                 <EnhancedImageUpload
-                  onImageUpload={setImageUrl}
-                  currentImage={imageUrl}
+                  onUpload={handleImageUpload}
+                  bucket="lab-tests"
+                  folder="images"
+                  maxFiles={1}
+                  currentImages={imageUrls}
                   className="max-w-md"
                 />
               </div>
