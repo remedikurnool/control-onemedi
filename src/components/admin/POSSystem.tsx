@@ -149,17 +149,18 @@ const POSSystem = () => {
   // Product search by barcode
   const searchByBarcode = async (barcode: string) => {
     const { data, error } = await supabase
-      .from('products')
+      .from('product_barcodes')
       .select(`
-        id,
-        name_en,
-        name_te,
-        price,
-        image_url,
-        inventory:product_inventory(available_quantity, reserved_quantity),
-        product_barcodes!inner(barcode_value)
+        product:products(
+          id,
+          name_en,
+          name_te,
+          price,
+          image_url,
+          inventory:product_inventory(available_quantity, reserved_quantity)
+        )
       `)
-      .eq('product_barcodes.barcode_value', barcode)
+      .eq('barcode_value', barcode)
       .single();
 
     if (error) {
@@ -167,7 +168,7 @@ const POSSystem = () => {
       return null;
     }
 
-    return data as Product;
+    return data.product;
   };
 
   // Handle barcode scan

@@ -1,8 +1,0 @@
-
-# Exclude API directories from TypeScript compilation
-src/api/
-api-server/
-**/src/api/
-**/api-server/
-api/
-**/api/

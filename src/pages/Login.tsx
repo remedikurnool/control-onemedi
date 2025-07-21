@@ -1,9 +1,9 @@
 
 import React from 'react';
-import EnhancedLoginForm from '@/components/admin/EnhancedLoginForm';
+import LoginForm from '@/components/admin/LoginForm';
 
 const Login = () => {
-  return <EnhancedLoginForm />;
+  return <LoginForm />;
 };
 
 export default Login;
