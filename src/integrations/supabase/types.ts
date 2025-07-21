@@ -834,6 +834,109 @@ export type Database = {
           },
         ]
       }
+      center_pricing: {
+        Row: {
+          base_price: number
+          center_id: string | null
+          created_at: string | null
+          discount_percentage: number | null
+          discounted_price: number | null
+          home_collection_fee: number | null
+          id: string
+          is_available: boolean | null
+          saved_amount: number | null
+          service_id: string
+          service_type: string
+          updated_at: string | null
+          urgent_fee: number | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          base_price: number
+          center_id?: string | null
+          created_at?: string | null
+          discount_percentage?: number | null
+          discounted_price?: number | null
+          home_collection_fee?: number | null
+          id?: string
+          is_available?: boolean | null
+          saved_amount?: number | null
+          service_id: string
+          service_type: string
+          updated_at?: string | null
+          urgent_fee?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          base_price?: number
+          center_id?: string | null
+          created_at?: string | null
+          discount_percentage?: number | null
+          discounted_price?: number | null
+          home_collection_fee?: number | null
+          id?: string
+          is_available?: boolean | null
+          saved_amount?: number | null
+          service_id?: string
+          service_type?: string
+          updated_at?: string | null
+          urgent_fee?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_pricing_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostic_centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      center_services: {
+        Row: {
+          center_id: string | null
+          created_at: string | null
+          estimated_time: string | null
+          id: string
+          is_available: boolean | null
+          service_id: string
+          service_type: string
+          special_instructions: string | null
+        }
+        Insert: {
+          center_id?: string | null
+          created_at?: string | null
+          estimated_time?: string | null
+          id?: string
+          is_available?: boolean | null
+          service_id: string
+          service_type: string
+          special_instructions?: string | null
+        }
+        Update: {
+          center_id?: string | null
+          created_at?: string | null
+          estimated_time?: string | null
+          id?: string
+          is_available?: boolean | null
+          service_id?: string
+          service_type?: string
+          special_instructions?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_services_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostic_centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       claim_documents: {
         Row: {
           claim_id: string | null
@@ -1713,38 +1816,71 @@ export type Database = {
       }
       diagnostic_centers: {
         Row: {
+          accreditation: string[] | null
           address: string
+          coordinates: Json | null
           created_at: string | null
           email: string | null
+          facilities: Json | null
+          home_collection_available: boolean | null
+          home_collection_radius_km: number | null
           id: string
+          image_url: string | null
           is_active: boolean | null
+          license_number: string | null
           name_en: string
           name_te: string
+          operating_hours: Json | null
           phone: string | null
+          rating: number | null
+          services_offered: Json | null
+          total_reviews: number | null
           updated_at: string | null
           working_hours: string | null
         }
         Insert: {
+          accreditation?: string[] | null
           address: string
+          coordinates?: Json | null
           created_at?: string | null
           email?: string | null
+          facilities?: Json | null
+          home_collection_available?: boolean | null
+          home_collection_radius_km?: number | null
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
+          license_number?: string | null
           name_en: string
           name_te: string
+          operating_hours?: Json | null
           phone?: string | null
+          rating?: number | null
+          services_offered?: Json | null
+          total_reviews?: number | null
           updated_at?: string | null
           working_hours?: string | null
         }
         Update: {
+          accreditation?: string[] | null
           address?: string
+          coordinates?: Json | null
           created_at?: string | null
           email?: string | null
+          facilities?: Json | null
+          home_collection_available?: boolean | null
+          home_collection_radius_km?: number | null
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
+          license_number?: string | null
           name_en?: string
           name_te?: string
+          operating_hours?: Json | null
           phone?: string | null
+          rating?: number | null
+          services_offered?: Json | null
+          total_reviews?: number | null
           updated_at?: string | null
           working_hours?: string | null
         }
@@ -2805,60 +2941,86 @@ export type Database = {
       }
       lab_tests: {
         Row: {
+          category_id: string | null
           created_at: string | null
           description_en: string | null
           description_te: string | null
           id: string
+          image_url: string | null
           is_active: boolean | null
           is_fasting_required: boolean | null
           is_home_collection: boolean | null
           name_en: string
           name_te: string
+          parameters: Json | null
           preparation_instructions: string | null
           price: number
+          rating: number | null
           report_time: string | null
           sample_type: string | null
+          short_description: string | null
           test_code: string
           test_group: string | null
+          total_reviews: number | null
           updated_at: string | null
         }
         Insert: {
+          category_id?: string | null
           created_at?: string | null
           description_en?: string | null
           description_te?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
           is_fasting_required?: boolean | null
           is_home_collection?: boolean | null
           name_en: string
           name_te: string
+          parameters?: Json | null
           preparation_instructions?: string | null
           price?: number
+          rating?: number | null
           report_time?: string | null
           sample_type?: string | null
+          short_description?: string | null
           test_code: string
           test_group?: string | null
+          total_reviews?: number | null
           updated_at?: string | null
         }
         Update: {
+          category_id?: string | null
           created_at?: string | null
           description_en?: string | null
           description_te?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
           is_fasting_required?: boolean | null
           is_home_collection?: boolean | null
           name_en?: string
           name_te?: string
+          parameters?: Json | null
           preparation_instructions?: string | null
           price?: number
+          rating?: number | null
           report_time?: string | null
           sample_type?: string | null
+          short_description?: string | null
           test_code?: string
           test_group?: string | null
+          total_reviews?: number | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "lab_tests_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "test_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       layout_config: {
         Row: {
@@ -4665,57 +4827,92 @@ export type Database = {
       }
       scan_services: {
         Row: {
+          availability_status: string | null
+          category_id: string | null
+          contrast_agent: string | null
           created_at: string | null
           description_en: string | null
           description_te: string | null
           duration: string | null
+          equipment_type: string | null
           id: string
           image_prep_required: boolean | null
+          image_url: string | null
           is_active: boolean | null
           is_contrast_required: boolean | null
           name_en: string
           name_te: string
+          parameters: Json | null
           preparation_instructions: string | null
           price: number
+          rating: number | null
           scan_code: string
           scan_type: string | null
+          short_description: string | null
+          total_reviews: number | null
           updated_at: string | null
         }
         Insert: {
+          availability_status?: string | null
+          category_id?: string | null
+          contrast_agent?: string | null
           created_at?: string | null
           description_en?: string | null
           description_te?: string | null
           duration?: string | null
+          equipment_type?: string | null
           id?: string
           image_prep_required?: boolean | null
+          image_url?: string | null
           is_active?: boolean | null
           is_contrast_required?: boolean | null
           name_en: string
           name_te: string
+          parameters?: Json | null
           preparation_instructions?: string | null
           price?: number
+          rating?: number | null
           scan_code: string
           scan_type?: string | null
+          short_description?: string | null
+          total_reviews?: number | null
           updated_at?: string | null
         }
         Update: {
+          availability_status?: string | null
+          category_id?: string | null
+          contrast_agent?: string | null
           created_at?: string | null
           description_en?: string | null
           description_te?: string | null
           duration?: string | null
+          equipment_type?: string | null
           id?: string
           image_prep_required?: boolean | null
+          image_url?: string | null
           is_active?: boolean | null
           is_contrast_required?: boolean | null
           name_en?: string
           name_te?: string
+          parameters?: Json | null
           preparation_instructions?: string | null
           price?: number
+          rating?: number | null
           scan_code?: string
           scan_type?: string | null
+          short_description?: string | null
+          total_reviews?: number | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "scan_services_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "test_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       security_audit_log: {
         Row: {
@@ -5218,6 +5415,109 @@ export type Database = {
         }
         Relationships: []
       }
+      test_categories: {
+        Row: {
+          bg_color: string | null
+          created_at: string | null
+          description_en: string | null
+          description_te: string | null
+          display_order: number | null
+          icon: string | null
+          icon_color: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name_en: string
+          name_te: string
+          parent_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          bg_color?: string | null
+          created_at?: string | null
+          description_en?: string | null
+          description_te?: string | null
+          display_order?: number | null
+          icon?: string | null
+          icon_color?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name_en: string
+          name_te: string
+          parent_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          bg_color?: string | null
+          created_at?: string | null
+          description_en?: string | null
+          description_te?: string | null
+          display_order?: number | null
+          icon?: string | null
+          icon_color?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name_en?: string
+          name_te?: string
+          parent_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "test_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_parameters: {
+        Row: {
+          created_at: string | null
+          id: string
+          normal_range_max: number | null
+          normal_range_min: number | null
+          normal_range_text: string | null
+          parameter_name: string
+          reference_values: Json | null
+          test_id: string | null
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          normal_range_max?: number | null
+          normal_range_min?: number | null
+          normal_range_text?: string | null
+          parameter_name: string
+          reference_values?: Json | null
+          test_id?: string | null
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          normal_range_max?: number | null
+          normal_range_min?: number | null
+          normal_range_text?: string | null
+          parameter_name?: string
+          reference_values?: Json | null
+          test_id?: string | null
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_parameters_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "lab_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       testimonials: {
         Row: {
           comment_en: string
@@ -5370,33 +5670,48 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string | null
+          department: string | null
           email: string
           full_name: string
           id: string
+          is_active: boolean | null
+          last_login: string | null
           location: Json | null
+          permissions: Json | null
           phone: string | null
           preferences: Json | null
           role: Database["public"]["Enums"]["user_role"] | null
           updated_at: string | null
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string | null
+          department?: string | null
           email: string
           full_name: string
           id: string
+          is_active?: boolean | null
+          last_login?: string | null
           location?: Json | null
+          permissions?: Json | null
           phone?: string | null
           preferences?: Json | null
           role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string | null
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string | null
+          department?: string | null
           email?: string
           full_name?: string
           id?: string
+          is_active?: boolean | null
+          last_login?: string | null
           location?: Json | null
+          permissions?: Json | null
           phone?: string | null
           preferences?: Json | null
           role?: Database["public"]["Enums"]["user_role"] | null

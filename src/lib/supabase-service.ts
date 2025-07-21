@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -25,7 +24,9 @@ export interface RealtimeSubscription {
 const VALID_TABLES = [
   'user_profiles', 'locations', 'products', 'customer_orders', 'consultations',
   'ambulance_bookings', 'ambulance_services', 'blood_banks', 'blood_inventory',
-  'analytics_events', 'coupons', 'hospitals', 'doctors', 'caregivers'
+  'analytics_events', 'coupons', 'hospitals', 'doctors', 'caregivers',
+  'lab_tests', 'scan_services', 'diagnostic_centers', 'test_categories',
+  'center_services', 'test_parameters', 'center_pricing'
 ];
 
 // Generic CRUD Service
@@ -486,6 +487,15 @@ export const staffService = new SupabaseService('staff');
 export const doctorsService = new SupabaseService('doctors');
 export const marketingCampaignsService = new SupabaseService('marketing_campaigns');
 export const analyticsService = new SupabaseService('business_metrics');
+
+// New services for enhanced lab tests and scans
+export const labTestsService = new SupabaseService('lab_tests');
+export const scanServicesService = new SupabaseService('scan_services');
+export const diagnosticCentersService = new SupabaseService('diagnostic_centers');
+export const testCategoriesService = new SupabaseService('test_categories');
+export const centerServicesService = new SupabaseService('center_services');
+export const testParametersService = new SupabaseService('test_parameters');
+export const centerPricingService = new SupabaseService('center_pricing');
 
 // Storage service instances
 export const avatarsStorage = new SupabaseStorageService('avatars');
