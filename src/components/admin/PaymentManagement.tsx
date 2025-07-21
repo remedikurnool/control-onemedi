@@ -28,7 +28,7 @@ import {
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { PaymentService, PaymentGatewayFactory, PAYMENT_CONFIG } from '@/lib/payment-gateways';
+import { PaymentService, PaymentGatewayFactory, PAYMENT_GATEWAYS } from '@/lib/payment-gateways';
 
 interface PaymentGatewayConfig {
   id: string;
@@ -240,7 +240,7 @@ const PaymentManagement: React.FC = () => {
 
         <TabsContent value="gateways" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Object.entries(PAYMENT_CONFIG).map(([gatewayName, config]) => {
+            {Object.entries(PAYMENT_GATEWAYS).map(([gatewayName, config]) => {
               const gatewayConfig = gateways?.find(g => g.gateway_name === gatewayName);
               
               return (
@@ -427,7 +427,7 @@ const PaymentManagement: React.FC = () => {
             </CardHeader>
             
             <CardContent className="space-y-4">
-              {Object.keys(PAYMENT_CONFIG).map((gateway) => (
+              {Object.keys(PAYMENT_GATEWAYS).map((gateway) => (
                 <div key={gateway} className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
                     <h4 className="font-medium">{gateway.charAt(0).toUpperCase() + gateway.slice(1)}</h4>
