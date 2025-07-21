@@ -1,129 +1,126 @@
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, Shield, Pill, TestTube, Stethoscope, UserCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Heart, Users, Package, BarChart3, Settings, ArrowRight } from 'lucide-react';
 
 const Index = () => {
+  const features = [
+    {
+      icon: Users,
+      title: 'User Management',
+      description: 'Manage customers, patients, and staff members',
+      href: '/admin/users'
+    },
+    {
+      icon: Package,
+      title: 'Inventory Management',
+      description: 'Track medicines, supplies, and equipment',
+      href: '/admin/inventory'
+    },
+    {
+      icon: BarChart3,
+      title: 'Analytics Dashboard',
+      description: 'Monitor performance and generate reports',
+      href: '/admin/analytics'
+    },
+    {
+      icon: Settings,
+      title: 'System Settings',
+      description: 'Configure application preferences',
+      href: '/admin/settings'
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Heart className="w-5 h-5 text-white" />
+      <header className="bg-white shadow-sm">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                <Heart className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">ONE MEDI</h1>
+                <p className="text-sm text-gray-600">Healthcare Management System</p>
+              </div>
             </div>
-            <h1 className="text-2xl font-bold">ONE MEDI</h1>
-          </div>
-          <Link to="/login">
-            <Button variant="outline" className="flex items-center gap-2">
-              <UserCheck className="w-4 h-4" />
-              Admin Login
-            </Button>
-          </Link>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-16 text-center">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-4xl font-bold text-gray-900 mb-6">
-            Your Complete Healthcare Management Solution
-          </h2>
-          <p className="text-xl text-gray-600 mb-8">
-            ONE MEDI provides comprehensive healthcare services including medicines, lab tests, 
-            doctor consultations, home care, and emergency services - all in one platform.
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Link to="/login">
-              <Button size="lg" className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
+            <Link to="/admin">
+              <Button>
                 Access Admin Panel
+                <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
           </div>
         </div>
-      </section>
+      </header>
 
-      {/* Services Grid */}
-      <section className="container mx-auto px-4 py-16">
-        <h3 className="text-3xl font-bold text-center mb-12">Our Services</h3>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card>
+      {/* Main Content */}
+      <main className="container mx-auto px-6 py-12">
+        {/* Hero Section */}
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            Complete Healthcare Management Solution
+          </h2>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Streamline your healthcare operations with our comprehensive management system
+            covering everything from patient care to inventory management.
+          </p>
+        </div>
+
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          {features.map((feature) => (
+            <Card key={feature.title} className="hover:shadow-md transition-shadow">
+              <CardHeader className="text-center pb-2">
+                <feature.icon className="w-12 h-12 mx-auto text-primary mb-4" />
+                <CardTitle className="text-lg">{feature.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="text-center">
+                <CardDescription className="mb-4">
+                  {feature.description}
+                </CardDescription>
+                <Link to={feature.href}>
+                  <Button variant="outline" size="sm">
+                    Learn More
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* CTA Section */}
+        <div className="text-center">
+          <Card className="max-w-2xl mx-auto">
             <CardHeader>
-              <Pill className="w-8 h-8 text-primary mb-2" />
-              <CardTitle>Medicines</CardTitle>
+              <CardTitle className="text-2xl">Ready to Get Started?</CardTitle>
               <CardDescription>
-                Wide range of medicines and pharmaceutical products with prescription management
+                Access the admin panel to manage your healthcare operations
               </CardDescription>
             </CardHeader>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <TestTube className="w-8 h-8 text-primary mb-2" />
-              <CardTitle>Lab Tests</CardTitle>
-              <CardDescription>
-                Comprehensive diagnostic and lab testing services with home collection
-              </CardDescription>
-            </CardHeader>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <Stethoscope className="w-8 h-8 text-primary mb-2" />
-              <CardTitle>Doctor Consultations</CardTitle>
-              <CardDescription>
-                Online and offline consultations with qualified healthcare professionals
-              </CardDescription>
-            </CardHeader>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <Heart className="w-8 h-8 text-primary mb-2" />
-              <CardTitle>Home Care</CardTitle>
-              <CardDescription>
-                Professional home healthcare services with trained caregivers
-              </CardDescription>
-            </CardHeader>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <Shield className="w-8 h-8 text-primary mb-2" />
-              <CardTitle>Diabetes Care</CardTitle>
-              <CardDescription>
-                Specialized diabetes management and monitoring services
-              </CardDescription>
-            </CardHeader>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <UserCheck className="w-8 h-8 text-primary mb-2" />
-              <CardTitle>Emergency Services</CardTitle>
-              <CardDescription>
-                24/7 emergency response and ambulance services
-              </CardDescription>
-            </CardHeader>
+            <CardContent>
+              <Link to="/admin">
+                <Button size="lg" className="w-full sm:w-auto">
+                  Open Admin Dashboard
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </CardContent>
           </Card>
         </div>
-      </section>
+      </main>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8">
-        <div className="container mx-auto px-4 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="w-6 h-6 bg-primary rounded flex items-center justify-center">
-              <Heart className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-xl font-bold">ONE MEDI</span>
+      <footer className="bg-white border-t mt-12">
+        <div className="container mx-auto px-6 py-8">
+          <div className="text-center text-gray-600">
+            <p>&copy; 2024 ONE MEDI. All rights reserved.</p>
+            <p className="mt-2">Healthcare Management System</p>
           </div>
-          <p className="text-gray-400">
-            Complete Healthcare Management System - Kurnool, Andhra Pradesh
-          </p>
         </div>
       </footer>
     </div>

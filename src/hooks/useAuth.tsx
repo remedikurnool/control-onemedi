@@ -1,37 +1,21 @@
 
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+// Simplified auth hook without authentication requirements
+import { useState, useEffect } from 'react';
 
 export const useAuth = () => {
-  const { data: session, isLoading } = useQuery({
-    queryKey: ['auth-session'],
-    queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      return session;
-    },
-  });
-
-  const { data: userProfile } = useQuery({
-    queryKey: ['user-profile', session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return null;
-      
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-      
-      return profile;
-    },
-    enabled: !!session?.user?.id,
-  });
+  const [user, setUser] = useState({ id: 'admin', email: 'admin@onemedi.com' });
+  const [isLoading, setIsLoading] = useState(false);
 
   return {
-    user: session?.user || null,
-    userProfile,
-    isAuthenticated: !!session,
+    user,
+    userProfile: { 
+      id: 'admin', 
+      full_name: 'Admin User', 
+      role: 'admin',
+      email: 'admin@onemedi.com' 
+    },
+    isAuthenticated: true,
     isLoading,
-    isAdmin: userProfile?.role && ['super_admin', 'admin', 'manager'].includes(userProfile.role),
+    isAdmin: true,
   };
 };

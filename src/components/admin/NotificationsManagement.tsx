@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Plus, Send, Bell, Mail, MessageCircle, Calendar, Users, Eye, Trash2, Edit } from 'lucide-react';
-import { useRealtimeData } from '@/hooks/useRealtimeData';
 
 interface Notification {
   id: string;
@@ -35,23 +34,8 @@ const NotificationsManagement: React.FC = () => {
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [isNotificationDialogOpen, setIsNotificationDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
-
-  const { data: notifications, isLoading, create, update, remove } = useRealtimeData<Notification>({
-    table: 'notifications',
-    queryKey: ['notifications'],
-    orderBy: 'created_at',
-    orderDirection: 'desc',
-    enableRealtime: true,
-    onInsert: (notification) => {
-      toast.success(`Notification "${notification.title}" created successfully`);
-    },
-    onUpdate: (notification) => {
-      toast.success(`Notification "${notification.title}" updated`);
-    },
-    onDelete: (notification) => {
-      toast.success('Notification deleted');
-    }
-  });
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmitNotification = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -63,18 +47,31 @@ const NotificationsManagement: React.FC = () => {
       audience_type: formData.get('audience_type')?.toString() as 'all' | 'role_based' | 'specific_users',
       audience_filter: formData.get('audience_filter') ? JSON.parse(formData.get('audience_filter')?.toString() || '{}') : {},
       delivery_method: formData.get('delivery_method')?.toString() as 'push' | 'email' | 'sms' | 'all',
-      status: formData.get('is_scheduled') === 'on' ? 'scheduled' : 'draft',
-      scheduled_at: formData.get('scheduled_at')?.toString() || null,
+      status: (formData.get('is_scheduled') === 'on' ? 'scheduled' : 'draft') as 'draft' | 'scheduled' | 'sent' | 'failed',
+      scheduled_at: formData.get('scheduled_at')?.toString() || undefined,
       read_count: 0,
       total_recipients: 0,
-      created_by: 'admin', // Replace with actual user ID
+      created_by: 'admin',
     };
 
     try {
       if (selectedNotification) {
-        await update(selectedNotification.id, notificationData);
+        // Update existing notification
+        const updatedNotifications = notifications.map(n => 
+          n.id === selectedNotification.id ? { ...n, ...notificationData } : n
+        );
+        setNotifications(updatedNotifications);
+        toast.success('Notification updated successfully');
       } else {
-        await create(notificationData);
+        // Create new notification
+        const newNotification: Notification = {
+          id: Date.now().toString(),
+          ...notificationData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        setNotifications([newNotification, ...notifications]);
+        toast.success('Notification created successfully');
       }
       setIsNotificationDialogOpen(false);
       setSelectedNotification(null);
@@ -85,14 +82,19 @@ const NotificationsManagement: React.FC = () => {
 
   const handleSendNotification = async (notification: Notification) => {
     try {
-      await update(notification.id, {
-        status: 'sent',
-        sent_at: new Date().toISOString()
-      });
+      const updatedNotifications = notifications.map(n => 
+        n.id === notification.id ? { ...n, status: 'sent' as const, sent_at: new Date().toISOString() } : n
+      );
+      setNotifications(updatedNotifications);
       toast.success('Notification sent successfully');
     } catch (error) {
       toast.error('Failed to send notification');
     }
+  };
+
+  const handleDeleteNotification = (id: string) => {
+    setNotifications(notifications.filter(n => n.id !== id));
+    toast.success('Notification deleted');
   };
 
   const filteredNotifications = notifications.filter(notification => {
@@ -298,7 +300,7 @@ const NotificationsManagement: React.FC = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => remove(notification.id)}
+                          onClick={() => handleDeleteNotification(notification.id)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
