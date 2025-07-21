@@ -43,14 +43,7 @@ export const EnhancedLabTestList: React.FC<EnhancedLabTestListProps> = ({
     queryKey: ['enhanced_lab_tests'],
     select: `
       *,
-      category:test_categories(name_en, name_te, icon),
-      pricing:center_pricing(
-        center_id,
-        base_price,
-        discounted_price,
-        discount_percentage,
-        center:diagnostic_centers(name_en, name_te)
-      )
+      category:test_categories(name_en, name_te, icon)
     `,
     enableRealtime: true
   });
@@ -72,20 +65,10 @@ export const EnhancedLabTestList: React.FC<EnhancedLabTestListProps> = ({
                          test.name_te.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          test.test_code.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesCategory = !selectedCategory || test.category_id === selectedCategory;
+    const matchesCategory = !selectedCategory || selectedCategory === 'all' || test.category_id === selectedCategory;
     
     return matchesSearch && matchesCategory;
   }) || [];
-
-  const getLowestPrice = (pricing: any[]) => {
-    if (!pricing || pricing.length === 0) return null;
-    return Math.min(...pricing.map(p => p.discounted_price || p.base_price));
-  };
-
-  const getHighestDiscount = (pricing: any[]) => {
-    if (!pricing || pricing.length === 0) return 0;
-    return Math.max(...pricing.map(p => p.discount_percentage || 0));
-  };
 
   const renderTestCard = (test: any) => (
     <Card key={test.id} className="hover:shadow-lg transition-shadow">
@@ -139,29 +122,6 @@ export const EnhancedLabTestList: React.FC<EnhancedLabTestListProps> = ({
           </div>
         </div>
 
-        {test.pricing && test.pricing.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Price Range:</span>
-              <div className="flex items-center space-x-2">
-                <IndianRupee className="h-4 w-4 text-green-600" />
-                <span className="text-lg font-bold text-green-600">
-                  ₹{getLowestPrice(test.pricing)}
-                </span>
-                {getHighestDiscount(test.pricing) > 0 && (
-                  <Badge variant="destructive" className="text-xs">
-                    {getHighestDiscount(test.pricing)}% OFF
-                  </Badge>
-                )}
-              </div>
-            </div>
-            
-            <div className="text-xs text-gray-500">
-              Available at {test.pricing.length} center{test.pricing.length > 1 ? 's' : ''}
-            </div>
-          </div>
-        )}
-
         <div className="flex items-center justify-between mt-4 pt-4 border-t">
           <div className="flex items-center space-x-4">
             {test.is_fasting_required && (
@@ -209,7 +169,7 @@ export const EnhancedLabTestList: React.FC<EnhancedLabTestListProps> = ({
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 {categories?.map((category: any) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.icon} {category.name_en}
@@ -223,7 +183,7 @@ export const EnhancedLabTestList: React.FC<EnhancedLabTestListProps> = ({
                 <SelectValue placeholder="All Centers" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Centers</SelectItem>
+                <SelectItem value="all">All Centers</SelectItem>
                 {centers?.map((center: any) => (
                   <SelectItem key={center.id} value={center.id}>
                     {center.name_en}

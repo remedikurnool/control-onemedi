@@ -125,7 +125,7 @@ export const EnhancedLabTestForm: React.FC<EnhancedLabTestFormProps> = ({
       const formData = {
         ...data,
         image_url: imageUrl,
-        parameters: JSON.stringify(parameters)
+        parameters: parameters
       };
 
       await onSubmit(formData);
@@ -215,6 +215,7 @@ export const EnhancedLabTestForm: React.FC<EnhancedLabTestFormProps> = ({
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="none">No Category</SelectItem>
                       {categories?.map((category: any) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name_en}
@@ -449,8 +450,8 @@ export const EnhancedLabTestForm: React.FC<EnhancedLabTestFormProps> = ({
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Test Image</h3>
                 <EnhancedImageUpload
-                  value={imageUrl}
-                  onChange={setImageUrl}
+                  onImageUpload={setImageUrl}
+                  currentImage={imageUrl}
                   className="max-w-md"
                 />
               </div>

@@ -127,7 +127,7 @@ export const EnhancedScanForm: React.FC<EnhancedScanFormProps> = ({
     const formData = {
       ...data,
       image_url: imageUrl,
-      parameters: JSON.stringify(parameters)
+      parameters: parameters
     };
 
     await onSubmit(formData);
@@ -188,6 +188,7 @@ export const EnhancedScanForm: React.FC<EnhancedScanFormProps> = ({
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">No Category</SelectItem>
                   {categories?.map((category: any) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.icon} {category.name_en}
@@ -491,8 +492,8 @@ export const EnhancedScanForm: React.FC<EnhancedScanFormProps> = ({
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Scan Image</h3>
             <EnhancedImageUpload
-              value={imageUrl}
-              onChange={setImageUrl}
+              onImageUpload={setImageUrl}
+              currentImage={imageUrl}
               className="max-w-md"
             />
           </div>
