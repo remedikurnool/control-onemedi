@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Heart, Eye, EyeOff, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import UserSeeder from '@/components/admin/UserSeeder';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -17,6 +18,7 @@ const LoginForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [loginAttempts, setLoginAttempts] = useState(0);
+  const [showSeeder, setShowSeeder] = useState(false);
   
   const { signIn, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -68,6 +70,10 @@ const LoginForm = () => {
         setLoginAttempts(prev => prev + 1);
         if (error.message?.includes('Invalid login credentials')) {
           setError('Invalid email or password. Please try again.');
+          // Show seeder if it's a demo credential attempt
+          if (email.includes('onemedi.com') || email.includes('remedikurnool@gmail.com')) {
+            setShowSeeder(true);
+          }
         } else if (error.message?.includes('admin access')) {
           setError('You do not have admin access to this system.');
         } else {
@@ -86,6 +92,23 @@ const LoginForm = () => {
   };
 
   const isFormDisabled = isSubmitting || loginAttempts >= 5;
+
+  if (showSeeder) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="space-y-4">
+          <UserSeeder />
+          <Button 
+            variant="outline" 
+            onClick={() => setShowSeeder(false)}
+            className="w-full"
+          >
+            Back to Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
@@ -179,18 +202,19 @@ const LoginForm = () => {
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
             <h3 className="font-semibold text-sm mb-2">Demo Credentials:</h3>
             <div className="text-xs space-y-1">
+              <p><strong>Your Admin:</strong> remedikurnool@gmail.com</p>
               <p><strong>Super Admin:</strong> superadmin@onemedi.com</p>
               <p><strong>Admin:</strong> admin@onemedi.com</p>
               <p><strong>Manager:</strong> manager@onemedi.com</p>
-              <p className="mt-2"><strong>Password:</strong> SecurePass123!</p>
+              <p className="mt-2"><strong>Passwords:</strong> AdmiN456! or SecurePass123!</p>
             </div>
             <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
               <div className="flex items-center gap-2 text-yellow-700 mb-1">
                 <AlertTriangle className="h-3 w-3" />
-                <span className="font-semibold">Security Notice</span>
+                <span className="font-semibold">First Time Setup</span>
               </div>
               <p className="text-yellow-600">
-                These are demo credentials. In production, use strong passwords with uppercase, lowercase, numbers, and special characters.
+                If you can't login, click the "Create Admin Users" button above to set up demo accounts.
               </p>
             </div>
           </div>
