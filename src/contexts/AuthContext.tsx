@@ -9,7 +9,7 @@ interface UserProfile {
   email: string;
   full_name: string;
   phone?: string;
-  role: 'super_admin' | 'admin' | 'manager' | 'pharmacist' | 'doctor' | 'lab_technician' | 'user';
+  role: 'admin' | 'pharmacist' | 'doctor' | 'lab_technician' | 'user';
   created_at: string;
   updated_at: string;
 }
@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
 
   const isAuthenticated = !!user && !!session;
-  const isAdmin = userProfile?.role ? ['super_admin', 'admin', 'manager'].includes(userProfile.role) : false;
+  const isAdmin = userProfile?.role === 'admin';
 
   // Fetch user profile
   const fetchUserProfile = async (userId: string) => {
@@ -181,7 +181,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (data.user) {
         // Check if user has admin access
         const profile = await fetchUserProfile(data.user.id);
-        if (!profile || !['super_admin', 'admin', 'manager'].includes(profile.role)) {
+        if (!profile || profile.role !== 'admin') {
           await supabase.auth.signOut({ scope: 'global' });
           return { error: { message: 'You do not have admin access' } };
         }
