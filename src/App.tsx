@@ -3,7 +3,11 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import Index from "./pages/Index";
+import LoginPage from "./pages/LoginPage";
+import UnauthorizedPage from "./pages/UnauthorizedPage";
 import AdminLayout from "./components/admin/AdminLayout";
 import Dashboard from "./components/admin/Dashboard";
 import UsersPage from "./pages/admin/UsersPage";
@@ -45,47 +49,58 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="users" element={<UsersPage />} />
-            <Route path="inventory" element={<InventoryPage />} />
-            <Route path="orders" element={<OrdersPage />} />
-            <Route path="medicines" element={<MedicinesPage />} />
-            <Route path="enhanced-lab-tests" element={<EnhancedLabTestsPage />} />
-            <Route path="lab-tests" element={<EnhancedLabTestsPage />} />
-            <Route path="patients" element={<PatientPage />} />
-            <Route path="scans" element={<ScansPage />} />
-            <Route path="doctors" element={<DoctorsPage />} />
-            <Route path="surgery-opinion" element={<SurgeryOpinionPage />} />
-            <Route path="home-care" element={<HomeCareManagementPage />} />
-            <Route path="diabetes-care" element={<DiabetesCarePage />} />
-            <Route path="ambulance" element={<AmbulancePage />} />
-            <Route path="blood-bank" element={<BloodBankPage />} />
-            <Route path="blood-banks" element={<BloodBankPage />} />
-            <Route path="diet-guide" element={<DietGuidePage />} />
-            <Route path="hospital" element={<HospitalPage />} />
-            <Route path="hospitals" element={<HospitalPage />} />
-            <Route path="physiotherapy" element={<PhysiotherapyPage />} />
-            <Route path="locations" element={<LocationsPage />} />
-            <Route path="analytics" element={<AnalyticsPage />} />
-            <Route path="advanced-analytics" element={<AdvancedAnalyticsPage />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-            <Route path="chat" element={<ChatPage />} />
-            <Route path="seo" element={<SEOPage />} />
-            <Route path="layout-builder" element={<LayoutBuilderPage />} />
-            <Route path="pos" element={<POSPage />} />
-            <Route path="marketing" element={<MarketingPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/unauthorized" element={<UnauthorizedPage />} />
+            
+            {/* Protected Admin Routes */}
+            <Route path="/admin" element={
+              <AuthGuard requireAdmin>
+                <AdminLayout />
+              </AuthGuard>
+            }>
+              <Route index element={<Dashboard />} />
+              <Route path="users" element={<UsersPage />} />
+              <Route path="inventory" element={<InventoryPage />} />
+              <Route path="orders" element={<OrdersPage />} />
+              <Route path="medicines" element={<MedicinesPage />} />
+              <Route path="enhanced-lab-tests" element={<EnhancedLabTestsPage />} />
+              <Route path="lab-tests" element={<EnhancedLabTestsPage />} />
+              <Route path="patients" element={<PatientPage />} />
+              <Route path="scans" element={<ScansPage />} />
+              <Route path="doctors" element={<DoctorsPage />} />
+              <Route path="surgery-opinion" element={<SurgeryOpinionPage />} />
+              <Route path="home-care" element={<HomeCareManagementPage />} />
+              <Route path="diabetes-care" element={<DiabetesCarePage />} />
+              <Route path="ambulance" element={<AmbulancePage />} />
+              <Route path="blood-bank" element={<BloodBankPage />} />
+              <Route path="blood-banks" element={<BloodBankPage />} />
+              <Route path="diet-guide" element={<DietGuidePage />} />
+              <Route path="hospital" element={<HospitalPage />} />
+              <Route path="hospitals" element={<HospitalPage />} />
+              <Route path="physiotherapy" element={<PhysiotherapyPage />} />
+              <Route path="locations" element={<LocationsPage />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="advanced-analytics" element={<AdvancedAnalyticsPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="chat" element={<ChatPage />} />
+              <Route path="seo" element={<SEOPage />} />
+              <Route path="layout-builder" element={<LayoutBuilderPage />} />
+              <Route path="pos" element={<POSPage />} />
+              <Route path="marketing" element={<MarketingPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
