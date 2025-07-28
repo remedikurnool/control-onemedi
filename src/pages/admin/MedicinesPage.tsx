@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +21,7 @@ import { toast } from 'sonner';
 import { CSVImportExport } from '@/components/ui/csv-import-export';
 import { BulkOperations } from '@/components/ui/bulk-operations';
 
+// Updated Medicine interface to match the actual database schema
 interface Medicine {
   id: string;
   created_at: string;
@@ -87,6 +89,13 @@ const MedicinesPage = () => {
     }
   };
 
+  const handleFileImport = (file: File) => {
+    // This function handles file uploads for the BulkOperations component
+    console.log('File import:', file);
+    // You would implement CSV parsing here
+    toast.info('File import functionality needs to be implemented');
+  };
+
   const handleExport = (data: Medicine[]) => {
     const csvData = [
       Object.keys(data[0] || {}),
@@ -151,8 +160,8 @@ const MedicinesPage = () => {
         </Button>
       </div>
 
+      {/* Stats cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Stats cards */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Medicines</CardTitle>
@@ -209,7 +218,7 @@ const MedicinesPage = () => {
         onBulkActivate={(items) => handleBulkUpdate(items, { is_active: true })}
         onBulkDeactivate={(items) => handleBulkUpdate(items, { is_active: false })}
         onExport={handleExport}
-        onImport={handleImport}
+        onImport={handleFileImport}
       />
 
       {/* CSV Import/Export */}
@@ -250,3 +259,4 @@ const MedicinesPage = () => {
 };
 
 export default MedicinesPage;
+
