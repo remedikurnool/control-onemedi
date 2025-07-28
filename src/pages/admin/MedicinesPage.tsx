@@ -1,383 +1,263 @@
-
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { BulkOperations } from '@/components/ui/bulk-operations';
-import { CSVImportExport } from '@/components/ui/csv-import-export';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent
+} from "@/components/ui/dialog"
+import { Plus, Package, CheckCircle, AlertTriangle, Layers } from 'lucide-react';
 import { EnhancedMedicineForm } from '@/components/admin/forms/EnhancedMedicineForm';
-import { DeleteConfirmation, BulkDeleteConfirmation } from '@/components/ui/confirmation-dialog';
-import { Plus, Search, Filter, Package, Edit, Trash2, Power, PowerOff, Download, Upload, Mail } from 'lucide-react';
 import { toast } from 'sonner';
+import { CSVImportExport } from '@/components/common/CSVImportExport';
+import { BulkOperations } from '@/components/common/BulkOperations';
 
 interface Medicine {
   id: string;
-  name: string;
-  category: string;
-  stock: number;
-  price: number;
-  status: 'In Stock' | 'Low Stock' | 'Out of Stock';
+  created_at: string;
+  created_by: string;
+  name_en: string;
+  name_te: string;
+  generic_name: string;
+  brand_name: string | null;
   manufacturer: string;
-  expiry: string;
+  category_id: string;
+  description_en: string | null;
+  description_te: string | null;
+  price: number;
+  discount_price: number | null;
+  prescription_required: boolean;
   is_active: boolean;
+  image_url: string | null;
+  composition: string | null;
+  dosage_form: string | null;
+  strength: string | null;
+  pack_size: string | null;
+  storage_instructions: string | null;
+  side_effects: string | null;
+  contraindications: string | null;
+  drug_interactions: string | null;
+  pregnancy_category: string | null;
+  expiry_date: string | null;
+  batch_number: string | null;
+  hsn_code: string | null;
+  gst_percentage: number;
+  updated_at: string;
+  updated_by: string | null;
 }
 
-const MedicinesPage = () => {
-  const [medicines, setMedicines] = useState<Medicine[]>([
-    {
-      id: '1',
-      name: 'Paracetamol 500mg',
-      category: 'Pain Relief',
-      stock: 150,
-      price: 25.50,
-      status: 'In Stock',
-      manufacturer: 'ABC Pharma',
-      expiry: '2025-12-31',
-      is_active: true
-    },
-    {
-      id: '2',
-      name: 'Amoxicillin 250mg',
-      category: 'Antibiotic',
-      stock: 75,
-      price: 45.00,
-      status: 'Low Stock',
-      manufacturer: 'XYZ Pharma',
-      expiry: '2025-06-30',
-      is_active: true
-    },
-    {
-      id: '3',
-      name: 'Insulin Injection',
-      category: 'Diabetes',
-      stock: 0,
-      price: 120.00,
-      status: 'Out of Stock',
-      manufacturer: 'MediCorp',
-      expiry: '2025-03-15',
-      is_active: false
+export const MedicinesPage = () => {
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
+  const queryClient = useQueryClient();
+
+  const { data: medicines, refetch } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*');
+      if (error) throw error;
+      return data as Medicine[];
     }
-  ]);
+  });
 
-  const [selectedMedicines, setSelectedMedicines] = useState<Medicine[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [showBulkOperations, setShowBulkOperations] = useState(false);
-  const [showImportExport, setShowImportExport] = useState(false);
-  const [editingMedicine, setEditingMedicine] = useState<Medicine | null>(null);
-
-  const filteredMedicines = medicines.filter(medicine =>
-    medicine.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    medicine.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    medicine.manufacturer.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'In Stock': return 'bg-green-100 text-green-800';
-      case 'Low Stock': return 'bg-yellow-100 text-yellow-800';
-      case 'Out of Stock': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const handleImport = async (data: Medicine[]) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .insert(data);
+      
+      if (error) throw error;
+      
+      toast.success(`Successfully imported ${data.length} medicines`);
+      refetch();
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error('Failed to import medicines');
     }
   };
 
-  const handleEdit = (medicine: Medicine) => {
-    setEditingMedicine(medicine);
-    setShowForm(true);
+  const handleExport = (data: Medicine[]) => {
+    const csvData = [
+      Object.keys(data[0] || {}),
+      ...data.map(item => Object.values(item))
+    ];
+
+    const csvContent = "data:text/csv;charset=utf-8," + csvData.map(e => e.join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "medicines.csv");
+    document.body.appendChild(link);
+    link.click();
   };
 
-  const handleDelete = (medicine: Medicine) => {
-    setMedicines(prev => prev.filter(m => m.id !== medicine.id));
-    toast.success('Medicine deleted successfully');
-  };
+  const handleBulkUpdate = async (items: Medicine[], update: Partial<Medicine>) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update(update)
+        .in('id', items.map(item => item.id));
 
-  const handleBulkEdit = async (items: Medicine[]) => {
-    toast.success(`Bulk edit initiated for ${items.length} medicines`);
+      if (error) throw error;
+
+      toast.success(`Successfully updated ${items.length} medicines`);
+      refetch();
+    } catch (error) {
+      console.error('Bulk update error:', error);
+      toast.error('Failed to update medicines');
+    }
   };
 
   const handleBulkDelete = async (items: Medicine[]) => {
-    const itemIds = items.map(item => item.id);
-    setMedicines(prev => prev.filter(m => !itemIds.includes(m.id)));
-    toast.success(`${items.length} medicines deleted successfully`);
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .in('id', items.map(item => item.id));
+
+      if (error) throw error;
+
+      toast.success(`Successfully deleted ${items.length} medicines`);
+      refetch();
+    } catch (error) {
+      console.error('Bulk delete error:', error);
+      toast.error('Failed to delete medicines');
+    }
   };
-
-  const handleBulkActivate = async (items: Medicine[]) => {
-    const itemIds = items.map(item => item.id);
-    setMedicines(prev => prev.map(m => 
-      itemIds.includes(m.id) ? { ...m, is_active: true } : m
-    ));
-    toast.success(`${items.length} medicines activated successfully`);
-  };
-
-  const handleBulkDeactivate = async (items: Medicine[]) => {
-    const itemIds = items.map(item => item.id);
-    setMedicines(prev => prev.map(m => 
-      itemIds.includes(m.id) ? { ...m, is_active: false } : m
-    ));
-    toast.success(`${items.length} medicines deactivated successfully`);
-  };
-
-  const handleExport = async (items: Medicine[]) => {
-    const csvContent = [
-      ['Name', 'Category', 'Stock', 'Price', 'Status', 'Manufacturer', 'Expiry'],
-      ...items.map(item => [
-        item.name,
-        item.category,
-        item.stock.toString(),
-        item.price.toString(),
-        item.status,
-        item.manufacturer,
-        item.expiry
-      ])
-    ].map(row => row.join(',')).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `medicines_export_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImport = async (file: File) => {
-    // Mock import functionality
-    toast.success('Import functionality will be implemented with real backend');
-  };
-
-  const csvColumns = [
-    { key: 'name' as keyof Medicine, label: 'Name', required: true, type: 'string' as const },
-    { key: 'category' as keyof Medicine, label: 'Category', required: true, type: 'string' as const },
-    { key: 'stock' as keyof Medicine, label: 'Stock', required: true, type: 'number' as const },
-    { key: 'price' as keyof Medicine, label: 'Price', required: true, type: 'number' as const },
-    { key: 'manufacturer' as keyof Medicine, label: 'Manufacturer', required: true, type: 'string' as const },
-    { key: 'expiry' as keyof Medicine, label: 'Expiry', required: true, type: 'date' as const },
-  ];
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Medicines Management</h1>
-          <p className="text-muted-foreground">Manage your medicine inventory and stock levels</p>
+          <h1 className="text-2xl font-bold">Medicines Management</h1>
+          <p className="text-muted-foreground">
+            Manage your medicine inventory, pricing, and product information
+          </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowImportExport(true)}>
-            <Upload className="w-4 h-4 mr-2" />
-            Import/Export
-          </Button>
-          <Button variant="outline" onClick={() => setShowBulkOperations(true)}>
-            <Package className="w-4 h-4 mr-2" />
-            Bulk Operations
-          </Button>
-          <Button onClick={() => setShowForm(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Medicine
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex gap-4 items-center">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search medicines..." 
-            className="pl-10"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <Button variant="outline">
-          <Filter className="w-4 h-4 mr-2" />
-          Filter
+        <Button onClick={() => setIsFormOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Medicine
         </Button>
       </div>
 
-      {/* Selection Summary */}
-      {selectedMedicines.length > 0 && (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Stats cards */}
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <Badge variant="secondary">
-                {selectedMedicines.length} selected
-              </Badge>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkEdit(selectedMedicines)}
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkActivate(selectedMedicines)}
-                >
-                  <Power className="w-4 h-4 mr-2" />
-                  Activate
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkDeactivate(selectedMedicines)}
-                >
-                  <PowerOff className="w-4 h-4 mr-2" />
-                  Deactivate
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleExport(selectedMedicines)}
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export
-                </Button>
-                <BulkDeleteConfirmation
-                  trigger={
-                    <Button variant="destructive" size="sm">
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </Button>
-                  }
-                  count={selectedMedicines.length}
-                  onConfirm={() => handleBulkDelete(selectedMedicines)}
-                />
-              </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Medicines</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{medicines?.length || 0}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Medicines</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {medicines?.filter(m => m.is_active).length || 0}
             </div>
           </CardContent>
         </Card>
-      )}
 
-      <div className="grid gap-4">
-        {filteredMedicines.map((medicine) => (
-          <Card key={medicine.id}>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedMedicines.some(m => m.id === medicine.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedMedicines(prev => [...prev, medicine]);
-                        } else {
-                          setSelectedMedicines(prev => prev.filter(m => m.id !== medicine.id));
-                        }
-                      }}
-                      className="mr-2"
-                    />
-                    <Package className="w-5 h-5 text-primary" />
-                    <h3 className="font-semibold text-lg">{medicine.name}</h3>
-                    <Badge className={getStatusColor(medicine.status)}>
-                      {medicine.status}
-                    </Badge>
-                    {!medicine.is_active && (
-                      <Badge variant="destructive">Inactive</Badge>
-                    )}
-                  </div>
-                  <p className="text-muted-foreground mb-2">{medicine.category}</p>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium">Stock:</span>
-                      <span className="ml-2">{medicine.stock} units</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Price:</span>
-                      <span className="ml-2">₹{medicine.price}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Manufacturer:</span>
-                      <span className="ml-2">{medicine.manufacturer}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Expiry:</span>
-                      <span className="ml-2">{medicine.expiry}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => handleEdit(medicine)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <DeleteConfirmation
-                    trigger={
-                      <Button size="sm" variant="outline">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    }
-                    itemName={medicine.name}
-                    onConfirm={() => handleDelete(medicine)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Prescription Required</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {medicines?.filter(m => m.prescription_required).length || 0}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Categories</CardTitle>
+            <Layers className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {new Set(medicines?.map(m => m.category_id)).size || 0}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Medicine Form Dialog */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingMedicine ? 'Edit Medicine' : 'Add New Medicine'}
-            </DialogTitle>
-          </DialogHeader>
-          <EnhancedMedicineForm
-            medicine={editingMedicine}
-            onClose={() => {
-              setShowForm(false);
-              setEditingMedicine(null);
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Bulk Operations Dialog */}
-      <Dialog open={showBulkOperations} onOpenChange={setShowBulkOperations}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Bulk Operations</DialogTitle>
-          </DialogHeader>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Medicine Inventory</CardTitle>
+            <div className="flex items-center gap-2">
+              <CSVImportExport
+                data={medicines || []}
+                onImport={handleImport}
+                onExport={handleExport}
+                filename="medicines"
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
           <BulkOperations
-            selectedItems={selectedMedicines}
-            onSelectionChange={setSelectedMedicines}
-            onBulkEdit={handleBulkEdit}
+            data={medicines || []}
+            onBulkUpdate={handleBulkUpdate}
             onBulkDelete={handleBulkDelete}
-            onBulkActivate={handleBulkActivate}
-            onBulkDeactivate={handleBulkDeactivate}
-            onExport={handleExport}
-            onImport={handleImport}
+            columns={[
+              { key: 'name_en', label: 'Name (English)' },
+              { key: 'name_te', label: 'Name (Telugu)' },
+              { key: 'generic_name', label: 'Generic Name' },
+              { key: 'manufacturer', label: 'Manufacturer' },
+              { key: 'price', label: 'Price' },
+              { key: 'is_active', label: 'Status' }
+            ]}
+            actions={[
+              {
+                label: 'Activate',
+                action: (items) => handleBulkUpdate(items, { is_active: true }),
+                variant: 'default'
+              },
+              {
+                label: 'Deactivate',
+                action: (items) => handleBulkUpdate(items, { is_active: false }),
+                variant: 'secondary'
+              },
+              {
+                label: 'Mark as Prescription Required',
+                action: (items) => handleBulkUpdate(items, { prescription_required: true }),
+                variant: 'outline'
+              }
+            ]}
           />
-        </DialogContent>
-      </Dialog>
+        </CardContent>
+      </Card>
 
-      {/* Import/Export Dialog */}
-      <Dialog open={showImportExport} onOpenChange={setShowImportExport}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Import/Export Medicines</DialogTitle>
-          </DialogHeader>
-          <CSVImportExport
-            data={medicines}
-            onImport={handleImport}
-            onExport={handleExport}
-            columns={csvColumns}
-            templateName="medicines"
+      {/* Dialog for adding/editing medicines */}
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <EnhancedMedicineForm
+            medicine={selectedMedicine}
+            onClose={() => {
+              setIsFormOpen(false);
+              setSelectedMedicine(null);
+            }}
           />
         </DialogContent>
       </Dialog>
     </div>
   );
 };
-
-export default MedicinesPage;

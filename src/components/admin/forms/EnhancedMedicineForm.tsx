@@ -70,9 +70,34 @@ export const EnhancedMedicineForm: React.FC<EnhancedMedicineFormProps> = ({
 
   const medicinesMutation = useMutation({
     mutationFn: async (data: MedicineFormData) => {
+      // Ensure required fields are present and create a clean payload
       const payload = {
-        ...data,
-        image_url: imageUrl,
+        name_en: data.name_en,
+        name_te: data.name_te,
+        generic_name: data.generic_name,
+        brand_name: data.brand_name || null,
+        manufacturer: data.manufacturer,
+        category_id: data.category_id,
+        description_en: data.description_en || null,
+        description_te: data.description_te || null,
+        price: data.price,
+        discount_price: data.discount_price || null,
+        prescription_required: data.prescription_required,
+        is_active: data.is_active,
+        image_url: imageUrl || null,
+        composition: data.composition || null,
+        dosage_form: data.dosage_form || null,
+        strength: data.strength || null,
+        pack_size: data.pack_size || null,
+        storage_instructions: data.storage_instructions || null,
+        side_effects: data.side_effects || null,
+        contraindications: data.contraindications || null,
+        drug_interactions: data.drug_interactions || null,
+        pregnancy_category: data.pregnancy_category || null,
+        expiry_date: data.expiry_date || null,
+        batch_number: data.batch_number || null,
+        hsn_code: data.hsn_code || null,
+        gst_percentage: data.gst_percentage,
         updated_at: new Date().toISOString()
       };
 
@@ -101,8 +126,7 @@ export const EnhancedMedicineForm: React.FC<EnhancedMedicineFormProps> = ({
   });
 
   const handleSubmit = async (data: MedicineFormData) => {
-    const submitData = { ...data, image_url: imageUrl };
-    await medicinesMutation.mutateAsync(submitData);
+    await medicinesMutation.mutateAsync(data);
   };
 
   const handleImageUpload = (urls: string[]) => {
