@@ -1,54 +1,31 @@
 
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EnhancedForm, FormSection } from '@/components/ui/enhanced-form';
+import { FormInput, FormSelect, FormTextarea, FormSwitch } from '@/components/ui/form-validation';
 import { EnhancedImageUpload } from '@/components/common/EnhancedImageUpload';
 import { toast } from 'sonner';
+import { medicineSchema, MedicineFormData } from '@/lib/validation';
 
 // Mock categories since the medicine_categories table doesn't exist in the schema
 const mockCategories = [
-  { id: '1', name_en: 'Pain Relief', name_te: 'నొప్పి ఎపట్టిల్లేందాయ' },
-  { id: '2', name_en: 'Antibiotics', name_te: 'యాంటీబయాటిక్స్' },
-  { id: '3', name_en: 'Vitamins', name_te: 'విటమిన్లు' },
-  { id: '4', name_en: 'Diabetes Care', name_te: 'డయాబెటిస్ కేర్' }
+  { value: '1', label: 'Pain Relief - నొప్పి ఎపట్టిల్లేందాయ' },
+  { value: '2', label: 'Antibiotics - యాంటీబయాటిక్స్' },
+  { value: '3', label: 'Vitamins - విటమిన్లు' },
+  { value: '4', label: 'Diabetes Care - డయాబెటిస్ కేర్' },
+  { value: '5', label: 'Heart Care - హార్ట్ కేర్' },
+  { value: '6', label: 'Respiratory - శ్వాసకోశ' }
 ];
 
-interface MedicineFormData {
-  name_en: string;
-  name_te: string;
-  generic_name: string;
-  brand_name: string;
-  manufacturer: string;
-  category_id: string;
-  description_en: string;
-  description_te: string;
-  price: number;
-  discount_price: number;
-  prescription_required: boolean;
-  is_active: boolean;
-  image_url: string;
-  composition: string;
-  dosage_form: string;
-  strength: string;
-  pack_size: string;
-  storage_instructions: string;
-  side_effects: string;
-  contraindications: string;
-  drug_interactions: string;
-  pregnancy_category: string;
-  expiry_date: string;
-  batch_number: string;
-  hsn_code: string;
-  gst_percentage: number;
-}
+const pregnancyCategoryOptions = [
+  { value: 'A', label: 'Category A - Safe' },
+  { value: 'B', label: 'Category B - Probably Safe' },
+  { value: 'C', label: 'Category C - Use with Caution' },
+  { value: 'D', label: 'Category D - Potential Risk' },
+  { value: 'X', label: 'Category X - Contraindicated' }
+];
 
 interface EnhancedMedicineFormProps {
   medicine?: any;
@@ -59,54 +36,37 @@ export const EnhancedMedicineForm: React.FC<EnhancedMedicineFormProps> = ({
   medicine,
   onClose
 }) => {
-  const [imageUrl, setImageUrl] = useState<string>('');
+  const [imageUrl, setImageUrl] = useState<string>(medicine?.image_url || '');
   const queryClient = useQueryClient();
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    setValue,
-    formState: { errors }
-  } = useForm<MedicineFormData>({
-    defaultValues: {
-      name_en: '',
-      name_te: '',
-      generic_name: '',
-      brand_name: '',
-      manufacturer: '',
-      category_id: '',
-      description_en: '',
-      description_te: '',
-      price: 0,
-      discount_price: 0,
-      prescription_required: false,
-      is_active: true,
-      image_url: '',
-      composition: '',
-      dosage_form: '',
-      strength: '',
-      pack_size: '',
-      storage_instructions: '',
-      side_effects: '',
-      contraindications: '',
-      drug_interactions: '',
-      pregnancy_category: '',
-      expiry_date: '',
-      batch_number: '',
-      hsn_code: '',
-      gst_percentage: 18
-    }
-  });
-
-  useEffect(() => {
-    if (medicine) {
-      Object.keys(medicine).forEach(key => {
-        setValue(key as keyof MedicineFormData, medicine[key]);
-      });
-      setImageUrl(medicine.image_url || '');
-    }
-  }, [medicine, setValue]);
+  const defaultValues: Partial<MedicineFormData> = {
+    name_en: medicine?.name_en || '',
+    name_te: medicine?.name_te || '',
+    generic_name: medicine?.generic_name || '',
+    brand_name: medicine?.brand_name || '',
+    manufacturer: medicine?.manufacturer || '',
+    category_id: medicine?.category_id || '',
+    description_en: medicine?.description_en || '',
+    description_te: medicine?.description_te || '',
+    price: medicine?.price || 0,
+    discount_price: medicine?.discount_price || 0,
+    prescription_required: medicine?.prescription_required || false,
+    is_active: medicine?.is_active ?? true,
+    image_url: imageUrl,
+    composition: medicine?.composition || '',
+    dosage_form: medicine?.dosage_form || '',
+    strength: medicine?.strength || '',
+    pack_size: medicine?.pack_size || '',
+    storage_instructions: medicine?.storage_instructions || '',
+    side_effects: medicine?.side_effects || '',
+    contraindications: medicine?.contraindications || '',
+    drug_interactions: medicine?.drug_interactions || '',
+    pregnancy_category: medicine?.pregnancy_category || '',
+    expiry_date: medicine?.expiry_date || '',
+    batch_number: medicine?.batch_number || '',
+    hsn_code: medicine?.hsn_code || '',
+    gst_percentage: medicine?.gst_percentage || 18
+  };
 
   const medicinesMutation = useMutation({
     mutationFn: async (data: MedicineFormData) => {
@@ -140,8 +100,9 @@ export const EnhancedMedicineForm: React.FC<EnhancedMedicineFormProps> = ({
     }
   });
 
-  const onSubmit = (data: MedicineFormData) => {
-    medicinesMutation.mutate(data);
+  const handleSubmit = async (data: MedicineFormData) => {
+    const submitData = { ...data, image_url: imageUrl };
+    await medicinesMutation.mutateAsync(submitData);
   };
 
   const handleImageUpload = (urls: string[]) => {
@@ -150,339 +111,249 @@ export const EnhancedMedicineForm: React.FC<EnhancedMedicineFormProps> = ({
     }
   };
 
-  // Calculate discount price
-  const watchedPrice = watch('price');
-  const watchedDiscountPrice = watch('discount_price');
-
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <EnhancedForm
+      schema={medicineSchema}
+      defaultValues={defaultValues}
+      onSubmit={handleSubmit}
+      onCancel={onClose}
+      title={medicine ? 'Edit Medicine' : 'Add New Medicine'}
+      description="Enter the medicine details below. All required fields are marked with *"
+      isSubmitting={medicinesMutation.isPending}
+      autoSave={true}
+      autoSaveInterval={10000}
+      confirmBeforeSubmit={!medicine}
+      className="space-y-8"
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Basic Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="name_en">Medicine Name (English) *</Label>
-              <Input
-                id="name_en"
-                {...register('name_en', { required: 'Medicine name is required' })}
-                placeholder="Enter medicine name in English"
-              />
-              {errors.name_en && <p className="text-sm text-red-600">{errors.name_en.message}</p>}
-            </div>
+        <FormSection 
+          title="Basic Information"
+          description="Essential medicine details"
+        >
+          <div className="grid grid-cols-1 gap-4">
+            <FormInput
+              name="name_en"
+              label="Medicine Name (English)"
+              placeholder="Enter medicine name in English"
+              required
+            />
 
-            <div>
-              <Label htmlFor="name_te">Medicine Name (Telugu) *</Label>
-              <Input
-                id="name_te"
-                {...register('name_te', { required: 'Telugu name is required' })}
-                placeholder="Enter medicine name in Telugu"
-              />
-              {errors.name_te && <p className="text-sm text-red-600">{errors.name_te.message}</p>}
-            </div>
+            <FormInput
+              name="name_te"
+              label="Medicine Name (Telugu)"
+              placeholder="Enter medicine name in Telugu"
+              required
+            />
 
-            <div>
-              <Label htmlFor="generic_name">Generic Name *</Label>
-              <Input
-                id="generic_name"
-                {...register('generic_name', { required: 'Generic name is required' })}
-                placeholder="Enter generic name"
-              />
-              {errors.generic_name && <p className="text-sm text-red-600">{errors.generic_name.message}</p>}
-            </div>
+            <FormInput
+              name="generic_name"
+              label="Generic Name"
+              placeholder="Enter generic name"
+              required
+            />
 
-            <div>
-              <Label htmlFor="brand_name">Brand Name</Label>
-              <Input
-                id="brand_name"
-                {...register('brand_name')}
-                placeholder="Enter brand name"
-              />
-            </div>
+            <FormInput
+              name="brand_name"
+              label="Brand Name"
+              placeholder="Enter brand name"
+            />
 
-            <div>
-              <Label htmlFor="manufacturer">Manufacturer *</Label>
-              <Input
-                id="manufacturer"
-                {...register('manufacturer', { required: 'Manufacturer is required' })}
-                placeholder="Enter manufacturer name"
-              />
-              {errors.manufacturer && <p className="text-sm text-red-600">{errors.manufacturer.message}</p>}
-            </div>
+            <FormInput
+              name="manufacturer"
+              label="Manufacturer"
+              placeholder="Enter manufacturer name"
+              required
+            />
 
-            <div>
-              <Label htmlFor="category_id">Category *</Label>
-              <Select onValueChange={(value) => setValue('category_id', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockCategories.map(category => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name_en} - {category.name_te}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.category_id && <p className="text-sm text-red-600">{errors.category_id.message}</p>}
-            </div>
+            <FormSelect
+              name="category_id"
+              label="Category"
+              options={mockCategories}
+              placeholder="Select category"
+              required
+            />
+          </div>
+        </FormSection>
 
-            <div>
-              <Label htmlFor="description_en">Description (English)</Label>
-              <Textarea
-                id="description_en"
-                {...register('description_en')}
-                placeholder="Enter medicine description in English"
-                rows={3}
-              />
-            </div>
+        {/* Pricing & Availability */}
+        <FormSection 
+          title="Pricing & Availability"
+          description="Price and stock information"
+        >
+          <div className="grid grid-cols-2 gap-4">
+            <FormInput
+              name="price"
+              label="Price (₹)"
+              type="number"
+              placeholder="0.00"
+              required
+            />
 
-            <div>
-              <Label htmlFor="description_te">Description (Telugu)</Label>
-              <Textarea
-                id="description_te"
-                {...register('description_te')}
-                placeholder="Enter medicine description in Telugu"
-                rows={3}
-              />
-            </div>
-          </CardContent>
-        </Card>
+            <FormInput
+              name="discount_price"
+              label="Discount Price (₹)"
+              type="number"
+              placeholder="0.00"
+            />
 
-        {/* Pricing Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Pricing & Availability</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="price">Price (₹) *</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  {...register('price', { required: 'Price is required', min: 0 })}
-                  placeholder="0.00"
-                />
-                {errors.price && <p className="text-sm text-red-600">{errors.price.message}</p>}
-              </div>
+            <FormInput
+              name="hsn_code"
+              label="HSN Code"
+              placeholder="Enter HSN code"
+            />
 
-              <div>
-                <Label htmlFor="discount_price">Discount Price (₹)</Label>
-                <Input
-                  id="discount_price"
-                  type="number"
-                  step="0.01"
-                  {...register('discount_price', { min: 0 })}
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
+            <FormInput
+              name="gst_percentage"
+              label="GST (%)"
+              type="number"
+              placeholder="18"
+            />
+          </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="hsn_code">HSN Code</Label>
-                <Input
-                  id="hsn_code"
-                  {...register('hsn_code')}
-                  placeholder="Enter HSN code"
-                />
-              </div>
+          <div className="flex items-center gap-8">
+            <FormSwitch
+              name="prescription_required"
+              label="Prescription Required"
+            />
 
-              <div>
-                <Label htmlFor="gst_percentage">GST (%)</Label>
-                <Input
-                  id="gst_percentage"
-                  type="number"
-                  {...register('gst_percentage')}
-                  placeholder="18"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="prescription_required"
-                  {...register('prescription_required')}
-                  onCheckedChange={(checked) => setValue('prescription_required', checked)}
-                />
-                <Label htmlFor="prescription_required">Prescription Required</Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="is_active"
-                  {...register('is_active')}
-                  onCheckedChange={(checked) => setValue('is_active', checked)}
-                />
-                <Label htmlFor="is_active">Active</Label>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <FormSwitch
+              name="is_active"
+              label="Active"
+            />
+          </div>
+        </FormSection>
       </div>
 
       {/* Medicine Image */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Medicine Image</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <EnhancedImageUpload
-            onUpload={handleImageUpload}
-            bucket="service-images"
-            folder="medicines"
-            maxFiles={1}
-            currentImages={imageUrl ? [imageUrl] : []}
+      <FormSection 
+        title="Medicine Image"
+        description="Upload medicine image"
+      >
+        <EnhancedImageUpload
+          onUpload={handleImageUpload}
+          bucket="service-images"
+          folder="medicines"
+          maxFiles={1}
+          currentImages={imageUrl ? [imageUrl] : []}
+        />
+      </FormSection>
+
+      {/* Descriptions */}
+      <FormSection 
+        title="Descriptions"
+        description="Medicine descriptions in both languages"
+      >
+        <div className="grid grid-cols-1 gap-4">
+          <FormTextarea
+            name="description_en"
+            label="Description (English)"
+            placeholder="Enter medicine description in English"
+            rows={3}
           />
-        </CardContent>
-      </Card>
 
-      {/* Detailed Information */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Product Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="composition">Composition</Label>
-              <Textarea
-                id="composition"
-                {...register('composition')}
-                placeholder="Enter medicine composition"
-                rows={3}
-              />
-            </div>
+          <FormTextarea
+            name="description_te"
+            label="Description (Telugu)"
+            placeholder="Enter medicine description in Telugu"
+            rows={3}
+          />
+        </div>
+      </FormSection>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="dosage_form">Dosage Form</Label>
-                <Input
-                  id="dosage_form"
-                  {...register('dosage_form')}
-                  placeholder="e.g., Tablet, Capsule, Syrup"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="strength">Strength</Label>
-                <Input
-                  id="strength"
-                  {...register('strength')}
-                  placeholder="e.g., 500mg, 10ml"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="pack_size">Pack Size</Label>
-              <Input
-                id="pack_size"
-                {...register('pack_size')}
-                placeholder="e.g., 10 tablets, 100ml bottle"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="storage_instructions">Storage Instructions</Label>
-              <Textarea
-                id="storage_instructions"
-                {...register('storage_instructions')}
-                placeholder="Enter storage instructions"
-                rows={2}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Medical Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="side_effects">Side Effects</Label>
-              <Textarea
-                id="side_effects"
-                {...register('side_effects')}
-                placeholder="List common side effects"
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="contraindications">Contraindications</Label>
-              <Textarea
-                id="contraindications"
-                {...register('contraindications')}
-                placeholder="List contraindications"
-                rows={2}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="drug_interactions">Drug Interactions</Label>
-              <Textarea
-                id="drug_interactions"
-                {...register('drug_interactions')}
-                placeholder="List drug interactions"
-                rows={2}
-              />
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Product Details */}
+        <FormSection 
+          title="Product Details"
+          description="Detailed product information"
+        >
+          <div className="grid grid-cols-1 gap-4">
+            <FormTextarea
+              name="composition"
+              label="Composition"
+              placeholder="Enter medicine composition"
+              rows={3}
+            />
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="pregnancy_category">Pregnancy Category</Label>
-                <Select onValueChange={(value) => setValue('pregnancy_category', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="A">Category A</SelectItem>
-                    <SelectItem value="B">Category B</SelectItem>
-                    <SelectItem value="C">Category C</SelectItem>
-                    <SelectItem value="D">Category D</SelectItem>
-                    <SelectItem value="X">Category X</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <FormInput
+                name="dosage_form"
+                label="Dosage Form"
+                placeholder="e.g., Tablet, Capsule, Syrup"
+              />
 
-              <div>
-                <Label htmlFor="expiry_date">Expiry Date</Label>
-                <Input
-                  id="expiry_date"
-                  type="date"
-                  {...register('expiry_date')}
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="batch_number">Batch Number</Label>
-              <Input
-                id="batch_number"
-                {...register('batch_number')}
-                placeholder="Enter batch number"
+              <FormInput
+                name="strength"
+                label="Strength"
+                placeholder="e.g., 500mg, 10ml"
               />
             </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Submit Buttons */}
-      <div className="flex justify-end space-x-4">
-        <Button type="button" variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={medicinesMutation.isPending}>
-          {medicinesMutation.isPending ? 'Saving...' : 'Save Medicine'}
-        </Button>
+            <FormInput
+              name="pack_size"
+              label="Pack Size"
+              placeholder="e.g., 10 tablets, 100ml bottle"
+            />
+
+            <FormTextarea
+              name="storage_instructions"
+              label="Storage Instructions"
+              placeholder="Enter storage instructions"
+              rows={2}
+            />
+          </div>
+        </FormSection>
+
+        {/* Medical Information */}
+        <FormSection 
+          title="Medical Information"
+          description="Important medical details"
+        >
+          <div className="grid grid-cols-1 gap-4">
+            <FormTextarea
+              name="side_effects"
+              label="Side Effects"
+              placeholder="List common side effects"
+              rows={3}
+            />
+
+            <FormTextarea
+              name="contraindications"
+              label="Contraindications"
+              placeholder="List contraindications"
+              rows={2}
+            />
+
+            <FormTextarea
+              name="drug_interactions"
+              label="Drug Interactions"
+              placeholder="List drug interactions"
+              rows={2}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormSelect
+                name="pregnancy_category"
+                label="Pregnancy Category"
+                options={pregnancyCategoryOptions}
+                placeholder="Select category"
+              />
+
+              <FormInput
+                name="expiry_date"
+                label="Expiry Date"
+                type="date"
+              />
+            </div>
+
+            <FormInput
+              name="batch_number"
+              label="Batch Number"
+              placeholder="Enter batch number"
+            />
+          </div>
+        </FormSection>
       </div>
-    </form>
+    </EnhancedForm>
   );
 };
