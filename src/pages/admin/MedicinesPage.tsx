@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,7 +20,7 @@ import { toast } from 'sonner';
 import { CSVImportExport } from '@/components/ui/csv-import-export';
 import { BulkOperations } from '@/components/ui/bulk-operations';
 
-// Updated Medicine interface to match the actual database schema
+// Medicine interface that matches the actual database schema
 interface Medicine {
   id: string;
   created_at: string;
@@ -259,4 +258,3 @@ const MedicinesPage = () => {
 };
 
 export default MedicinesPage;
-
