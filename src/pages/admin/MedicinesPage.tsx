@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,8 +17,8 @@ import {
 import { Plus, Package, CheckCircle, AlertTriangle, Layers } from 'lucide-react';
 import { EnhancedMedicineForm } from '@/components/admin/forms/EnhancedMedicineForm';
 import { toast } from 'sonner';
-import { CSVImportExport } from '@/components/common/CSVImportExport';
-import { BulkOperations } from '@/components/common/BulkOperations';
+import { CSVImportExport } from '@/components/ui/csv-import-export';
+import { BulkOperations } from '@/components/ui/bulk-operations';
 
 interface Medicine {
   id: string;
@@ -53,9 +54,10 @@ interface Medicine {
   updated_by: string | null;
 }
 
-export const MedicinesPage = () => {
+const MedicinesPage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
+  const [selectedItems, setSelectedItems] = useState<Medicine[]>([]);
   const queryClient = useQueryClient();
 
   const { data: medicines, refetch } = useQuery({
@@ -198,53 +200,38 @@ export const MedicinesPage = () => {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Medicine Inventory</CardTitle>
-            <div className="flex items-center gap-2">
-              <CSVImportExport
-                data={medicines || []}
-                onImport={handleImport}
-                onExport={handleExport}
-                filename="medicines"
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <BulkOperations
-            data={medicines || []}
-            onBulkUpdate={handleBulkUpdate}
-            onBulkDelete={handleBulkDelete}
-            columns={[
-              { key: 'name_en', label: 'Name (English)' },
-              { key: 'name_te', label: 'Name (Telugu)' },
-              { key: 'generic_name', label: 'Generic Name' },
-              { key: 'manufacturer', label: 'Manufacturer' },
-              { key: 'price', label: 'Price' },
-              { key: 'is_active', label: 'Status' }
-            ]}
-            actions={[
-              {
-                label: 'Activate',
-                action: (items) => handleBulkUpdate(items, { is_active: true }),
-                variant: 'default'
-              },
-              {
-                label: 'Deactivate',
-                action: (items) => handleBulkUpdate(items, { is_active: false }),
-                variant: 'secondary'
-              },
-              {
-                label: 'Mark as Prescription Required',
-                action: (items) => handleBulkUpdate(items, { prescription_required: true }),
-                variant: 'outline'
-              }
-            ]}
-          />
-        </CardContent>
-      </Card>
+      {/* Bulk Operations */}
+      <BulkOperations
+        selectedItems={selectedItems}
+        onSelectionChange={setSelectedItems}
+        onBulkEdit={(items) => handleBulkUpdate(items, {})}
+        onBulkDelete={handleBulkDelete}
+        onBulkActivate={(items) => handleBulkUpdate(items, { is_active: true })}
+        onBulkDeactivate={(items) => handleBulkUpdate(items, { is_active: false })}
+        onExport={handleExport}
+        onImport={handleImport}
+      />
+
+      {/* CSV Import/Export */}
+      <CSVImportExport
+        data={medicines || []}
+        onImport={handleImport}
+        onExport={handleExport}
+        columns={[
+          { key: 'name_en', label: 'Name (English)', required: true },
+          { key: 'name_te', label: 'Name (Telugu)', required: true },
+          { key: 'generic_name', label: 'Generic Name', required: true },
+          { key: 'brand_name', label: 'Brand Name' },
+          { key: 'manufacturer', label: 'Manufacturer', required: true },
+          { key: 'category_id', label: 'Category ID', required: true },
+          { key: 'price', label: 'Price', type: 'number', required: true },
+          { key: 'discount_price', label: 'Discount Price', type: 'number' },
+          { key: 'prescription_required', label: 'Prescription Required', type: 'boolean' },
+          { key: 'is_active', label: 'Active', type: 'boolean' },
+          { key: 'gst_percentage', label: 'GST %', type: 'number' }
+        ]}
+        templateName="medicines"
+      />
 
       {/* Dialog for adding/editing medicines */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
@@ -261,3 +248,5 @@ export const MedicinesPage = () => {
     </div>
   );
 };
+
+export default MedicinesPage;
