@@ -85,7 +85,7 @@ export const EnhancedMedicineForm: React.FC<EnhancedMedicineFormProps> = ({
       } else {
         const { error } = await supabase
           .from('products')
-          .insert([payload]);
+          .insert(payload);
         if (error) throw error;
       }
     },

@@ -333,7 +333,12 @@ export function BulkSelection<T>({
           id="select-all"
           checked={isAllSelected}
           ref={(el) => {
-            if (el) el.indeterminate = isPartiallySelected;
+            if (el) {
+              const input = el.querySelector('input') as HTMLInputElement;
+              if (input) {
+                input.indeterminate = isPartiallySelected;
+              }
+            }
           }}
           onCheckedChange={handleSelectAll}
         />

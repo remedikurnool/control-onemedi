@@ -14,7 +14,7 @@ interface FormFieldProps {
   name: string;
   label?: string;
   placeholder?: string;
-  type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url';
+  type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'date';
   required?: boolean;
   disabled?: boolean;
   className?: string;
