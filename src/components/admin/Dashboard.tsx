@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +21,11 @@ import {
   Building,
   Phone
 } from 'lucide-react';
+import FavoritesManager from './navigation/FavoritesManager';
+import RecentlyVisited from './navigation/RecentlyVisited';
+import NotificationPanel from './notifications/NotificationPanel';
+import QuickActionsPanel from './actions/QuickActionsPanel';
+import ActivityFeed from './activity/ActivityFeed';
 
 const Dashboard: React.FC = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
@@ -61,13 +67,11 @@ const Dashboard: React.FC = () => {
         .select('*')
         .lt('stock_quantity', 10);
 
-      // Get blood bank status
       const { data: bloodBanks } = await supabase
         .from('blood_banks')
         .select('name_en, is_active')
         .eq('is_active', true);
 
-      // Get ambulance availability
       const { data: ambulances } = await supabase
         .from('ambulance_services')
         .select('is_available, is_active')
@@ -116,161 +120,185 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="text-center py-8">Loading dashboard...</div>
-      ) : (
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="sales">Sales</TabsTrigger>
-            <TabsTrigger value="operations">Operations</TabsTrigger>
-            <TabsTrigger value="emergency">Emergency</TabsTrigger>
-          </TabsList>
+      {/* Quick Actions Panel */}
+      <QuickActionsPanel compact />
 
-          <TabsContent value="overview" className="space-y-4">
-            {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Patients</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{metrics?.totalPatients || 0}</div>
-                  <p className="text-xs text-muted-foreground">registered users</p>
-                </CardContent>
-              </Card>
+      {/* Dashboard Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Main Content - Left Side */}
+        <div className="lg:col-span-3 space-y-6">
+          {isLoading ? (
+            <div className="text-center py-8">Loading dashboard...</div>
+          ) : (
+            <Tabs defaultValue="overview" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="sales">Sales</TabsTrigger>
+                <TabsTrigger value="operations">Operations</TabsTrigger>
+                <TabsTrigger value="emergency">Emergency</TabsTrigger>
+              </TabsList>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Products</CardTitle>
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{metrics?.totalMedicines || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {metrics?.lowStockMedicines || 0} low stock
-                  </p>
-                </CardContent>
-              </Card>
+              <TabsContent value="overview" className="space-y-4">
+                {/* Key Metrics */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Patients</CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{metrics?.totalPatients || 0}</div>
+                      <p className="text-xs text-muted-foreground">registered users</p>
+                    </CardContent>
+                  </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Orders Today</CardTitle>
-                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{metrics?.todayOrders || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {metrics?.pendingOrders || 0} pending
-                  </p>
-                </CardContent>
-              </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Products</CardTitle>
+                      <Package className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{metrics?.totalMedicines || 0}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {metrics?.lowStockMedicines || 0} low stock
+                      </p>
+                    </CardContent>
+                  </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">₹{(metrics?.totalRevenue || 0).toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">total earnings</p>
-                </CardContent>
-              </Card>
-            </div>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Orders Today</CardTitle>
+                      <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{metrics?.todayOrders || 0}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {metrics?.pendingOrders || 0} pending
+                      </p>
+                    </CardContent>
+                  </Card>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Today's Appointments</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{metrics?.todayAppointments || 0}</div>
-                  <p className="text-muted-foreground">scheduled consultations</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Emergency Calls</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-red-600">{metrics?.emergencyCalls || 0}</div>
-                  <p className="text-muted-foreground">ambulance requests</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Ambulance Fleet</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">
-                    {metrics?.availableAmbulances || 0}/{metrics?.totalAmbulances || 0}
-                  </div>
-                  <p className="text-muted-foreground">available/total</p>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="sales" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Sales Overview</CardTitle>
-                <CardDescription>Revenue and order analytics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-center py-8 text-muted-foreground">
-                  Sales analytics coming soon...
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="operations" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Operations Dashboard</CardTitle>
-                <CardDescription>Inventory and service management</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-center py-8 text-muted-foreground">
-                  Operations overview coming soon...
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="emergency" className="space-y-4">
-            <Card className="border-red-200">
-              <CardHeader>
-                <CardTitle className="text-red-600">Emergency Services</CardTitle>
-                <CardDescription>Real-time emergency response status</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-4">
-                    <Phone className="h-8 w-8 text-red-500" />
-                    <div>
-                      <div className="text-2xl font-bold">{metrics?.emergencyCalls || 0}</div>
-                      <p className="text-sm text-muted-foreground">Active Emergency Calls</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <Truck className="h-8 w-8 text-blue-500" />
-                    <div>
-                      <div className="text-2xl font-bold">{metrics?.availableAmbulances || 0}</div>
-                      <p className="text-sm text-muted-foreground">Available Ambulances</p>
-                    </div>
-                  </div>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">₹{(metrics?.totalRevenue || 0).toLocaleString()}</div>
+                      <p className="text-xs text-muted-foreground">total earnings</p>
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      )}
+
+                {/* Quick Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Today's Appointments</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{metrics?.todayAppointments || 0}</div>
+                      <p className="text-muted-foreground">scheduled consultations</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Emergency Calls</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-red-600">{metrics?.emergencyCalls || 0}</div>
+                      <p className="text-muted-foreground">ambulance requests</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Ambulance Fleet</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">
+                        {metrics?.availableAmbulances || 0}/{metrics?.totalAmbulances || 0}
+                      </div>
+                      <p className="text-muted-foreground">available/total</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="sales" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Sales Overview</CardTitle>
+                    <CardDescription>Revenue and order analytics</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-center py-8 text-muted-foreground">
+                      Sales analytics coming soon...
+                    </p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="operations" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Operations Dashboard</CardTitle>
+                    <CardDescription>Inventory and service management</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-center py-8 text-muted-foreground">
+                      Operations overview coming soon...
+                    </p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="emergency" className="space-y-4">
+                <Card className="border-red-200">
+                  <CardHeader>
+                    <CardTitle className="text-red-600">Emergency Services</CardTitle>
+                    <CardDescription>Real-time emergency response status</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-4">
+                        <Phone className="h-8 w-8 text-red-500" />
+                        <div>
+                          <div className="text-2xl font-bold">{metrics?.emergencyCalls || 0}</div>
+                          <p className="text-sm text-muted-foreground">Active Emergency Calls</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <Truck className="h-8 w-8 text-blue-500" />
+                        <div>
+                          <div className="text-2xl font-bold">{metrics?.availableAmbulances || 0}</div>
+                          <p className="text-sm text-muted-foreground">Available Ambulances</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          )}
+        </div>
+
+        {/* Right Sidebar */}
+        <div className="space-y-6">
+          {/* Real-time Notifications */}
+          <NotificationPanel compact />
+          
+          {/* Recently Visited */}
+          <RecentlyVisited compact />
+          
+          {/* Favorites */}
+          <FavoritesManager compact />
+          
+          {/* Activity Feed */}
+          <ActivityFeed compact maxItems={5} />
+        </div>
+      </div>
     </div>
   );
 };

@@ -36,6 +36,9 @@ import {
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
+import BreadcrumbNavigation from './navigation/BreadcrumbNavigation';
+import SidebarSearch from './navigation/SidebarSearch';
+import FavoritesManager from './navigation/FavoritesManager';
 
 const AdminLayout = () => {
   const location = useLocation();
@@ -84,7 +87,21 @@ const AdminLayout = () => {
         </div>
       </div>
       
+      {/* Search functionality */}
+      <div className="p-4 border-b">
+        <SidebarSearch onNavigate={() => setSidebarOpen(false)} />
+      </div>
+
+      {/* Favorites section */}
+      <div className="p-4 border-b">
+        <h3 className="text-sm font-medium mb-2">Favorites</h3>
+        <FavoritesManager compact onNavigate={() => setSidebarOpen(false)} />
+      </div>
+      
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        <div className="mb-4">
+          <h3 className="text-sm font-medium text-muted-foreground mb-2">Main Navigation</h3>
+        </div>
         {navigation.map((item) => {
           const isActive = location.pathname === item.href || 
             (item.href !== '/admin' && location.pathname.startsWith(item.href));
@@ -112,13 +129,13 @@ const AdminLayout = () => {
   return (
     <div className="flex h-screen bg-background">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:border-r">
+      <div className="hidden lg:flex lg:w-80 lg:flex-col lg:border-r">
         <SidebarContent />
       </div>
 
       {/* Mobile Sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="p-0 w-64">
+        <SheetContent side="left" className="p-0 w-80">
           <SidebarContent />
         </SheetContent>
       </Sheet>
@@ -172,6 +189,7 @@ const AdminLayout = () => {
 
         {/* Page Content */}
         <main className="flex-1 overflow-auto p-6">
+          <BreadcrumbNavigation />
           <Outlet />
         </main>
       </div>
