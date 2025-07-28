@@ -16,9 +16,14 @@ interface VisitedItem {
 interface RecentlyVisitedProps {
   compact?: boolean;
   maxItems?: number;
+  onNavigate?: () => void;
 }
 
-const RecentlyVisited: React.FC<RecentlyVisitedProps> = ({ compact = false, maxItems = 5 }) => {
+const RecentlyVisited: React.FC<RecentlyVisitedProps> = ({ 
+  compact = false, 
+  maxItems = 5, 
+  onNavigate 
+}) => {
   const [visitedPages, setVisitedPages] = useState<VisitedItem[]>([]);
   const location = useLocation();
 
@@ -66,6 +71,12 @@ const RecentlyVisited: React.FC<RecentlyVisitedProps> = ({ compact = false, maxI
 
   const displayItems = visitedPages.slice(0, maxItems);
 
+  const handleLinkClick = () => {
+    if (onNavigate) {
+      onNavigate();
+    }
+  };
+
   if (compact) {
     return (
       <div className="space-y-2">
@@ -78,6 +89,7 @@ const RecentlyVisited: React.FC<RecentlyVisitedProps> = ({ compact = false, maxI
               key={item.url}
               to={item.url}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
+              onClick={handleLinkClick}
             >
               <navItem.icon className="w-4 h-4" />
               <span className="truncate">{item.title}</span>
@@ -120,6 +132,7 @@ const RecentlyVisited: React.FC<RecentlyVisitedProps> = ({ compact = false, maxI
                 <Link
                   to={item.url}
                   className="flex-1 text-sm hover:underline flex items-center gap-2"
+                  onClick={handleLinkClick}
                 >
                   {item.title}
                   <ExternalLink className="w-3 h-3" />

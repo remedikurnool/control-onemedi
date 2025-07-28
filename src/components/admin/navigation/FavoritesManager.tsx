@@ -17,9 +17,14 @@ interface FavoriteItem {
 interface FavoritesManagerProps {
   currentPath?: string;
   compact?: boolean;
+  onNavigate?: () => void;
 }
 
-const FavoritesManager: React.FC<FavoritesManagerProps> = ({ currentPath, compact = false }) => {
+const FavoritesManager: React.FC<FavoritesManagerProps> = ({ 
+  currentPath, 
+  compact = false, 
+  onNavigate 
+}) => {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
 
   useEffect(() => {
@@ -65,6 +70,12 @@ const FavoritesManager: React.FC<FavoritesManagerProps> = ({ currentPath, compac
     }
   };
 
+  const handleLinkClick = () => {
+    if (onNavigate) {
+      onNavigate();
+    }
+  };
+
   if (compact) {
     return (
       <div className="space-y-2">
@@ -77,6 +88,7 @@ const FavoritesManager: React.FC<FavoritesManagerProps> = ({ currentPath, compac
               key={favorite.url}
               to={favorite.url}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
+              onClick={handleLinkClick}
             >
               <navItem.icon className="w-4 h-4" />
               <span className="truncate">{favorite.title}</span>
@@ -140,6 +152,7 @@ const FavoritesManager: React.FC<FavoritesManagerProps> = ({ currentPath, compac
                 <Link
                   to={favorite.url}
                   className="flex-1 text-sm hover:underline"
+                  onClick={handleLinkClick}
                 >
                   {favorite.title}
                 </Link>
