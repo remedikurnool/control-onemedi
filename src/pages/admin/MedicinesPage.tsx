@@ -68,7 +68,7 @@ const MedicinesPage = () => {
         .from('products')
         .select('*');
       if (error) throw error;
-      return data as Medicine[];
+      return data;
     }
   });
 
